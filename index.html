@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SGT · Projeto GA BA</title>
+<meta name="theme-color" content="#0f4c5c">
+<style>
+  :root{
+    --cor:#0f4c5c; --cor-forte:#0a3540; --cor-suave:#e6f0f2;
+    --texto:#1f2937; --texto-2:#6b7280; --borda:#d1d5db; --fundo:#f5f7f8;
+    --erro:#b42318; --erro-fundo:#fef3f2; --ok:#067647; --ok-fundo:#ecfdf3;
+    --raio:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--fundo);color:var(--texto);padding:24px 16px}
+  .cartao{width:100%;max-width:400px;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.06);padding:32px 28px}
+  .marca{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .selo{width:44px;height:44px;border-radius:10px;background:var(--cor);color:#fff;display:grid;place-items:center;font-weight:700;letter-spacing:.02em}
+  .marca b{display:block;font-size:18px}
+  .marca span{font-size:13px;color:var(--texto-2)}
+  h1{font-size:20px;margin:0 0 6px}
+  p.sub{margin:0 0 20px;color:var(--texto-2);font-size:14px;line-height:1.45}
+  label{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  input[type=text],input[type=password],input[type=date]{width:100%;padding:12px 14px;font-size:16px;border:1px solid var(--borda);border-radius:var(--raio);background:#fff;color:var(--texto)}
+  input:focus{outline:2px solid var(--cor);outline-offset:1px;border-color:var(--cor)}
+  .ajuda{font-size:12.5px;color:var(--texto-2);margin-top:6px}
+  .codigo{letter-spacing:10px;text-align:center;font-size:24px!important;font-weight:700}
+  .check{display:flex;gap:10px;align-items:flex-start;margin:18px 0 4px;font-size:13.5px;line-height:1.45;font-weight:400}
+  .check input{margin-top:3px;width:18px;height:18px;accent-color:var(--cor);flex:none}
+  button{width:100%;margin-top:20px;padding:13px;font-size:16px;font-weight:600;border:0;border-radius:var(--raio);background:var(--cor);color:#fff;cursor:pointer}
+  button:hover{background:var(--cor-forte)}
+  button:disabled{opacity:.55;cursor:default}
+  .link{background:none;color:var(--cor);padding:6px;margin-top:10px;font-weight:600;font-size:14px}
+  .link:hover{background:none;text-decoration:underline}
+  .aviso{border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.45;margin-top:16px;display:none}
+  .aviso.erro{display:block;background:var(--erro-fundo);color:var(--erro)}
+  .aviso.ok{display:block;background:var(--ok-fundo);color:var(--ok)}
+  .passos{display:flex;gap:6px;margin-bottom:18px}
+  .passos i{flex:1;height:4px;border-radius:4px;background:var(--cor-suave)}
+  .passos i.on{background:var(--cor)}
+  .oculto{display:none}
+  .rodape{text-align:center;font-size:12px;color:var(--texto-2);margin-top:22px}
+</style>
+</head>
+<body>
+<main class="cartao">
+  <div class="marca">
+    <div class="selo">SGT</div>
+    <div><b>Sistema Geral do Time</b><span>Projeto GA BA</span></div>
+  </div>
+
+  <!-- ENTRAR -->
+  <section id="v-entrar">
+    <h1>Entrar</h1>
+    <p class="sub">Use seu CPF e sua senha do SGT.</p>
+    <form id="f-entrar" novalidate>
+      <label for="e-cpf">CPF</label>
+      <input id="e-cpf" type="text" inputmode="numeric" autocomplete="username" placeholder="Somente números" maxlength="14">
+      <label for="e-senha">Senha</label>
+      <input id="e-senha" type="password" autocomplete="current-password">
+      <button type="submit">Entrar</button>
+    </form>
+    <div class="aviso" id="a-entrar"></div>
+    <button class="link" data-ir="v-pa1">Primeiro acesso</button>
+    <button class="link" data-ir="v-esqueci">Esqueci minha senha</button>
+  </section>
+
+  <!-- PRIMEIRO ACESSO · 1 -->
+  <section id="v-pa1" class="oculto">
+    <div class="passos"><i class="on"></i><i></i></div>
+    <h1>Primeiro acesso</h1>
+    <p class="sub">Confirme seus dados. Vamos enviar um código para o e-mail cadastrado no quadro do projeto.</p>
+    <form id="f-pa1" novalidate>
+      <label for="p-cpf">CPF</label>
+      <input id="p-cpf" type="text" inputmode="numeric" placeholder="Somente números" maxlength="14">
+      <label for="p-nasc">Data de nascimento</label>
+      <input id="p-nasc" type="date">
+      <button type="submit">Enviar código</button>
+    </form>
+    <div class="aviso" id="a-pa1"></div>
+    <button class="link" data-ir="v-entrar">Voltar para entrar</button>
+  </section>
+
+  <!-- PRIMEIRO ACESSO · 2 -->
+  <section id="v-pa2" class="oculto">
+    <div class="passos"><i class="on"></i><i class="on"></i></div>
+    <h1>Crie sua senha</h1>
+    <p class="sub" id="pa2-sub">Enviamos um código de 6 dígitos para o seu e-mail. Confira também a caixa de spam.</p>
+    <form id="f-pa2" novalidate>
+      <label for="p-cod">Código</label>
+      <input id="p-cod" class="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      <label for="p-senha">Nova senha</label>
+      <input id="p-senha" type="password" autocomplete="new-password">
+      <div class="ajuda">Pelo menos 8 caracteres, com letras e números.</div>
+      <label for="p-senha2">Repita a senha</label>
+      <input id="p-senha2" type="password" autocomplete="new-password">
+      <label class="check"><input id="p-lgpd" type="checkbox">
+        <span>Autorizo o uso do meu CPF, data de nascimento e e-mail para criar e proteger meu acesso ao SGT, conforme a Lei Geral de Proteção de Dados (LGPD).</span></label>
+      <button type="submit">Criar acesso</button>
+    </form>
+    <div class="aviso" id="a-pa2"></div>
+    <button class="link" id="reenviar">Pedir um novo código</button>
+  </section>
+
+  <!-- ESQUECI -->
+  <section id="v-esqueci" class="oculto">
+    <h1>Esqueci minha senha</h1>
+    <p class="sub">A recuperação automática de senha chega em breve. Por enquanto, procure a equipe de Gestão de Pessoas do projeto para liberar um novo acesso.</p>
+    <button class="link" data-ir="v-entrar">Voltar para entrar</button>
+  </section>
+
+  <!-- LOGADO -->
+  <section id="v-inicio" class="oculto">
+    <h1 id="ola">Olá!</h1>
+    <p class="sub">Você entrou no SGT. As ferramentas vão aparecer aqui conforme forem liberadas para o seu perfil.</p>
+    <div class="aviso ok" id="perfil"></div>
+    <button id="sair">Sair</button>
+  </section>
+
+  <div class="rodape">SGT · Projeto GA BA</div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://bjlhmkwxlrvatnlwjcln.supabase.co";
+const CHAVE_PUBLICA = "sb_publishable_s4_6UV8RA2bFOH0BfR9jLw_EC4VV1N1"; // pública por natureza; a segurança está no banco (RLS)
+const FUNCAO = SUPABASE_URL + "/functions/v1/primeiro-acesso";
+const DOMINIO_INTERNO = "@sgt.interno";
+
+const $ = (id) => document.getElementById(id);
+const so_numeros = (s) => (s || "").replace(/\D/g, "");
+let cpfPrimeiroAcesso = "";
+
+function mostrar(id){
+  document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
+  document.querySelectorAll(".aviso").forEach(a => { if (a.id !== "perfil") { a.className = "aviso"; a.textContent = ""; } });
+}
+function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso " + tipo; a.textContent = texto; }
+function ocupado(form, sim){ form.querySelectorAll("button,input").forEach(e => e.disabled = sim); }
+document.querySelectorAll("[data-ir]").forEach(b => b.addEventListener("click", () => mostrar(b.dataset.ir)));
+
+// Máscara de CPF enquanto digita
+["e-cpf","p-cpf"].forEach(id => $(id).addEventListener("input", e => {
+  const n = so_numeros(e.target.value).slice(0, 11);
+  e.target.value = n.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}));
+
+function cpfValido(c){
+  if (!/^\d{11}$/.test(c) || /^(\d)\1{10}$/.test(c)) return false;
+  const dv = (n) => { let s = 0; for (let i = 0; i < n; i++) s += +c[i] * (n + 1 - i); const d = (s * 10) % 11; return d === 10 ? 0 : d; };
+  return dv(9) === +c[9] && dv(10) === +c[10];
+}
+
+async function chamarFuncao(corpo){
+  const r = await fetch(FUNCAO, { method: "POST", headers: { "Content-Type": "application/json", "apikey": CHAVE_PUBLICA }, body: JSON.stringify(corpo) });
+  let d = {}; try { d = await r.json(); } catch {}
+  return { ok: r.ok, ...d };
+}
+
+// ---------- Entrar
+$("f-entrar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const cpf = so_numeros($("e-cpf").value), senha = $("e-senha").value;
+  if (!cpfValido(cpf)) return aviso("a-entrar", "Confira o CPF digitado.");
+  if (!senha) return aviso("a-entrar", "Digite sua senha.");
+  ocupado(e.target, true);
+  try {
+    const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
+      method: "POST", headers: { "Content-Type": "application/json", "apikey": CHAVE_PUBLICA },
+      body: JSON.stringify({ email: cpf + DOMINIO_INTERNO, password: senha })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error("credenciais");
+    guardarSessao(d);
+    await abrirInicio(d);
+  } catch {
+    aviso("a-entrar", "CPF ou senha incorretos. Se ainda não criou sua senha, use Primeiro acesso.");
+  } finally { ocupado(e.target, false); }
+});
+
+// ---------- Primeiro acesso · 1
+async function solicitarCodigo(cpf, nasc, avisoId){
+  const d = await chamarFuncao({ acao: "solicitar_codigo", cpf, data_nascimento: nasc });
+  if (!d.ok) { aviso(avisoId, d.erro || "Não foi possível continuar agora. Tente de novo."); return false; }
+  $("pa2-sub").textContent = `Enviamos um código de 6 dígitos para ${d.enviado_para}. Ele vale por ${d.validade_min} minutos. Confira também a caixa de spam.`;
+  return true;
+}
+$("f-pa1").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const cpf = so_numeros($("p-cpf").value), nasc = $("p-nasc").value;
+  if (!cpfValido(cpf)) return aviso("a-pa1", "Confira o CPF digitado.");
+  if (!nasc) return aviso("a-pa1", "Informe sua data de nascimento.");
+  ocupado(e.target, true);
+  try {
+    if (await solicitarCodigo(cpf, nasc, "a-pa1")) { cpfPrimeiroAcesso = cpf; mostrar("v-pa2"); $("p-cod").focus(); }
+  } catch { aviso("a-pa1", "Sem conexão com o SGT. Verifique sua internet."); }
+  finally { ocupado(e.target, false); }
+});
+
+$("reenviar").addEventListener("click", async () => {
+  try {
+    if (await solicitarCodigo(cpfPrimeiroAcesso, $("p-nasc").value, "a-pa2")) aviso("a-pa2", "Novo código enviado.", "ok");
+  } catch { aviso("a-pa2", "Sem conexão com o SGT. Verifique sua internet."); }
+});
+
+// ---------- Primeiro acesso · 2
+$("f-pa2").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const codigo = so_numeros($("p-cod").value), senha = $("p-senha").value;
+  if (codigo.length !== 6) return aviso("a-pa2", "O código tem 6 dígitos.");
+  if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return aviso("a-pa2", "A senha precisa ter pelo menos 8 caracteres, com letras e números.");
+  if (senha !== $("p-senha2").value) return aviso("a-pa2", "As senhas não são iguais.");
+  if (!$("p-lgpd").checked) return aviso("a-pa2", "Para continuar, marque a caixa de autorização de uso dos dados.");
+  ocupado(e.target, true);
+  try {
+    const d = await chamarFuncao({ acao: "confirmar", cpf: cpfPrimeiroAcesso, codigo, senha, aceite_lgpd: true });
+    if (!d.ok) return aviso("a-pa2", d.erro || "Não foi possível criar o acesso agora.");
+    e.target.reset();
+    mostrar("v-entrar");
+    $("e-cpf").value = cpfPrimeiroAcesso; $("e-cpf").dispatchEvent(new Event("input"));
+    aviso("a-entrar", "Acesso criado! Agora entre com seu CPF e a senha que você criou.", "ok");
+    $("e-senha").focus();
+  } catch { aviso("a-pa2", "Sem conexão com o SGT. Verifique sua internet."); }
+  finally { ocupado(e.target, false); }
+});
+
+// ---------- Sessão
+function guardarSessao(d){ try { sessionStorage.setItem("sgt", JSON.stringify({ t: d.access_token, u: d.user.id })); } catch {} }
+function lerSessao(){ try { return JSON.parse(sessionStorage.getItem("sgt")); } catch { return null; } }
+
+const NOMES_PAPEIS = { admin: "Administrador(a)", gerencia: "Gerência", rh: "Gestão de Pessoas", lideranca: "Liderança", colaborador: "Colaborador(a)" };
+
+async function abrirInicio(d){
+  const token = d.access_token || d.t, uid = d.user ? d.user.id : d.u;
+  const h = { "apikey": CHAVE_PUBLICA, "Authorization": "Bearer " + token };
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/colaborador?select=id,nome&auth_user_id=eq.${uid}`, { headers: h });
+  if (!r.ok) throw new Error("sessao");
+  const [c] = await r.json();
+  if (!c) throw new Error("sem cadastro");
+  const rp = await fetch(`${SUPABASE_URL}/rest/v1/papel_usuario?select=papel&colaborador_id=eq.${c.id}`, { headers: h });
+  const papeis = rp.ok ? (await rp.json()).map(p => NOMES_PAPEIS[p.papel] || p.papel) : [];
+  $("ola").textContent = "Olá, " + c.nome.split(" ")[0] + "!";
+  $("perfil").textContent = "Seu perfil: " + (papeis.join(" · ") || "Colaborador(a)");
+  mostrar("v-inicio");
+}
+
+$("sair").addEventListener("click", () => { try { sessionStorage.removeItem("sgt"); } catch {} $("f-entrar").reset(); mostrar("v-entrar"); });
+
+(async () => { const s = lerSessao(); if (s) { try { await abrirInicio(s); } catch { try { sessionStorage.removeItem("sgt"); } catch {} } } })();
+</script>
+</body>
+</html>
