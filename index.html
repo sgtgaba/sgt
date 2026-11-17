@@ -365,12 +365,6 @@
     </div>
   </section>
 
-  <div id="instalar" class="oculto" style="margin-top:18px;border:1px solid var(--borda);border-radius:var(--raio);padding:12px 14px;background:var(--fundo);font-size:13.5px;line-height:1.45">
-    <b>Instale o SGT no seu celular ou computador</b>
-    <div id="instalar-txt" class="ajuda" style="margin-top:4px">O SGT ganha um ícone na tela inicial e abre como aplicativo.</div>
-    <div style="display:flex;gap:8px;margin-top:8px"><button id="instalar-sim" style="width:auto;margin:0;padding:9px 16px;font-size:14px">Instalar app</button>
-      <button id="instalar-nao" class="sec" style="width:auto;margin:0;padding:9px 16px;font-size:14px">Agora não</button></div>
-  </div>
   <div class="rodape">SGT · Projeto GA BA</div>
 </main>
 
@@ -395,7 +389,7 @@ const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", des
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad)/.test(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app)/.test(id));
   window.scrollTo(0, 0);
 }
 function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso" + (texto ? " " + tipo : ""); a.textContent = texto; }
@@ -593,6 +587,7 @@ async function abrirInicio(){
   if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
   f.push(`<button class="ferr" id="ir-ferias"><span class="ico">✈</span><span>Gestão de Férias<small>Informar férias, enviar comprovante e aviso assinado</small></span></button>`);
   f.push(`<button class="ferr" id="ir-dados"><span class="ico">☎</span><span>Dados e Contatos<small>Conferir meus dados e atualizar contatos</small></span></button>`);
+  if (window.App) f.push(App.cartao());
   f.push(`<button class="ferr" id="ir-enc"><span class="ico">⇄</span><span>Encaminhamentos<small>Solicitações à gestão do projeto, com acompanhamento</small></span></button>`);
   if (temModulo("cat")) f.push(`<a class="ferr" href="cat.html"><span class="ico">✚</span><span>Formulário de Relatório · CAT<small>Escuta e relatório para subsidiar a CAT</small></span></a>`);
   if (temModulo("ouvidoria")) f.push(`<button class="ferr" id="ir-ouv"><span class="ico">✉</span><span>Ouvidoria<small>Manifestações recebidas e respostas</small></span></button>`);
@@ -607,6 +602,7 @@ async function abrirInicio(){
   if ($("ir-enc")) $("ir-enc").addEventListener("click", () => window.Encaminhamentos && Encaminhamentos.abrir());
   if ($("ir-ouv")) $("ir-ouv").addEventListener("click", () => window.Ouvidoria && Ouvidoria.abrir());
   if ($("ir-links")) $("ir-links").addEventListener("click", () => window.Links && Links.abrir());
+  if ($("ir-app")) $("ir-app").addEventListener("click", () => App.abrir());
   if ($("ir-dados")) $("ir-dados").addEventListener("click", () => window.Dados && Dados.abrir());
   if (window.Dados) Dados.checar();
   mostrar("v-inicio");
@@ -885,27 +881,6 @@ $("importar").addEventListener("click", async () => {
   } catch (err) { if (err.message !== "sessao") aviso("a-lote", traduzErro(err)); $("importar").disabled = false; }
 });
 
-// ---------- Instalar como aplicativo (ícone na tela inicial)
-(() => {
-  let pedido = null;
-  const instalado = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
-  const dispensado = () => { try { return localStorage.getItem("sgt-instalar") === "nao"; } catch { return false; } };
-  if (instalado || dispensado()) return;
-  const caixa = $("instalar");
-  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); pedido = e; caixa.classList.remove("oculto"); });
-  if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
-    $("instalar-txt").innerHTML = "No iPhone: toque em <b>Compartilhar</b> (o quadrado com a seta) e depois em <b>Adicionar à Tela de Início</b>.";
-    $("instalar-sim").classList.add("oculto"); caixa.classList.remove("oculto");
-  }
-  $("instalar-sim").addEventListener("click", async () => {
-    if (!pedido) return;
-    pedido.prompt(); const r = await pedido.userChoice; pedido = null;
-    if (r.outcome === "accepted") caixa.classList.add("oculto");
-  });
-  $("instalar-nao").addEventListener("click", () => { caixa.classList.add("oculto"); try { localStorage.setItem("sgt-instalar", "nao"); } catch {} });
-  addEventListener("appinstalled", () => caixa.classList.add("oculto"));
-})();
-
 // ---------- Ao abrir a página
 (async () => {
   let msg = ""; try { msg = sessionStorage.getItem("sgt-aviso") || ""; sessionStorage.removeItem("sgt-aviso"); } catch {}
@@ -919,6 +894,7 @@ $("importar").addEventListener("click", async () => {
 <script src="ouvidoria.js?v=1"></script>
 <script src="links.js?v=1"></script>
 <script src="dados.js?v=1"></script>
+<script src="app.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>
