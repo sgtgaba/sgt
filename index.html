@@ -77,6 +77,13 @@
   .ferr small{display:block;font-weight:400;color:var(--texto-2);font-size:12.5px;margin-top:2px}
   .ferr .ico{width:40px;height:40px;border-radius:9px;background:var(--cor-suave);color:var(--magenta);display:grid;place-items:center;font-weight:700;flex:none}
   .ferr[disabled]{opacity:.6}
+  /* Ícones das ferramentas nas cores do projeto, em sequência */
+  .ferramentas .ferr .ico{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .ferramentas .ferr:nth-child(5n+1) .ico{background:#E00D7E}
+  .ferramentas .ferr:nth-child(5n+2) .ico{background:#ED7F0C}
+  .ferramentas .ferr:nth-child(5n+3) .ico{background:#90BF23}
+  .ferramentas .ferr:nth-child(5n+4) .ico{background:#E00E1B}
+  .ferramentas .ferr:nth-child(5n+5) .ico{background:#27B2B5}
   #v-inicio #sair{width:auto;padding:10px 22px;font-size:14px}
   @media (max-width:640px){.ferramentas{grid-template-columns:1fr 1fr}.ferr{min-height:110px;padding:12px}}
 
