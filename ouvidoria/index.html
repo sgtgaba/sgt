@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ouvidoria · Projeto GA BA</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#e71181">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../icones/favicon-32.png">
+<link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGT">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root{
+    --cor:#c40f6d; --cor-forte:#9c0b56; --cor-suave:#fde8f2;
+    --magenta:#e71181; --laranja:#ee7f08; --verde:#92c01f;
+    --texto:#1f2937; --texto-2:#6b7280; --borda:#e0d6dc; --fundo:#faf6f8;
+    --erro:#b42318; --erro-fundo:#fef3f2; --ok:#067647; --ok-fundo:#ecfdf3; --alerta:#b54708; --alerta-fundo:#fffaeb;
+    --raio:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--fundo);color:var(--texto);padding:32px 14px}
+  .cartao{position:relative;overflow:hidden;width:100%;max-width:720px;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(231,17,129,.08);padding:34px 26px 30px}
+  .cartao::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--magenta) 0 34%,var(--laranja) 34% 67%,var(--verde) 67% 100%)}
+  .marca{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .selo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--magenta) 0 55%,var(--laranja) 55% 80%,var(--verde) 80%);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+  .marca b{display:block;font-size:18px}.marca span{font-size:13px;color:var(--texto-2)}
+  h1{font-size:21px;margin:0 0 6px}h2{font-size:16px;margin:24px 0 8px}
+  p.sub{margin:0 0 18px;color:var(--texto-2);font-size:14.5px;line-height:1.5}
+  label{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  input[type=text],input[type=email],input[type=tel],select,textarea{width:100%;padding:11px 13px;font-size:16px;border:1px solid var(--borda);border-radius:var(--raio);background:#fff;color:var(--texto);font-family:inherit}
+  textarea{min-height:120px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--cor);outline-offset:1px;border-color:var(--cor)}
+  .ajuda{font-size:12.5px;color:var(--texto-2);margin-top:5px;line-height:1.45}
+  .grade2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  @media(max-width:560px){.grade2{grid-template-columns:1fr}}
+  .check{display:flex;gap:10px;align-items:flex-start;margin:14px 0 4px;font-size:14px;line-height:1.5;font-weight:400}
+  .check input{margin-top:3px;width:18px;height:18px;accent-color:var(--cor);flex:none}
+  .opcoes{display:flex;gap:8px;flex-wrap:wrap}
+  .opcoes label{margin:0;font-weight:500;border:1px solid var(--borda);border-radius:999px;padding:8px 14px;cursor:pointer;display:flex;gap:8px;align-items:center;font-size:14.5px}
+  .opcoes label:has(input:checked){border-color:var(--cor);background:var(--cor-suave);color:var(--cor-forte)}
+  .opcoes input{accent-color:var(--cor)}
+  button{padding:13px 18px;font-size:16px;font-weight:600;border:0;border-radius:var(--raio);background:var(--cor);color:#fff;cursor:pointer;font-family:inherit}
+  button:hover{background:var(--cor-forte)}button:disabled{opacity:.55;cursor:default}
+  button.sec{background:#fff;color:var(--cor);border:1px solid var(--borda)}button.sec:hover{background:var(--cor-suave)}
+  .acoes{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}.acoes button{flex:1;min-width:160px}
+  .aviso{border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin-top:14px;display:none;white-space:pre-line}
+  .aviso.erro{display:block;background:var(--erro-fundo);color:var(--erro)}
+  .aviso.ok{display:block;background:var(--ok-fundo);color:var(--ok)}
+  .aviso.alerta{display:block;background:var(--alerta-fundo);color:var(--alerta)}
+  .oculto{display:none!important}
+  .escolha{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .escolha button{text-align:left;background:#fff;color:var(--texto);border:1px solid var(--borda);font-weight:400;font-size:14px;line-height:1.45;padding:18px}
+  .escolha button:hover{background:var(--cor-suave)}.escolha button b{display:block;font-size:16px;margin-bottom:4px;color:var(--cor-forte)}
+  @media(max-width:560px){.escolha{grid-template-columns:1fr}}
+  .caixa{background:var(--fundo);border:1px solid var(--borda);border-radius:var(--raio);padding:14px 16px;font-size:14px;line-height:1.55}
+  .caixa ul{margin:6px 0 0;padding-left:20px}
+  .protocolo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+  .protocolo div{border:2px dashed var(--cor);border-radius:var(--raio);padding:14px;text-align:center}
+  .protocolo small{display:block;color:var(--texto-2);font-size:12.5px;margin-bottom:4px}
+  .protocolo b{font-size:22px;letter-spacing:2px;font-variant-numeric:tabular-nums}
+  .bolha{border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.5;white-space:pre-wrap;background:#f4f4f6;margin-top:10px}
+  .bolha.ouv{background:var(--cor-suave)}
+  .bolha small{display:block;color:var(--texto-2);font-size:12px;margin-bottom:4px}
+  .etiqueta{display:inline-block;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--cor-suave);color:var(--cor-forte)}
+  .rodape{text-align:center;font-size:12px;color:var(--texto-2);margin-top:24px;line-height:1.5}
+  .rodape a{color:var(--texto-2)}
+  @media print{body{background:#fff;padding:0}.cartao{box-shadow:none}.acoes,.rodape{display:none}}
+</style>
+</head>
+<body>
+<main class="cartao">
+  <div class="marca">
+    <div class="selo">GA</div>
+    <div><b>Ouvidoria</b><span>Projeto GA BA · canal sigiloso</span></div>
+  </div>
+
+  <!-- INÍCIO -->
+  <section id="t-inicio">
+    <h1>Fale com a Ouvidoria</h1>
+    <p class="sub">Use este canal para denúncias, reclamações, sugestões, elogios ou qualquer outra manifestação sobre o projeto. Você não precisa entrar no SGT nem se identificar.</p>
+    <div class="escolha">
+      <button id="ir-nova"><b>Registrar manifestação</b>Conte o que aconteceu. Você recebe um protocolo e uma chave para acompanhar a resposta.</button>
+      <button id="ir-consulta"><b>Acompanhar manifestação</b>Veja a situação e as respostas, ou envie um complemento, com seu protocolo e sua chave.</button>
+    </div>
+    <h2>Como protegemos você</h2>
+    <div class="caixa"><ul>
+      <li>O formulário não pede login, nome nem CPF. A identificação é opcional.</li>
+      <li>Não guardamos o endereço do seu computador ou celular junto com a manifestação.</li>
+      <li>Somente as pessoas designadas para a Ouvidoria leem os envios e os arquivos.</li>
+      <li>Retaliar quem fez uma manifestação de boa-fé é proibido.</li>
+    </ul></div>
+  </section>
+
+  <!-- FORMULÁRIO -->
+  <section id="t-nova" class="oculto">
+    <h1>Registrar manifestação</h1>
+    <p class="sub">Campos com * são obrigatórios. Quanto mais detalhes, melhor conseguimos encaminhar.</p>
+    <form id="f-nova" novalidate>
+      <label>Tipo de manifestação *</label>
+      <div class="opcoes" id="tipos">
+        <label><input type="radio" name="tipo" value="denuncia">Denúncia</label>
+        <label><input type="radio" name="tipo" value="reclamacao">Reclamação</label>
+        <label><input type="radio" name="tipo" value="sugestao">Sugestão</label>
+        <label><input type="radio" name="tipo" value="elogio">Elogio</label>
+        <label><input type="radio" name="tipo" value="solicitacao">Solicitação</label>
+        <label><input type="radio" name="tipo" value="outro">Outro</label>
+      </div>
+      <label for="assunto">Assunto *</label>
+      <select id="assunto"><option value="">Escolha…</option>
+        <option>Assédio moral</option><option>Assédio sexual</option><option>Discriminação ou preconceito</option>
+        <option>Conduta antiética ou irregularidade</option><option>Conflito entre pessoas</option>
+        <option>Liderança e gestão</option><option>Condições e segurança do trabalho</option>
+        <option>Comunicação e processos internos</option><option>Atendimento e relacionamento com escolas e parceiros</option>
+        <option>Reconhecimento de um trabalho</option><option>Ideia ou melhoria</option><option>Outro assunto</option>
+      </select>
+      <label for="relato">O que aconteceu? *</label>
+      <textarea id="relato" maxlength="20000" placeholder="Descreva os fatos: o que aconteceu, como, e o que você espera da Ouvidoria."></textarea>
+      <div class="grade2">
+        <div><label for="quando">Quando aconteceu</label><input id="quando" type="text" maxlength="100" placeholder="Ex.: 10/11/2026, ou desde agosto"></div>
+        <div><label for="onde">Onde aconteceu</label><input id="onde" type="text" maxlength="300" placeholder="Ex.: NTE 11, escola, reunião on-line"></div>
+      </div>
+
+      <label>O relato envolve outras pessoas? *</label>
+      <div class="opcoes">
+        <label><input type="radio" name="terc" value="nao">Não</label>
+        <label><input type="radio" name="terc" value="sim">Sim</label>
+      </div>
+      <div id="bloco-terc" class="oculto">
+        <div class="aviso alerta" style="display:block">Quando o relato envolve outras pessoas, é preciso apresentar elementos concretos que o sustentem: documentos, prints, áudios, e-mails, fotos ou testemunhas. Relatos sem provas podem não ter como ser apurados.</div>
+        <label for="pessoas">Quem está envolvido</label>
+        <textarea id="pessoas" style="min-height:70px" maxlength="2000" placeholder="Nome e função das pessoas envolvidas, se souber"></textarea>
+        <label for="provas">Provas e testemunhas *</label>
+        <textarea id="provas" style="min-height:80px" maxlength="5000" placeholder="Descreva as provas que você tem e anexe os arquivos abaixo. Se houver testemunhas, diga quem são."></textarea>
+      </div>
+
+      <label for="arquivos">Arquivos <span style="font-weight:400;color:var(--texto-2)">(até 10 arquivos, 10 MB cada)</span></label>
+      <input id="arquivos" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx,.xlsx,.txt,.mp3,.m4a,.ogg,.wav,.mp4">
+      <div class="ajuda">PDF, imagens, documentos, áudios ou vídeos curtos. Antes de enviar fotos, confira se não aparecem dados de pessoas que não têm relação com o caso.</div>
+
+      <label>Deseja se identificar?</label>
+      <div class="opcoes">
+        <label><input type="radio" name="ident" value="nao" checked>Não, quero ficar anônimo(a)</label>
+        <label><input type="radio" name="ident" value="sim">Sim</label>
+      </div>
+      <div id="bloco-ident" class="oculto grade2">
+        <div><label for="nome">Nome</label><input id="nome" type="text" maxlength="200" autocomplete="name"></div>
+        <div><label for="contato">E-mail ou telefone para retorno</label><input id="contato" type="text" maxlength="200"></div>
+      </div>
+
+      <label class="check"><input type="checkbox" id="aceite"><span>Declaro que as informações prestadas são verdadeiras e estou ciente de que serão tratadas com sigilo, exclusivamente para apuração e encaminhamento desta manifestação, conforme a Lei Geral de Proteção de Dados (LGPD). Sei que acusar alguém sabendo que é inocente pode configurar crime.</span></label>
+      <div class="acoes"><button type="button" class="sec" data-volta>Voltar</button><button type="submit">Enviar manifestação</button></div>
+    </form>
+    <div class="aviso" id="a-nova"></div>
+  </section>
+
+  <!-- PROTOCOLO -->
+  <section id="t-feito" class="oculto">
+    <h1>Manifestação recebida</h1>
+    <p class="sub">Guarde o protocolo e a chave abaixo. Eles são a única forma de acompanhar a resposta, e não conseguimos recuperar a chave se ela for perdida.</p>
+    <div class="protocolo">
+      <div><small>Protocolo</small><b id="f-prot"></b></div>
+      <div><small>Chave de acesso</small><b id="f-chave"></b></div>
+    </div>
+    <div class="aviso" id="a-feito"></div>
+    <div class="acoes">
+      <button class="sec" id="copiar">Copiar protocolo e chave</button>
+      <button class="sec" id="baixar">Baixar comprovante</button>
+      <button id="ir-acompanhar">Acompanhar agora</button>
+    </div>
+  </section>
+
+  <!-- CONSULTA -->
+  <section id="t-consulta" class="oculto">
+    <h1>Acompanhar manifestação</h1>
+    <form id="f-consulta" novalidate>
+      <div class="grade2">
+        <div><label for="c-prot">Protocolo</label><input id="c-prot" type="text" autocomplete="off" placeholder="OUV-2026-XXXXXX" style="text-transform:uppercase"></div>
+        <div><label for="c-chave">Chave de acesso</label><input id="c-chave" type="text" autocomplete="off" placeholder="XXXX-XXXX" style="text-transform:uppercase"></div>
+      </div>
+      <div class="acoes"><button type="button" class="sec" data-volta>Voltar</button><button type="submit">Consultar</button></div>
+    </form>
+    <div class="aviso" id="a-consulta"></div>
+    <div id="resultado"></div>
+  </section>
+
+  <div class="rodape">Ouvidoria · Projeto GA BA<br><a href="../">Entrar no SGT</a></div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://bjlhmkwxlrvatnlwjcln.supabase.co";
+const CHAVE_PUBLICA = "sb_publishable_s4_6UV8RA2bFOH0BfR9jLw_EC4VV1N1";
+const MAX_MB = 10, MAX_ARQ = 10;
+const TIPOS = { denuncia: "Denúncia", reclamacao: "Reclamação", sugestao: "Sugestão", elogio: "Elogio", solicitacao: "Solicitação", outro: "Outro" };
+const STATUS = { recebida: "Recebida", em_analise: "Em análise", encaminhada: "Encaminhada para apuração", respondida: "Respondida", concluida: "Concluída", arquivada: "Arquivada" };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let enviado = null;
+
+function tela(id) {
+  document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
+  document.querySelectorAll(".aviso[id]").forEach(a => { a.className = "aviso"; a.textContent = ""; });
+  window.scrollTo(0, 0);
+}
+function aviso(id, t, tipo = "erro") { const a = $(id); a.className = "aviso" + (t ? " " + tipo : ""); a.textContent = t; }
+
+async function rpc(nome, corpo) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${nome}`, { method: "POST",
+    headers: { apikey: CHAVE_PUBLICA, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  const d = await r.json().catch(() => null);
+  if (!r.ok) throw new Error((d && d.message) || "Não foi possível concluir agora. Tente de novo.");
+  return d;
+}
+const nomeSeguro = (n) => n.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w.\-]+/g, "_").slice(-80);
+async function enviarArquivos(id, prot, chave, arquivos, progresso) {
+  const falhas = [];
+  for (let i = 0; i < arquivos.length; i++) {
+    const f = arquivos[i];
+    progresso && progresso(i + 1, arquivos.length);
+    const caminho = `${id}/${Date.now()}_${i}_${nomeSeguro(f.name)}`;
+    try {
+      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/ouvidoria/${caminho}`, { method: "POST",
+        headers: { apikey: CHAVE_PUBLICA, "Content-Type": f.type || "application/octet-stream" }, body: f });
+      if (!r.ok) throw new Error();
+      await rpc("ouv_registrar_anexo", { p_protocolo: prot, p_chave: chave, p_path: caminho, p_nome: f.name, p_tamanho: f.size, p_tipo: f.type || "" });
+    } catch { falhas.push(f.name); }
+  }
+  return falhas;
+}
+function conferirArquivos(lista) {
+  if (lista.length > MAX_ARQ) return `Envie no máximo ${MAX_ARQ} arquivos.`;
+  const grande = lista.find(f => f.size > MAX_MB * 1024 * 1024);
+  if (grande) return `O arquivo "${grande.name}" passa de ${MAX_MB} MB.`;
+  return "";
+}
+
+// ---------- navegação
+$("ir-nova").addEventListener("click", () => tela("t-nova"));
+$("ir-consulta").addEventListener("click", () => tela("t-consulta"));
+document.querySelectorAll("[data-volta]").forEach(b => b.addEventListener("click", () => tela("t-inicio")));
+document.querySelectorAll('input[name="terc"]').forEach(r => r.addEventListener("change", () =>
+  $("bloco-terc").classList.toggle("oculto", document.querySelector('input[name="terc"]:checked').value !== "sim")));
+document.querySelectorAll('input[name="ident"]').forEach(r => r.addEventListener("change", () =>
+  $("bloco-ident").classList.toggle("oculto", document.querySelector('input[name="ident"]:checked').value !== "sim")));
+
+// ---------- envio
+$("f-nova").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const tipo = document.querySelector('input[name="tipo"]:checked')?.value;
+  const terc = document.querySelector('input[name="terc"]:checked')?.value;
+  const ident = document.querySelector('input[name="ident"]:checked')?.value === "sim";
+  const arquivos = [...$("arquivos").files];
+  if (!tipo) return aviso("a-nova", "Escolha o tipo de manifestação.");
+  if (!$("assunto").value) return aviso("a-nova", "Escolha o assunto.");
+  if ($("relato").value.trim().length < 20) return aviso("a-nova", "Descreva o que aconteceu com pelo menos 20 caracteres.");
+  if (!terc) return aviso("a-nova", "Diga se o relato envolve outras pessoas.");
+  if (terc === "sim" && $("provas").value.trim().length < 15)
+    return aviso("a-nova", "Como o relato envolve outras pessoas, descreva as provas que o sustentam (documentos, prints, testemunhas etc.).");
+  const errArq = conferirArquivos(arquivos); if (errArq) return aviso("a-nova", errArq);
+  if (ident && !$("contato").value.trim()) return aviso("a-nova", "Para se identificar, informe um e-mail ou telefone para retorno.");
+  if (!$("aceite").checked) return aviso("a-nova", "Para enviar, marque a declaração.");
+  const btn = e.target.querySelector('button[type="submit"]'); btn.disabled = true;
+  try {
+    aviso("a-nova", "Enviando…", "alerta");
+    const r = await rpc("ouv_registrar", { p_aceite: true, p: {
+      tipo, assunto: $("assunto").value, relato: $("relato").value.trim(), envolve_terceiros: terc === "sim",
+      pessoas_envolvidas: $("pessoas").value.trim(), evidencias: $("provas").value.trim(),
+      local_fato: $("onde").value.trim(), data_fato: $("quando").value.trim(),
+      identificado: ident, nome_contato: ident ? $("nome").value.trim() : "", contato: ident ? $("contato").value.trim() : "" } });
+    enviado = { ...r, tipo, criado: new Date() };
+    let falhas = [];
+    if (arquivos.length) falhas = await enviarArquivos(r.id, r.protocolo, r.chave, arquivos, (i, n) => aviso("a-nova", `Enviando arquivo ${i} de ${n}…`, "alerta"));
+    e.target.reset(); $("bloco-terc").classList.add("oculto"); $("bloco-ident").classList.add("oculto");
+    $("f-prot").textContent = r.protocolo; $("f-chave").textContent = r.chave;
+    tela("t-feito");
+    if (falhas.length) aviso("a-feito", `A manifestação foi registrada, mas não conseguimos enviar: ${falhas.join(", ")}. Você pode enviar os arquivos de novo pelo acompanhamento nas próximas 2 horas.`, "alerta");
+  } catch (x) { aviso("a-nova", x.message); }
+  finally { btn.disabled = false; }
+});
+
+$("copiar").addEventListener("click", () => {
+  const t = `Ouvidoria · Projeto GA BA\nProtocolo: ${enviado.protocolo}\nChave de acesso: ${enviado.chave}\nAcompanhe em: ${location.href.split("?")[0]}`;
+  navigator.clipboard.writeText(t).then(() => aviso("a-feito", "Copiado. Guarde em um lugar seguro.", "ok"), () => aviso("a-feito", "Não foi possível copiar. Anote o protocolo e a chave."));
+});
+$("baixar").addEventListener("click", () => {
+  const t = `OUVIDORIA · PROJETO GA BA\nComprovante de manifestação\n\nProtocolo: ${enviado.protocolo}\nChave de acesso: ${enviado.chave}\nTipo: ${TIPOS[enviado.tipo]}\nEnviada em: ${enviado.criado.toLocaleString("pt-BR")}\n\nAcompanhe em: ${location.href.split("?")[0]}\n\nGuarde este comprovante em local seguro. Quem tiver o protocolo e a chave consegue ver as respostas.\n`;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([t], { type: "text/plain;charset=utf-8" }));
+  a.download = `ouvidoria_${enviado.protocolo}.txt`; document.body.appendChild(a); a.click(); a.remove();
+});
+$("ir-acompanhar").addEventListener("click", () => {
+  tela("t-consulta"); $("c-prot").value = enviado.protocolo; $("c-chave").value = enviado.chave; consultar();
+});
+
+// ---------- acompanhamento
+let acesso = null;
+async function consultar() {
+  const prot = $("c-prot").value.trim().toUpperCase(), chave = $("c-chave").value.trim().toUpperCase();
+  if (!prot || !chave) return aviso("a-consulta", "Informe o protocolo e a chave de acesso.");
+  aviso("a-consulta", "");
+  try {
+    const d = await rpc("ouv_consultar", { p_protocolo: prot, p_chave: chave });
+    acesso = { prot, chave, id: d.id };
+    const msgs = d.mensagens.map(m => `<div class="bolha${m.autor === "ouvidoria" ? " ouv" : ""}"><small>${m.autor === "ouvidoria" ? "Resposta da Ouvidoria" : "Seu complemento"} · ${new Date(m.criado_em).toLocaleString("pt-BR")}</small>${esc(m.texto)}</div>`).join("");
+    $("resultado").innerHTML = `
+      <h2>${esc(d.protocolo)} · ${TIPOS[d.tipo]}</h2>
+      <p><span class="etiqueta">${STATUS[d.status]}</span> <span class="ajuda">Enviada em ${new Date(d.criado_em).toLocaleString("pt-BR")} · última atualização em ${new Date(d.atualizado_em).toLocaleString("pt-BR")}</span></p>
+      <div class="caixa" style="white-space:pre-wrap"><b>${esc(d.assunto)}</b><br>${esc(d.relato)}</div>
+      ${d.anexos.length ? `<p class="ajuda">Arquivos enviados: ${d.anexos.map(esc).join(", ")}</p>` : ""}
+      <h2>Mensagens</h2>${msgs || `<p class="ajuda">Ainda não há resposta. A Ouvidoria responde por aqui; volte depois para conferir.</p>`}
+      ${d.pode_complementar ? `<h2>Enviar complemento</h2>
+        <textarea id="comp" maxlength="20000" placeholder="Acrescente informações ou responda à Ouvidoria"></textarea>
+        <label for="comp-arq">Arquivos <span style="font-weight:400;color:var(--texto-2)">(opcional)</span></label>
+        <input id="comp-arq" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx,.xlsx,.txt,.mp3,.m4a,.ogg,.wav,.mp4">
+        <div class="acoes"><button id="comp-enviar">Enviar complemento</button></div><div class="aviso" id="a-comp"></div>` : `<p class="ajuda">Esta manifestação foi encerrada.</p>`}`;
+    if ($("comp-enviar")) $("comp-enviar").addEventListener("click", complementar);
+  } catch (x) { $("resultado").innerHTML = ""; aviso("a-consulta", x.message); }
+}
+async function complementar() {
+  const txt = $("comp").value.trim(), arquivos = [...$("comp-arq").files];
+  if (!txt && !arquivos.length) return aviso("a-comp", "Escreva o complemento ou escolha um arquivo.");
+  const errArq = conferirArquivos(arquivos); if (errArq) return aviso("a-comp", errArq);
+  $("comp-enviar").disabled = true;
+  try {
+    await rpc("ouv_complementar", { p_protocolo: acesso.prot, p_chave: acesso.chave,
+      p_texto: txt || `Enviou ${arquivos.length} arquivo${arquivos.length > 1 ? "s" : ""}: ${arquivos.map(f => f.name).join(", ")}` });
+    const falhas = arquivos.length ? await enviarArquivos(acesso.id, acesso.prot, acesso.chave, arquivos) : [];
+    await consultar();
+    aviso("a-consulta", falhas.length ? `Complemento enviado, mas estes arquivos falharam: ${falhas.join(", ")}.` : "Complemento enviado. A Ouvidoria foi avisada.", falhas.length ? "alerta" : "ok");
+  } catch (x) { aviso("a-comp", x.message); $("comp-enviar").disabled = false; }
+}
+$("f-consulta").addEventListener("submit", (e) => { e.preventDefault(); consultar(); });
+</script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("../sw.js", { scope: "../" }).catch(() => {}));</script>
+</body>
+</html>
