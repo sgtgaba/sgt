@@ -208,7 +208,7 @@
       <input id="p-cod" class="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
       <label for="p-senha">Nova senha</label>
       <input id="p-senha" type="password" autocomplete="new-password">
-      <div class="ajuda">Pelo menos 8 caracteres, com letras e números.</div>
+      <div class="ajuda">Pelo menos 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial (! @ # $ % & * - _ . ? entre outros).</div>
       <label for="p-senha2">Repita a senha</label>
       <input id="p-senha2" type="password" autocomplete="new-password">
       <label class="check"><input id="p-lgpd" type="checkbox">
@@ -245,7 +245,7 @@
       <input id="r-cod" class="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
       <label for="r-senha">Nova senha</label>
       <input id="r-senha" type="password" autocomplete="new-password">
-      <div class="ajuda">Pelo menos 8 caracteres, com letras e números.</div>
+      <div class="ajuda">Pelo menos 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial (! @ # $ % & * - _ . ? entre outros).</div>
       <label for="r-senha2">Repita a nova senha</label>
       <input id="r-senha2" type="password" autocomplete="new-password">
       <button type="submit">Salvar nova senha</button>
@@ -388,6 +388,7 @@
     <h2>Acesso</h2>
     <div class="ajuda" id="ed-acesso"></div>
     <button class="perigo" id="ed-liberar">Liberar novo primeiro acesso</button>
+    <button class="perigo oculto" id="ed-2fa">Redefinir verificação em 2 fatores</button>
   </section>
 
   <!-- ÁREA TÉCNICA (só programador) -->
@@ -425,6 +426,8 @@ const SUPABASE_URL = "https://bjlhmkwxlrvatnlwjcln.supabase.co";
 const CHAVE_PUBLICA = "sb_publishable_s4_6UV8RA2bFOH0BfR9jLw_EC4VV1N1"; // pública por natureza; a segurança está no banco (RLS)
 const FUNCAO = SUPABASE_URL + "/functions/v1/primeiro-acesso";
 const DOMINIO_INTERNO = "@sgt.interno";
+const SENHA_REGRA = "pelo menos 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.";
+const senhaForte = (s) => s.length >= 8 && /[A-Z]/.test(s) && /[a-z]/.test(s) && /\d/.test(s) && /[!@#$%^&*()_+\-=\[\]{};'\\:"|<>?,./`~]/.test(s);
 
 const $ = (id) => document.getElementById(id);
 const so_numeros = (s) => (s || "").replace(/\D/g, "");
@@ -441,7 +444,7 @@ const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", des
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd)/.test(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd|seg)/.test(id));
   $("cartao").classList.toggle("amplo", /^v-(qg|pv|car|gan|orc|cd)/.test(id));
   window.scrollTo(0, 0);
 }
@@ -583,7 +586,7 @@ $("f-rec2").addEventListener("submit", async (e) => {
   e.preventDefault();
   const codigo = so_numeros($("r-cod").value), senha = $("r-senha").value;
   if (codigo.length !== 6) return aviso("a-rec2", "O código tem 6 dígitos.");
-  if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return aviso("a-rec2", "A senha precisa ter pelo menos 8 caracteres, com letras e números.");
+  if (!senhaForte(senha)) return aviso("a-rec2", "A senha precisa ter " + SENHA_REGRA);
   if (senha !== $("r-senha2").value) return aviso("a-rec2", "As senhas não são iguais.");
   ocupado(e.target, true);
   try {
@@ -603,7 +606,7 @@ $("f-pa2").addEventListener("submit", async (e) => {
   e.preventDefault();
   const codigo = so_numeros($("p-cod").value), senha = $("p-senha").value;
   if (codigo.length !== 6) return aviso("a-pa2", "O código tem 6 dígitos.");
-  if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return aviso("a-pa2", "A senha precisa ter pelo menos 8 caracteres, com letras e números.");
+  if (!senhaForte(senha)) return aviso("a-pa2", "A senha precisa ter " + SENHA_REGRA);
   if (senha !== $("p-senha2").value) return aviso("a-pa2", "As senhas não são iguais.");
   if (!$("p-lgpd").checked) return aviso("a-pa2", "Para continuar, marque a caixa de autorização de uso dos dados.");
   ocupado(e.target, true);
@@ -630,6 +633,7 @@ async function abrirInicio(){
   const s = lerSessao();
   const [c] = await api(`/rest/v1/colaborador?select=id,nome&auth_user_id=eq.${s.u}`);
   if (!c) throw new Error("sem cadastro");
+  if (window.Seguranca && !(await Seguranca.exigir(abrirInicio))) return;
   const [ps, ms] = await Promise.all([
     api(`/rest/v1/papel_usuario?select=papel&colaborador_id=eq.${c.id}`),
     api(`/rest/v1/acesso_modulo?select=modulo&colaborador_id=eq.${c.id}`)]);
@@ -654,6 +658,7 @@ async function abrirInicio(){
   f.push(`<button class="ferr" id="ir-cd"><span class="ico">↻</span><span>Ciclos de Desenvolvimento<small>Autoavaliação, feedback e PDI</small></span></button>`);
   f.push(`<button class="ferr" id="ir-car"><span class="ico">☺</span><span>Carômetro<small>Quem faz parte do time hoje</small></span></button>`);
   f.push(`<button class="ferr" id="ir-gan"><span class="ico">✎</span><span>GANews<small>A revista do Projeto GA BA</small></span></button>`);
+  if (window.Seguranca) f.push(Seguranca.cartao());
   if (ehSuper()) f.push(`<button class="ferr" id="ir-tecnica"><span class="ico">&lt;/&gt;</span><span>Área técnica<small>Código, banco de dados e configurações do SGT</small></span></button>`);
   $("ferramentas").innerHTML = f.join("");
   if ($("ir-painel")) $("ir-painel").addEventListener("click", abrirPainel);
@@ -671,8 +676,10 @@ async function abrirInicio(){
   if ($("ir-cd")) $("ir-cd").addEventListener("click", () => window.Ciclos && Ciclos.abrir());
   if ($("ir-gan")) $("ir-gan").addEventListener("click", () => window.GANews && GANews.abrir());
   if ($("ir-dados")) $("ir-dados").addEventListener("click", () => window.Dados && Dados.abrir());
+  if ($("ir-seg")) $("ir-seg").addEventListener("click", () => Seguranca.abrir());
   if (window.Dados) Dados.checar();
   mostrar("v-inicio");
+  if (window.Seguranca) Seguranca.avisosInicio();
 }
 $("sair").addEventListener("click", async () => {
   try { await api("/auth/v1/logout", { method: "POST" }); } catch {}
@@ -742,6 +749,7 @@ function abrirEdicao(id){
     ? "Esta pessoa já criou a senha. Se ela esqueceu, libere um novo primeiro acesso: o login atual é apagado e ela cria outra senha pelo botão Primeiro acesso. O cadastro e o histórico continuam."
     : "Esta pessoa ainda não criou a senha. Ela deve usar o botão Primeiro acesso na tela de entrada.";
   $("ed-liberar").classList.toggle("oculto", !(u.acesso_ativado && souAdmin && !bloqueado));
+  $("ed-2fa").classList.toggle("oculto", !(u.acesso_ativado && souAdmin && !bloqueado && u.id !== eu.id && u.papeis.some(p => p === "admin" || p === "superadmin")));
   mostrar("v-editar");
 }
 $("ed-voltar").addEventListener("click", async () => { mostrar("v-painel"); trocarAba("aba-usuarios"); await carregarUsuarios(); });
@@ -768,18 +776,31 @@ $("f-editar").addEventListener("submit", async (e) => {
   ocupado(e.target, true);
   try {
     await api(`/rest/v1/colaborador?id=eq.${u.id}`, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify(dados) });
-    for (const p of dar) await api("/rest/v1/papel_usuario", { method: "POST", headers: { "Prefer": "return=minimal" },
-      body: JSON.stringify({ colaborador_id: u.id, papel: p, origem: "manual", concedido_por: eu.id }) });
-    for (const p of tirar) await api(`/rest/v1/papel_usuario?colaborador_id=eq.${u.id}&papel=eq.${p}`, { method: "DELETE" });
-    for (const m of modDar) await api("/rest/v1/acesso_modulo", { method: "POST", headers: { "Prefer": "return=minimal" },
-      body: JSON.stringify({ colaborador_id: u.id, modulo: m, concedido_por: eu.id }) });
-    for (const m of modTirar) await api(`/rest/v1/acesso_modulo?colaborador_id=eq.${u.id}&modulo=eq.${m}`, { method: "DELETE" });
-    Object.assign(u, dados, { papeis: [...u.papeis.filter(p => !tirar.includes(p)), ...dar],
+    const res = await Seguranca.solicitar(u.id, dar, tirar, modDar, modTirar);
+    Object.assign(u, dados);
+    if (res === "confirmado") Object.assign(u, { papeis: [...u.papeis.filter(p => !tirar.includes(p)), ...dar],
       modulos: [...modsAtuais.filter(m => !modTirar.includes(m)), ...modDar] });
     $("ed-nome").textContent = u.nome;
-    aviso("a-editar", "Alterações salvas.", "ok");
+    if (res === "pendente") {
+      document.querySelectorAll("[data-papel]").forEach(cb => cb.checked = u.papeis.includes(cb.dataset.papel));
+      document.querySelectorAll("[data-modulo]").forEach(cb => cb.checked = (u.modulos || []).includes(cb.dataset.modulo));
+      aviso("a-editar", "Dados salvos. A mudança de acesso ficou pendente: confirme em Segurança → Confirmações de acesso em até 48 horas. Você também recebeu o aviso por e-mail.", "alerta");
+    } else aviso("a-editar", res === "confirmado" ? "Alterações salvas e mudança de acesso confirmada." : "Alterações salvas.", "ok");
   } catch (err) { if (err.message !== "sessao") aviso("a-editar", traduzErro(err)); }
   finally { ocupado(e.target, false); if (!defineAcessos()) document.querySelectorAll("[data-papel],[data-modulo]").forEach(c => c.disabled = true); }
+});
+
+$("ed-2fa").addEventListener("click", async (e) => {
+  const b = e.target;
+  if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Confirmar: redefinir 2 fatores";
+    aviso("a-editar", `${editando.nome.split(" ")[0]} vai cadastrar o autenticador de novo no próximo acesso. Clique de novo para confirmar.`, "alerta");
+    setTimeout(() => { b.dataset.ok = ""; b.textContent = "Redefinir verificação em 2 fatores"; }, 8000); return; }
+  b.dataset.ok = ""; b.textContent = "Redefinir verificação em 2 fatores";
+  try {
+    if (!Seguranca.totpRecente() && !(await Seguranca.pedirCodigo("Redefinir 2 fatores", "Confirme com o código do seu autenticador."))) return;
+    await api("/rest/v1/rpc/redefinir_2fa", { method: "POST", body: JSON.stringify({ p_colaborador: editando.id }) });
+    aviso("a-editar", "Pronto. A verificação em 2 fatores foi redefinida e as sessões dessa pessoa foram encerradas.", "ok");
+  } catch (err) { if (err.message !== "sessao") aviso("a-editar", traduzErro(err)); }
 });
 
 let confirmaLiberar = false;
@@ -974,6 +995,7 @@ $("importar").addEventListener("click", async () => {
 <script src="ganews.js?v=1"></script>
 <script src="orcamento.js?v=1"></script>
 <script src="ciclos.js?v=1"></script>
+<script src="seguranca.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>
