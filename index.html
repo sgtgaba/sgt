@@ -54,13 +54,15 @@
   .rodape{text-align:center;font-size:12px;color:var(--texto-2);margin-top:22px}
 
   /* Início: grade de ferramentas */
-  .ferramentas{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px}
-  .ferr{display:flex;align-items:center;gap:12px;text-align:left;margin:0;padding:14px;background:#fff;color:var(--texto);border:1px solid var(--borda);font-weight:600;font-size:15px}
+  .ferramentas{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:4px}
+  .ferr{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;margin:0;padding:16px;min-height:118px;background:#fff;color:var(--texto);border:1px solid var(--borda);font-weight:600;font-size:15px}
   .ferr:hover{background:var(--cor-suave)}
   a.ferr{text-decoration:none;border-radius:var(--raio)}
   .ferr small{display:block;font-weight:400;color:var(--texto-2);font-size:12.5px;margin-top:2px}
-  .ferr .ico{width:36px;height:36px;border-radius:9px;background:var(--cor-suave);color:var(--magenta);display:grid;place-items:center;font-weight:700;flex:none}
+  .ferr .ico{width:40px;height:40px;border-radius:9px;background:var(--cor-suave);color:var(--magenta);display:grid;place-items:center;font-weight:700;flex:none}
   .ferr[disabled]{opacity:.6}
+  #v-inicio #sair{width:auto;padding:10px 22px;font-size:14px}
+  @media (max-width:640px){.ferramentas{grid-template-columns:1fr 1fr}.ferr{min-height:110px;padding:12px}}
 
   /* Painel */
   .topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -330,7 +332,7 @@ const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", des
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-painel","v-editar","v-tecnica"].includes(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || id.startsWith("v-fer"));
   window.scrollTo(0, 0);
 }
 function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso " + tipo; a.textContent = texto; }
@@ -480,10 +482,11 @@ async function abrirInicio(){
 
   const f = [];
   if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
-  f.push(`<button class="ferr" disabled><span class="ico">✈</span><span>Gestão de Férias<small>Em breve</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-ferias"><span class="ico">✈</span><span>Gestão de Férias<small>Informar férias, enviar comprovante e aviso assinado</small></span></button>`);
   if (ehSuper()) f.push(`<button class="ferr" id="ir-tecnica"><span class="ico">&lt;/&gt;</span><span>Área técnica<small>Código, banco de dados e configurações do SGT</small></span></button>`);
   $("ferramentas").innerHTML = f.join("");
   if ($("ir-painel")) $("ir-painel").addEventListener("click", abrirPainel);
+  if ($("ir-ferias")) $("ir-ferias").addEventListener("click", () => window.Ferias && Ferias.abrir());
   if ($("ir-tecnica")) $("ir-tecnica").addEventListener("click", () => mostrar("v-tecnica"));
   mostrar("v-inicio");
 }
@@ -754,5 +757,6 @@ $("importar").addEventListener("click", async () => {
 // ---------- Ao abrir a página
 (async () => { if (lerSessao()) { try { await abrirInicio(); } catch { limparSessao(); mostrar("v-entrar"); } } })();
 </script>
+<script src="ferias.js?v=1"></script>
 </body>
 </html>
