@@ -444,7 +444,7 @@ const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", des
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd|seg)/.test(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd|seg|not)/.test(id));
   $("cartao").classList.toggle("amplo", /^v-(qg|pv|car|gan|orc|cd)/.test(id));
   window.scrollTo(0, 0);
 }
@@ -680,6 +680,7 @@ async function abrirInicio(){
   if (window.Dados) Dados.checar();
   mostrar("v-inicio");
   if (window.Seguranca) Seguranca.avisosInicio();
+  if (window.Notificacoes) Notificacoes.atualizar();
 }
 $("sair").addEventListener("click", async () => {
   try { await api("/auth/v1/logout", { method: "POST" }); } catch {}
@@ -996,6 +997,7 @@ $("importar").addEventListener("click", async () => {
 <script src="orcamento.js?v=1"></script>
 <script src="ciclos.js?v=1"></script>
 <script src="seguranca.js?v=1"></script>
+<script src="notificacoes.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>
