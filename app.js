@@ -14,9 +14,6 @@
     .app-bloco ol{margin:8px 0 0;padding-left:20px;font-size:14px;line-height:1.6}
     a.app-baixar{display:inline-flex;align-items:center;gap:10px;margin-top:10px;padding:13px 18px;border-radius:var(--raio);background:var(--cor);color:#fff;font-weight:600;text-decoration:none}
     a.app-baixar:hover{background:var(--cor-forte)}
-    .app-link{display:flex;gap:8px;margin-top:10px}
-    .app-link input{font-size:14px!important;padding:10px 12px!important}
-    .app-link button{width:auto;margin:0;padding:10px 14px;font-size:14px;white-space:nowrap}
   </style>`);
 
   $("cartao").querySelector(".rodape").insertAdjacentHTML("beforebegin", `
@@ -48,20 +45,10 @@
       <button id="app-pwa" class="oculto" style="width:auto">Instalar o SGT neste aparelho</button>
       <div class="ajuda" id="app-pwa-txt">Se o botão não aparecer, use o ícone de instalar na barra de endereço do navegador.</div>
     </div>
-    <div class="app-bloco">
-      <h2>Enviar o link a um colega</h2>
-      <div class="ajuda">Só quem tem cadastro no quadro do projeto consegue entrar no app.</div>
-      <div class="app-link"><input type="text" id="app-url" readonly><button class="sec" id="app-copiar">Copiar link</button></div>
-    </div>
     <div class="aviso" id="a-app"></div>
   </section>`);
 
   $("app-voltar").addEventListener("click", () => mostrar("v-inicio"));
-  $("app-url").value = new URL(APK, location.href).href;
-  $("app-copiar").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText($("app-url").value); aviso("a-app", "Link copiado.", "ok"); }
-    catch { $("app-url").select(); aviso("a-app", "Selecione o link e copie.", "alerta"); }
-  });
   $("app-pwa").addEventListener("click", async () => {
     if (!pedido) return;
     pedido.prompt(); const r = await pedido.userChoice; pedido = null;
@@ -78,5 +65,5 @@
   }
 
   window.App = { abrir, cartao: () =>
-    `<button class="ferr" id="ir-app"><span class="ico">📱</span><span>App no celular<small>${instalado() ? "Baixar o app para Android e compartilhar com colegas" : "Baixar e instalar o SGT no seu aparelho"}</small></span></button>` };
+    `<button class="ferr" id="ir-app"><span class="ico">📱</span><span>App no celular<small>Baixar e instalar o SGT no seu aparelho</small></span></button>` };
 })();
