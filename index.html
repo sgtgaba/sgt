@@ -240,8 +240,8 @@
         <input id="busca" type="search" placeholder="Buscar por nome, CPF ou e-mail">
         <select id="f-perfil">
           <option value="">Todos os perfis</option>
-          <option value="superadmin">Superadministrador(a)</option><option value="admin">Administrador(a)</option><option value="gerencia">Gerência</option>
-          <option value="rh">Gestão de Pessoas</option><option value="lideranca">Liderança</option>
+          <option value="superadmin">Programador(a)</option><option value="admin">Administrador(a)</option><option value="gerencia">Gerente</option>
+          <option value="rh">Permissão: Gestão de Pessoas</option><option value="lideranca">Permissão: Liderança de equipe</option>
           <option value="m:cat">Ferramenta: CAT</option><option value="m:ouvidoria">Ferramenta: Ouvidoria</option>
           <option value="m:banco_talentos">Ferramenta: Banco de Talentos</option><option value="m:encaminhamentos">Ferramenta: Encaminhamentos</option>
           <option value="m:linktree">Ferramenta: Links</option><option value="m:dados_contatos">Ferramenta: Dados e Contatos</option>
@@ -312,13 +312,17 @@
       <div class="ajuda">Marcar como <b>Desligado</b> bloqueia o acesso na mesma hora. O histórico continua guardado.</div>
 
       <h2>Níveis de acesso</h2>
-      <div class="ajuda" id="ed-perm-ajuda" style="margin-bottom:6px">Todos têm o nível Colaborador(a). Marque os demais.</div>
+      <div class="ajuda" id="ed-perm-ajuda" style="margin-bottom:6px">Todos têm o nível Consultor(a). Marque os demais.</div>
       <div class="papeis">
-        <label class="check"><input type="checkbox" data-papel="lideranca"><span><b>Liderança</b><br>acompanha a própria equipe</span></label>
+        <label class="check"><input type="checkbox" data-papel="gerencia"><span><b>Gerente</b><br>acesso semelhante ao do administrador e assinatura dos avisos de férias; não muda níveis de acesso</span></label>
+        <label class="check"><input type="checkbox" data-papel="admin"><span><b>Administrador(a)</b><br>acesso total ao SGT e define os acessos de cada pessoa</span></label>
+        <label class="check oculto" id="ed-super"><input type="checkbox" data-papel="superadmin"><span><b>Programador(a)</b><br>acesso total, inclusive manutenção e programação</span></label>
+      </div>
+      <h2>Permissões específicas</h2>
+      <div class="ajuda" style="margin-bottom:6px">Para Consultores(as) com funções específicas.</div>
+      <div class="papeis">
+        <label class="check"><input type="checkbox" data-papel="lideranca"><span><b>Liderança de equipe</b><br>acompanha a própria equipe</span></label>
         <label class="check"><input type="checkbox" data-papel="rh"><span><b>Gestão de Pessoas</b><br>vê todos e cadastra o quadro</span></label>
-        <label class="check"><input type="checkbox" data-papel="gerencia"><span><b>Gerência</b><br>vê todos e assina avisos</span></label>
-        <label class="check"><input type="checkbox" data-papel="admin"><span><b>Administrador(a)</b><br>define os níveis de acesso</span></label>
-        <label class="check oculto" id="ed-super"><input type="checkbox" data-papel="superadmin"><span><b>Superadministrador(a)</b><br>acesso absoluto e área técnica</span></label>
       </div>
       <h2>Ferramentas liberadas</h2>
       <div class="ajuda" style="margin-bottom:6px">Ferramentas com dados restritos. Só quem estiver marcado aqui vê a ferramenta.</div>
@@ -338,10 +342,10 @@
     <button class="perigo" id="ed-liberar">Liberar novo primeiro acesso</button>
   </section>
 
-  <!-- ÁREA TÉCNICA (só superadministrador) -->
+  <!-- ÁREA TÉCNICA (só programador) -->
   <section id="v-tecnica" class="oculto">
     <div class="topo">
-      <div><h1>Área técnica</h1><div class="ajuda" style="margin:0">Acesso exclusivo do superadministrador</div></div>
+      <div><h1>Área técnica</h1><div class="ajuda" style="margin:0">Acesso exclusivo do(a) Programador(a)</div></div>
       <button class="sec" data-ir="v-inicio">← Início</button>
     </div>
     <p class="sub" style="margin-top:14px">Atalhos para o código e a infraestrutura do SGT. Cada serviço pede o próprio login (conta GitHub <b>sgtgaba</b>). Alterações aqui afetam todos os usuários.</p>
@@ -382,7 +386,7 @@ let eu = null;            // { id, nome, papeis: [] }
 let usuarios = [];        // cache da lista do painel
 let editando = null;
 
-const NOMES_PAPEIS = { superadmin: "Superadministrador(a)", admin: "Administrador(a)", gerencia: "Gerência", rh: "Gestão de Pessoas", lideranca: "Liderança", colaborador: "Colaborador(a)" };
+const NOMES_PAPEIS = { superadmin: "Programador(a)", admin: "Administrador(a)", gerencia: "Gerente", rh: "Gestão de Pessoas", lideranca: "Liderança de equipe", colaborador: "Consultor(a)" };
 const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
@@ -443,8 +447,8 @@ function traduzErro(e){
   if (/colaborador_cpf_key|duplicate key.*cpf/i.test(m)) return "Já existe uma pessoa cadastrada com este CPF.";
   if (/colaborador_email_key|duplicate key.*email/i.test(m)) return "Este e-mail já está cadastrado para outra pessoa.";
   if (/cpf_check|cpf_valido/i.test(m)) return "CPF inválido.";
-  if (/Somente o superadministrador/i.test(m)) return "Somente o superadministrador pode alterar este cadastro ou acesso.";
-  if (/pelo menos um superadministrador/i.test(m)) return "O SGT precisa de pelo menos um superadministrador.";
+  if (/Somente o superadministrador/i.test(m)) return "Somente o(a) Programador(a) pode alterar este cadastro ou acesso.";
+  if (/pelo menos um superadministrador/i.test(m)) return "O SGT precisa de pelo menos um(a) Programador(a).";
   if (/pelo menos um administrador/i.test(m)) return "O SGT precisa de pelo menos um administrador ativo. Dê o nível de administrador a outra pessoa antes de tirar este.";
   if (/permission denied|row-level security|Sem permissão/i.test(m)) return "Você não tem permissão para esta ação.";
   if (/Failed to fetch|NetworkError/i.test(m)) return "Sem conexão com o SGT. Verifique sua internet.";
@@ -567,7 +571,9 @@ $("f-pa2").addEventListener("submit", async (e) => {
 });
 
 // ---------- Início
-const pode = (...p) => eu && eu.papeis.some(x => x === "superadmin" || p.includes(x));
+// Gerente tem acesso semelhante ao do Administrador(a) (e ao de Gestão de Pessoas), mas não define níveis de acesso.
+const pode = (...p) => eu && eu.papeis.some(x => x === "superadmin" || p.includes(x) || (x === "gerencia" && (p.includes("admin") || p.includes("rh"))));
+const defineAcessos = () => eu && eu.papeis.some(x => x === "superadmin" || x === "admin");
 const ehSuper = () => eu && eu.papeis.includes("superadmin");
 const temModulo = (m) => ehSuper() || (eu && (eu.modulos || []).includes(m));
 
@@ -581,7 +587,7 @@ async function abrirInicio(){
   eu = { id: c.id, nome: c.nome, papeis: ps.map(p => p.papel), modulos: ms.map(m => m.modulo) };
   $("ola").textContent = "Olá, " + c.nome.split(" ")[0] + "!";
   const nomes = ["superadmin","admin","gerencia","rh","lideranca","colaborador"].filter(p => eu.papeis.includes(p)).map(p => NOMES_PAPEIS[p]);
-  $("perfil-txt").textContent = "Seu perfil: " + (nomes.join(" · ") || "Colaborador(a)");
+  $("perfil-txt").textContent = "Seu perfil: " + (nomes.join(" · ") || "Consultor(a)");
 
   const f = [];
   if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
@@ -660,7 +666,7 @@ function desenharLista(){
 // ---------- Editar pessoa
 function abrirEdicao(id){
   editando = usuarios.find(u => u.id === id); if (!editando) return;
-  const u = editando, souAdmin = pode("admin"), alvoSuper = u.papeis.includes("superadmin"), bloqueado = alvoSuper && !ehSuper();
+  const u = editando, souAdmin = defineAcessos(), alvoSuper = u.papeis.includes("superadmin"), bloqueado = alvoSuper && !ehSuper();
   $("ed-nome").textContent = u.nome;
   $("ed-sub").textContent = `CPF ${fmtCPF(u.cpf)}${u.vaga_codigo ? " · vaga " + u.vaga_codigo : ""}${u.cargo ? " · " + u.cargo : ""}`;
   $("ed-nome-in").value = u.nome; $("ed-email").value = u.email; $("ed-nasc").value = u.data_nascimento || "";
@@ -668,8 +674,8 @@ function abrirEdicao(id){
   document.querySelectorAll("[data-papel]").forEach(cb => { cb.checked = u.papeis.includes(cb.dataset.papel); cb.disabled = !souAdmin || bloqueado; });
   document.querySelectorAll("[data-modulo]").forEach(cb => { cb.checked = (u.modulos || []).includes(cb.dataset.modulo); cb.disabled = !souAdmin || bloqueado; });
   $("ed-super").classList.toggle("oculto", !ehSuper());
-  $("ed-perm-ajuda").textContent = bloqueado ? "Esta pessoa é superadministradora. Só um superadministrador pode alterar este cadastro e os acessos dela."
-    : souAdmin ? "Todos têm o nível Colaborador(a). Marque os demais." : "Só administradores podem mudar os níveis de acesso.";
+  $("ed-perm-ajuda").textContent = bloqueado ? "Esta pessoa é Programador(a). Só um(a) Programador(a) pode alterar este cadastro e os acessos dela."
+    : souAdmin ? "Todos têm o nível Consultor(a). Marque os demais." : "Só administradores podem mudar os níveis de acesso.";
   $("f-editar").querySelectorAll("input,select,button").forEach(el => { if (!el.dataset.papel) el.disabled = bloqueado; });
   $("ed-acesso").textContent = u.acesso_ativado
     ? "Esta pessoa já criou a senha. Se ela esqueceu, libere um novo primeiro acesso: o login atual é apagado e ela cria outra senha pelo botão Primeiro acesso. O cadastro e o histórico continuam."
@@ -690,13 +696,13 @@ $("f-editar").addEventListener("submit", async (e) => {
   if (!dados.data_nascimento) return aviso("a-editar", "Informe a data de nascimento.");
   if (u.id === eu.id && dados.situacao === "desligado") return aviso("a-editar", "Você não pode marcar a si mesmo como desligado.");
   const marcados = [...document.querySelectorAll("[data-papel]")].filter(c => c.checked).map(c => c.dataset.papel);
-  const tirar = pode("admin") ? u.papeis.filter(p => p !== "colaborador" && !marcados.includes(p)) : [];
-  const dar = pode("admin") ? marcados.filter(p => !u.papeis.includes(p)) : [];
+  const tirar = defineAcessos() ? u.papeis.filter(p => p !== "colaborador" && !marcados.includes(p)) : [];
+  const dar = defineAcessos() ? marcados.filter(p => !u.papeis.includes(p)) : [];
   const modsMarcados = [...document.querySelectorAll("[data-modulo]")].filter(c => c.checked).map(c => c.dataset.modulo);
   const modsAtuais = u.modulos || [];
-  const modTirar = pode("admin") ? modsAtuais.filter(m => !modsMarcados.includes(m) && document.querySelector(`[data-modulo="${m}"]`)) : [];
-  const modDar = pode("admin") ? modsMarcados.filter(m => !modsAtuais.includes(m)) : [];
-  if (u.id === eu.id && tirar.includes("superadmin")) return aviso("a-editar", "Você não pode tirar o seu próprio nível de superadministrador.");
+  const modTirar = defineAcessos() ? modsAtuais.filter(m => !modsMarcados.includes(m) && document.querySelector(`[data-modulo="${m}"]`)) : [];
+  const modDar = defineAcessos() ? modsMarcados.filter(m => !modsAtuais.includes(m)) : [];
+  if (u.id === eu.id && tirar.includes("superadmin")) return aviso("a-editar", "Você não pode tirar o seu próprio nível de Programador(a).");
   if (u.id === eu.id && tirar.includes("admin")) return aviso("a-editar", "Você não pode tirar o seu próprio nível de administrador. Peça a outro administrador.");
   ocupado(e.target, true);
   try {
@@ -712,7 +718,7 @@ $("f-editar").addEventListener("submit", async (e) => {
     $("ed-nome").textContent = u.nome;
     aviso("a-editar", "Alterações salvas.", "ok");
   } catch (err) { if (err.message !== "sessao") aviso("a-editar", traduzErro(err)); }
-  finally { ocupado(e.target, false); if (!pode("admin")) document.querySelectorAll("[data-papel],[data-modulo]").forEach(c => c.disabled = true); }
+  finally { ocupado(e.target, false); if (!defineAcessos()) document.querySelectorAll("[data-papel],[data-modulo]").forEach(c => c.disabled = true); }
 });
 
 let confirmaLiberar = false;
@@ -894,7 +900,7 @@ $("importar").addEventListener("click", async () => {
 <script src="ouvidoria.js?v=1"></script>
 <script src="links.js?v=1"></script>
 <script src="dados.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>
