@@ -77,6 +77,11 @@
           ${ler("Data de admissão", fmtData(m.data_admissao))}${ler("Vaga", m.vaga)}${ler("Cargo", m.cargo)}${ler("NTE", m.nte)}${ler("Liderança imediata", m.lider)}
         </div>
       </div>
+      <div class="dad-bloco">
+        <h2>Minha foto no Carômetro</h2>
+        <div class="ajuda" style="margin:-4px 0 10px">A foto aparece no Carômetro do projeto. Use uma foto recente, nítida, com boa luz e perfil profissional.</div>
+        <button type="button" class="sec" id="d-foto" style="width:auto;margin:0">Enviar ou trocar minha foto</button>
+      </div>
       <form id="f-dad" novalidate>
         <div class="dad-bloco">
           <h2>Meus contatos</h2>
@@ -133,6 +138,7 @@
       } catch { $("d-cep-aj").textContent = "Não consegui buscar o CEP agora. Preencha à mão."; }
     });
     $("f-dad").addEventListener("submit", salvar);
+    $("d-foto").addEventListener("click", () => window.Carometro && Carometro.minhaFoto());
   }
 
   async function salvar(e){
