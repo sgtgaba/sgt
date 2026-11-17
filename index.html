@@ -287,7 +287,7 @@
           <option value="m:banco_talentos">Ferramenta: Banco de Talentos</option><option value="m:encaminhamentos">Ferramenta: Encaminhamentos</option>
           <option value="m:linktree">Ferramenta: Links</option><option value="m:dados_contatos">Ferramenta: Dados e Contatos</option>
           <option value="m:quadro_geral">Ferramenta: Quadro Geral</option><option value="m:painel_vagas">Ferramenta: Painel de Vagas</option>
-          <option value="m:ganews">Ferramenta: GANews (edição)</option><option value="m:orcamento">Ferramenta: Orçamento</option>
+          <option value="m:ganews">Ferramenta: GANews (edição)</option><option value="m:orcamento">Ferramenta: Orçamento</option><option value="m:ciclos">Ferramenta: Ciclos (gestão)</option>
         </select>
         <select id="f-situacao">
           <option value="">Todas as situações</option>
@@ -380,6 +380,7 @@
         <label class="check"><input type="checkbox" data-modulo="painel_vagas"><span><b>Painel de Vagas</b><br>consulta vagas abertas e vacância</span></label>
         <label class="check"><input type="checkbox" data-modulo="orcamento"><span><b>Orçamento do Projeto</b><br>consulta o custo de pessoal</span></label>
         <label class="check"><input type="checkbox" data-modulo="ganews"><span><b>GANews (edição)</b><br>publica edições e modera comentários</span></label>
+        <label class="check"><input type="checkbox" data-modulo="ciclos"><span><b>Ciclos de Desenvolvimento (gestão)</b><br>vê e avalia todas as pessoas, painel do ciclo</span></label>
       </div>
       <button type="submit">Salvar alterações</button>
     </form>
@@ -434,14 +435,14 @@ let usuarios = [];        // cache da lista do painel
 let editando = null;
 
 const NOMES_PAPEIS = { superadmin: "Programador(a)", admin: "Administrador(a)", gerencia: "Gerente", rh: "Gestão de Pessoas", lideranca: "Liderança de equipe", colaborador: "Consultor(a)" };
-const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas", ganews: "GANews (edição)", orcamento: "Orçamento" };
+const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas", ganews: "GANews (edição)", orcamento: "Orçamento", ciclos: "Ciclos (gestão)" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc)/.test(id));
-  $("cartao").classList.toggle("amplo", /^v-(qg|pv|car|gan|orc)/.test(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd)/.test(id));
+  $("cartao").classList.toggle("amplo", /^v-(qg|pv|car|gan|orc|cd)/.test(id));
   window.scrollTo(0, 0);
 }
 function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso" + (texto ? " " + tipo : ""); a.textContent = texto; }
@@ -650,6 +651,7 @@ async function abrirInicio(){
   if (pode("admin","rh") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-qg"><span class="ico">▦</span><span>Quadro Geral do Time<small>Vagas, ocupantes, valores e movimentações</small></span></button>`);
   if (pode("admin","rh") || temModulo("painel_vagas") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-pv"><span class="ico">◷</span><span>Painel de Vagas<small>Vagas abertas e tempo de vacância</small></span></button>`);
   if (pode("admin","rh") || temModulo("orcamento")) f.push(`<button class="ferr" id="ir-orc"><span class="ico">$</span><span>Orçamento do Projeto<small>Custo de pessoal realizado e projetado</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-cd"><span class="ico">↻</span><span>Ciclos de Desenvolvimento<small>Autoavaliação, feedback e PDI</small></span></button>`);
   f.push(`<button class="ferr" id="ir-car"><span class="ico">☺</span><span>Carômetro<small>Quem faz parte do time hoje</small></span></button>`);
   f.push(`<button class="ferr" id="ir-gan"><span class="ico">✎</span><span>GANews<small>A revista do Projeto GA BA</small></span></button>`);
   if (ehSuper()) f.push(`<button class="ferr" id="ir-tecnica"><span class="ico">&lt;/&gt;</span><span>Área técnica<small>Código, banco de dados e configurações do SGT</small></span></button>`);
@@ -666,6 +668,7 @@ async function abrirInicio(){
   if ($("ir-pv")) $("ir-pv").addEventListener("click", () => window.PainelVagas && PainelVagas.abrir());
   if ($("ir-orc")) $("ir-orc").addEventListener("click", () => window.Orcamento && Orcamento.abrir());
   if ($("ir-car")) $("ir-car").addEventListener("click", () => window.Carometro && Carometro.abrir());
+  if ($("ir-cd")) $("ir-cd").addEventListener("click", () => window.Ciclos && Ciclos.abrir());
   if ($("ir-gan")) $("ir-gan").addEventListener("click", () => window.GANews && GANews.abrir());
   if ($("ir-dados")) $("ir-dados").addEventListener("click", () => window.Dados && Dados.abrir());
   if (window.Dados) Dados.checar();
@@ -970,6 +973,7 @@ $("importar").addEventListener("click", async () => {
 <script src="carometro.js?v=1"></script>
 <script src="ganews.js?v=1"></script>
 <script src="orcamento.js?v=1"></script>
+<script src="ciclos.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>
