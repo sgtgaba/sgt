@@ -1,8 +1,8 @@
 // SGT · service worker: permite instalar o app e abrir a tela mesmo com internet instável.
 // Sempre tenta a versão mais nova na rede; usa a cópia guardada só quando estiver sem conexão.
 // Dados do banco (Supabase) nunca são guardados aqui.
-const CACHE = "sgt-v1";
-const BASICO = ["./", "index.html", "ferias.js", "talentos.js", "encaminhamentos.js", "ouvidoria.js", "links.js", "cat.html",
+const CACHE = "sgt-v2";
+const BASICO = ["./", "index.html", "ferias.js", "talentos.js", "encaminhamentos.js", "ouvidoria.js", "links.js", "dados.js", "cat.html",
   "manifest.webmanifest", "icones/sgt-192.png", "icones/sgt-512.png", "ouvidoria/", "links/"];
 
 self.addEventListener("install", (e) => {

@@ -244,7 +244,7 @@
           <option value="rh">Gestão de Pessoas</option><option value="lideranca">Liderança</option>
           <option value="m:cat">Ferramenta: CAT</option><option value="m:ouvidoria">Ferramenta: Ouvidoria</option>
           <option value="m:banco_talentos">Ferramenta: Banco de Talentos</option><option value="m:encaminhamentos">Ferramenta: Encaminhamentos</option>
-          <option value="m:linktree">Ferramenta: Links</option>
+          <option value="m:linktree">Ferramenta: Links</option><option value="m:dados_contatos">Ferramenta: Dados e Contatos</option>
         </select>
         <select id="f-situacao">
           <option value="">Todas as situações</option>
@@ -327,6 +327,7 @@
         <label class="check"><input type="checkbox" data-modulo="ouvidoria"><span><b>Ouvidoria</b><br>lê as manifestações e responde</span></label>
         <label class="check"><input type="checkbox" data-modulo="banco_talentos"><span><b>Banco de Talentos</b><br>vê inscrições e ranking</span></label>
         <label class="check"><input type="checkbox" data-modulo="encaminhamentos"><span><b>Encaminhamentos (gestão)</b><br>vê e atende todas as solicitações</span></label>
+        <label class="check"><input type="checkbox" data-modulo="dados_contatos"><span><b>Dados e Contatos (gestão)</b><br>vê e exporta os contatos de todos</span></label>
         <label class="check"><input type="checkbox" data-modulo="linktree"><span><b>Links do Projeto</b><br>adiciona e edita os links</span></label>
       </div>
       <button type="submit">Salvar alterações</button>
@@ -388,13 +389,13 @@ let usuarios = [];        // cache da lista do painel
 let editando = null;
 
 const NOMES_PAPEIS = { superadmin: "Superadministrador(a)", admin: "Administrador(a)", gerencia: "Gerência", rh: "Gestão de Pessoas", lideranca: "Liderança", colaborador: "Colaborador(a)" };
-const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links" };
+const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk)/.test(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad)/.test(id));
   window.scrollTo(0, 0);
 }
 function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso" + (texto ? " " + tipo : ""); a.textContent = texto; }
@@ -591,6 +592,7 @@ async function abrirInicio(){
   const f = [];
   if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
   f.push(`<button class="ferr" id="ir-ferias"><span class="ico">✈</span><span>Gestão de Férias<small>Informar férias, enviar comprovante e aviso assinado</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-dados"><span class="ico">☎</span><span>Dados e Contatos<small>Conferir meus dados e atualizar contatos</small></span></button>`);
   f.push(`<button class="ferr" id="ir-enc"><span class="ico">⇄</span><span>Encaminhamentos<small>Solicitações à gestão do projeto, com acompanhamento</small></span></button>`);
   if (temModulo("cat")) f.push(`<a class="ferr" href="cat.html"><span class="ico">✚</span><span>Formulário de Relatório · CAT<small>Escuta e relatório para subsidiar a CAT</small></span></a>`);
   if (temModulo("ouvidoria")) f.push(`<button class="ferr" id="ir-ouv"><span class="ico">✉</span><span>Ouvidoria<small>Manifestações recebidas e respostas</small></span></button>`);
@@ -605,6 +607,8 @@ async function abrirInicio(){
   if ($("ir-enc")) $("ir-enc").addEventListener("click", () => window.Encaminhamentos && Encaminhamentos.abrir());
   if ($("ir-ouv")) $("ir-ouv").addEventListener("click", () => window.Ouvidoria && Ouvidoria.abrir());
   if ($("ir-links")) $("ir-links").addEventListener("click", () => window.Links && Links.abrir());
+  if ($("ir-dados")) $("ir-dados").addEventListener("click", () => window.Dados && Dados.abrir());
+  if (window.Dados) Dados.checar();
   mostrar("v-inicio");
 }
 $("sair").addEventListener("click", async () => {
@@ -914,6 +918,7 @@ $("importar").addEventListener("click", async () => {
 <script src="encaminhamentos.js?v=1"></script>
 <script src="ouvidoria.js?v=1"></script>
 <script src="links.js?v=1"></script>
+<script src="dados.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>
