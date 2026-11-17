@@ -489,7 +489,7 @@
       <div class="pwwrap"><input type="password" id="pw1" autocomplete="new-password"><button type="button" onclick="verSenha('pw1',this)">mostrar</button></div>
       <label class="f">Confirme a senha</label>
       <div class="pwwrap"><input type="password" id="pw2" autocomplete="new-password" onkeydown="if(event.key==='Enter')criarSenhaUI()"><button type="button" onclick="verSenha('pw2',this)">mostrar</button></div>
-      <div class="rules">Mínimo de 8 caracteres, com letras e números. Não use a mesma senha do seu e-mail.</div>
+      <div class="rules">Mínimo de 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial. Não use a mesma senha do seu e-mail.</div>
       <button class="btn btn-primary" onclick="criarSenhaUI()">Criar senha e entrar</button>
       <div class="msg" id="msgCriar"></div>
     </div>
@@ -1124,7 +1124,7 @@ function mostrarAuth(modo){
 function verSenha(id, b){ var i=document.getElementById(id); i.type = i.type==='password'?'text':'password'; b.textContent = i.type==='password'?'mostrar':'ocultar'; }
 function criarSenhaUI(){
   var a=document.getElementById('pw1').value, b=document.getElementById('pw2').value, m=document.getElementById('msgCriar'); m.textContent='';
-  if(a.length<8 || !/[A-Za-zÀ-ÿ]/.test(a) || !/\d/.test(a)) { m.textContent='Use pelo menos 8 caracteres, com letras e números.'; return; }
+  if(a.length<8 || !/[A-Z]/.test(a) || !/[a-z]/.test(a) || !/\d/.test(a) || !/[!@#$%^&*()_+\-=\[\]{};'\\:"|<>?,./`~]/.test(a)) { m.textContent='Use pelo menos 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.'; return; }
   if(a!==b){ m.textContent='As senhas não conferem.'; return; }
   overlay(true,'Criando sua senha…');
   google.script.run.withSuccessHandler(function(){ overlay(false); document.getElementById('pw1').value=''; document.getElementById('pw2').value=''; toast('Senha criada. Bem-vindo(a)!'); iniciarApp(); })
