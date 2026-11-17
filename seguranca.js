@@ -32,23 +32,28 @@
   $("cartao").querySelector(".rodape").insertAdjacentHTML("beforebegin", `
   <section id="v-2fa" class="oculto">
     <h1>Verificação em 2 fatores</h1>
+    <p class="sub" id="s2-intro">Seu nível de acesso exige uma segunda confirmação além da senha. Escolha como quer receber o código:</p>
+    <div id="s2-escolha" class="acoes">
+      <button type="button" id="s2-ir-email">Receber código por e-mail</button>
+      <button type="button" class="sec" id="s2-ir-app">Usar aplicativo autenticador</button>
+    </div>
     <div id="s2-cadastro" class="oculto">
-      <p class="sub">Seu nível de acesso exige uma segunda confirmação além da senha. Faça isto uma única vez:</p>
       <ol style="font-size:14px;line-height:1.55;padding-left:20px;margin:0">
         <li>Instale no celular um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou similar).</li>
-        <li>No aplicativo, toque em <b>+</b> e leia o QR Code abaixo. Se preferir, digite a chave.</li>
-        <li>Digite o código de 6 dígitos que aparecer no aplicativo.</li>
+        <li><b>Abra o aplicativo</b>, toque em <b>+</b> e escolha "Ler QR Code". A câmera comum do celular não serve: o código precisa ser lido de dentro do aplicativo. Se preferir, escolha "Inserir chave" e digite a chave abaixo.</li>
+        <li>O aplicativo passa a mostrar "SGT GA BA" com um código de 6 dígitos que muda a cada 30 segundos. Digite esse código aqui.</li>
       </ol>
       <div class="seg-qr"><img id="s2-qr" alt="QR Code para o autenticador"><div style="flex:1;min-width:180px"><div class="ajuda">Chave para digitar:</div><div class="seg-chave" id="s2-chave"></div></div></div>
     </div>
-    <p class="sub" id="s2-sub-login">Abra o aplicativo autenticador no celular e digite o código de 6 dígitos do SGT.</p>
-    <form id="f-2fa" novalidate>
-      <label for="s2-cod">Código do autenticador</label>
+    <p class="sub oculto" id="s2-sub"></p>
+    <form id="f-2fa" novalidate class="oculto">
+      <label for="s2-cod" id="s2-rotulo">Código</label>
       <input id="s2-cod" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="codigo">
       <button type="submit">Confirmar</button>
     </form>
+    <button class="link oculto" id="s2-outro"></button>
     <div class="aviso" id="a-2fa"></div>
-    <div class="ajuda" style="margin-top:14px">Perdeu o celular? Peça a outro(a) Administrador(a) ou Programador(a) para redefinir a sua verificação em 2 fatores.</div>
+    <div class="ajuda" style="margin-top:14px">Perdeu o celular? Use o código por e-mail ou peça a outro(a) Administrador(a) ou Programador(a) para redefinir a sua verificação em 2 fatores.</div>
     <button class="link" id="s2-sair">Sair</button>
   </section>
 
@@ -82,7 +87,7 @@
     </div>
 
     <div id="seg-conf" class="oculto">
-      <p class="sub">Toda mudança de nível de acesso ou de ferramenta só passa a valer depois que quem a fez confirmar aqui, com o código do autenticador. Pedidos não confirmados vencem em 48 horas.</p>
+      <p class="sub">Toda mudança de nível de acesso ou de ferramenta só passa a valer depois que quem a fez confirmar aqui, com o código de verificação (aplicativo ou e-mail). Pedidos não confirmados vencem em 48 horas.</p>
       <div id="seg-conf-lista"></div>
       <div class="aviso" id="a-conf"></div>
     </div>
@@ -97,6 +102,7 @@
   </section>`);
 
   // ------------------------------------------------------------ 2 fatores
+  let ultimaVerif = 0, modo = "app";
   async function fatores(){
     const u = await api("/auth/v1/user");
     return (u.factors || []).filter(f => f.factor_type === "totp");
@@ -104,25 +110,62 @@
   async function verificar(fid, codigo){
     const ch = await api(`/auth/v1/factors/${fid}/challenge`, { method: "POST", body: "{}" });
     const s = await api(`/auth/v1/factors/${fid}/verify`, { method: "POST", body: JSON.stringify({ challenge_id: ch.id, code: codigo }) });
-    guardarSessao(s);
+    guardarSessao(s); ultimaVerif = Date.now();
   }
-  // Devolve true se a pessoa pode seguir para o início; senão abre a tela do 2 fatores
-  async function exigir(continuar){
-    info = await rpc("minha_seguranca").catch(() => null);
-    if (!info || !info.precisa_2fa || jwt().aal === "aal2") return true;
-    depois = continuar;
-    const fs = await fatores();
-    fator = fs.find(f => f.status === "verified");
-    $("s2-cadastro").classList.add("oculto"); $("s2-sub-login").classList.remove("oculto");
-    if (!fator) {
-      for (const f of fs) await api(`/auth/v1/factors/${f.id}`, { method: "DELETE" }).catch(() => {});
+  async function enviarCodigoEmail(){
+    const d = await funcaoLogado({ acao: "2fa_codigo" });
+    if (!d.ok) throw new Error(d.erro || "Não foi possível enviar o código agora.");
+    return d;
+  }
+  async function verificarEmail(codigo){
+    const d = await funcaoLogado({ acao: "2fa_verificar", codigo });
+    if (!d.ok) throw new Error(d.erro || "Código incorreto.");
+    ultimaVerif = Date.now();
+  }
+  const msgErro = (err) => /invalid|expired|incorrect/i.test(err.message) ? "Código incorreto ou vencido." : traduzErro(err);
+
+  function tela(estado, texto){
+    $("s2-escolha").classList.toggle("oculto", estado !== "escolha");
+    $("s2-intro").classList.toggle("oculto", estado !== "escolha");
+    $("s2-cadastro").classList.toggle("oculto", estado !== "cadastro");
+    $("f-2fa").classList.toggle("oculto", estado === "escolha");
+    $("s2-sub").classList.toggle("oculto", !texto); $("s2-sub").textContent = texto || "";
+    $("s2-rotulo").textContent = modo === "email" ? "Código recebido por e-mail" : "Código do aplicativo autenticador";
+    const outro = $("s2-outro");
+    outro.classList.toggle("oculto", estado === "escolha");
+    outro.textContent = modo === "email" ? (fator ? "Prefiro usar o aplicativo autenticador" : "Reenviar código / escolher outra forma") : "Prefiro receber o código por e-mail";
+    $("s2-cod").value = ""; if (estado !== "escolha") $("s2-cod").focus();
+  }
+  async function irEmail(){
+    modo = "email"; aviso("a-2fa", "");
+    try { const d = await enviarCodigoEmail(); tela("codigo", `Enviamos um código de 6 dígitos para ${d.enviado_para}. Ele vale por ${d.validade_min} minutos. Confira também a caixa de spam.`); }
+    catch (err) { tela("escolha"); aviso("a-2fa", err.message); }
+  }
+  async function irApp(){
+    modo = "app"; aviso("a-2fa", "");
+    if (fator && !fator.novo) return tela("codigo", "Abra o aplicativo autenticador no celular e digite o código de 6 dígitos do SGT GA BA.");
+    try {
+      for (const f of (await fatores()).filter(f => f.status !== "verified")) await api(`/auth/v1/factors/${f.id}`, { method: "DELETE" }).catch(() => {});
       const n = await api("/auth/v1/factors", { method: "POST", body: JSON.stringify({ factor_type: "totp", friendly_name: "SGT " + new Date().toISOString().slice(0, 16), issuer: "SGT GA BA" }) });
       fator = { id: n.id, novo: true };
       $("s2-qr").src = n.totp.qr_code.startsWith("data:") ? n.totp.qr_code : "data:image/svg+xml;utf8," + encodeURIComponent(n.totp.qr_code);
       $("s2-chave").textContent = n.totp.secret;
-      $("s2-cadastro").classList.remove("oculto"); $("s2-sub-login").classList.add("oculto");
-    }
-    mostrar("v-2fa"); $("s2-cod").value = ""; $("s2-cod").focus();
+      tela("cadastro");
+    } catch (err) { aviso("a-2fa", traduzErro(err)); }
+  }
+  $("s2-ir-email").addEventListener("click", irEmail);
+  $("s2-ir-app").addEventListener("click", irApp);
+  $("s2-outro").addEventListener("click", () => modo === "email" ? (fator && !fator.novo ? irApp() : tela("escolha")) : irEmail());
+
+  // Devolve true se a pessoa pode seguir para o início; senão abre a tela do 2 fatores
+  async function exigir(continuar){
+    info = await rpc("minha_seguranca").catch(() => null);
+    if (!info || !info.precisa_2fa || info.verificado) return true;
+    depois = continuar;
+    fator = (await fatores()).find(f => f.status === "verified") || null;
+    mostrar("v-2fa");
+    if (fator) { modo = "app"; tela("codigo", "Abra o aplicativo autenticador no celular e digite o código de 6 dígitos do SGT GA BA."); }
+    else tela("escolha");
     return false;
   }
   $("f-2fa").addEventListener("submit", async (e) => {
@@ -131,43 +174,58 @@
     if (codigo.length !== 6) return aviso("a-2fa", "O código tem 6 dígitos.");
     ocupado(e.target, true);
     try {
-      await verificar(fator.id, codigo);
-      if (fator.novo) sessionStorage.setItem("sgt-aviso-ok", "Verificação em 2 fatores cadastrada. Nos próximos acessos, o SGT vai pedir o código do aplicativo.");
+      if (modo === "email") await verificarEmail(codigo);
+      else {
+        await verificar(fator.id, codigo);
+        if (fator.novo) sessionStorage.setItem("sgt-aviso-ok", "Aplicativo autenticador cadastrado. Nos próximos acessos, use o código do aplicativo (ou peça o código por e-mail).");
+      }
       if (depois) await depois();
     } catch (err) {
-      if (err.message !== "sessao") aviso("a-2fa", /invalid|expired|incorrect/i.test(err.message) ? "Código incorreto ou vencido. Confira o código atual no aplicativo." : traduzErro(err));
+      if (err.message !== "sessao") aviso("a-2fa", msgErro(err));
     } finally { ocupado(e.target, false); }
   });
   $("s2-sair").addEventListener("click", () => $("sair").click());
 
-  // Confirma de novo com o autenticador (vale por 10 minutos para ações sensíveis)
+  // Confirma de novo (aplicativo ou e-mail); vale por 10 minutos para ações sensíveis
   function pedirCodigo(titulo, texto){
-    return new Promise((ok) => {
+    return new Promise(async (ok) => {
+      const f = await fatores().then(l => l.find(x => x.status === "verified")).catch(() => null);
+      let m2 = f ? "app" : "email";
       const m = document.createElement("div"); m.className = "seg-modal";
-      m.innerHTML = `<div><h1 style="font-size:18px">${esc(titulo)}</h1><p class="sub">${esc(texto)}</p>
-        <form novalidate><label>Código do autenticador</label><input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="codigo">
-        <div class="aviso" id="a-modal"></div><div class="acoes"><button type="button" class="sec">Cancelar</button><button type="submit">Confirmar</button></div></form></div>`;
+      m.innerHTML = `<div><h1 style="font-size:18px">${esc(titulo)}</h1><p class="sub">${esc(texto)}</p><p class="sub" id="m-sub"></p>
+        <form novalidate><label id="m-rot"></label><input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="codigo">
+        <div class="aviso" id="a-modal"></div><div class="acoes"><button type="button" class="sec">Cancelar</button><button type="submit">Confirmar</button></div></form>
+        <button type="button" class="link" id="m-outro"></button></div>`;
       document.body.appendChild(m);
-      const inp = m.querySelector("input"); inp.focus();
+      const inp = m.querySelector("input");
+      const ajustar = async () => {
+        m.querySelector("#m-rot").textContent = m2 === "email" ? "Código recebido por e-mail" : "Código do aplicativo autenticador";
+        m.querySelector("#m-outro").textContent = m2 === "email" ? (f ? "Usar o aplicativo autenticador" : "Reenviar código por e-mail") : "Receber o código por e-mail";
+        m.querySelector("#m-sub").textContent = "";
+        if (m2 === "email") {
+          try { const d = await enviarCodigoEmail(); m.querySelector("#m-sub").textContent = `Enviamos um código para ${d.enviado_para}.`; }
+          catch (err) { aviso("a-modal", err.message); }
+        }
+        inp.value = ""; inp.focus();
+      };
+      m.querySelector("#m-outro").onclick = () => { m2 = (m2 === "email" && f) ? "app" : "email"; ajustar(); };
       m.querySelector("button.sec").onclick = () => { m.remove(); ok(false); };
       m.querySelector("form").onsubmit = async (e) => {
         e.preventDefault();
         const c = inp.value.replace(/\D/g, "");
         if (c.length !== 6) return aviso("a-modal", "O código tem 6 dígitos.");
         ocupado(e.target, true);
-        try {
-          const f = (await fatores()).find(x => x.status === "verified");
-          if (!f) throw new Error("Cadastre a verificação em 2 fatores: saia e entre de novo.");
-          await verificar(f.id, c); m.remove(); ok(true);
-        } catch (err) { aviso("a-modal", /invalid|expired|incorrect/i.test(err.message) ? "Código incorreto ou vencido." : traduzErro(err)); ocupado(e.target, false); }
+        try { if (m2 === "email") await verificarEmail(c); else await verificar(f.id, c); m.remove(); ok(true); }
+        catch (err) { aviso("a-modal", msgErro(err)); ocupado(e.target, false); }
       };
+      ajustar();
     });
   }
-  const totpRecente = () => (jwt().amr || []).some(a => a.method === "totp" && a.timestamp > Date.now() / 1000 - 540);
+  const totpRecente = () => Date.now() - ultimaVerif < 540000 || (jwt().amr || []).some(a => a.method === "totp" && a.timestamp > Date.now() / 1000 - 540);
 
   // ------------------------------------------------------------ Confirmação de acessos
   async function responder(id, aceitar){
-    if (aceitar && !totpRecente() && !(await pedirCodigo("Confirmar mudança de acesso", "Digite o código do aplicativo autenticador para confirmar."))) return false;
+    if (aceitar && !totpRecente() && !(await pedirCodigo("Confirmar mudança de acesso", "Confirme com o código do aplicativo autenticador ou com o código enviado por e-mail."))) return false;
     await rpc("acesso_responder", { p_id: id, p_aceitar: aceitar });
     return true;
   }
@@ -200,7 +258,7 @@
     const id = await rpc("acesso_solicitar", { p_colaborador: colab, p_dar_papeis: dar, p_tirar_papeis: tirar, p_dar_modulos: modDar, p_tirar_modulos: modTirar });
     if (!id) return "nada";
     const ok = totpRecente() || await pedirCodigo("Confirmar mudança de acesso",
-      "Você pediu uma mudança de nível ou de ferramenta. Ela só vale depois de confirmada com o código do autenticador. Se cancelar agora, pode confirmar depois em Segurança → Confirmações de acesso (prazo de 48 horas).");
+      "Você pediu uma mudança de nível ou de ferramenta. Ela só vale depois de confirmada com o código de verificação (aplicativo ou e-mail). Se cancelar agora, pode confirmar depois em Segurança → Confirmações de acesso (prazo de 48 horas).");
     if (!ok) return "pendente";
     await rpc("acesso_responder", { p_id: id, p_aceitar: true });
     return "confirmado";
