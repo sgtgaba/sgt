@@ -12,6 +12,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SGT">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>
+  // Modo noturno: escolha guardada neste aparelho; sem escolha, segue o sistema
+  (function(){ var t = null; try { t = localStorage.getItem("sgt-tema"); } catch (e) {}
+    if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";
+    document.documentElement.setAttribute("data-tema", t); })();
+</script>
 <style>
   :root{
     --cor:#c40f6d; --cor-forte:#9c0b56; --cor-suave:#fde8f2;
@@ -112,9 +118,36 @@
     .tags{justify-content:flex-start}
     .cartao{padding:24px 18px}
   }
+
+  /* Modo noturno */
+  :root{--superficie:#fff}
+  html[data-tema=escuro]{color-scheme:dark;
+    --cor:#f0559f; --cor-forte:#ff74b4; --cor-suave:#3a1a2b; --magenta:#f0559f;
+    --texto:#ece7ea; --texto-2:#a9a1a6; --borda:#3a3338; --fundo:#141113; --superficie:#1f1a1d;
+    --erro:#ff8a80; --erro-fundo:#3b1916; --ok:#6fd49c; --ok-fundo:#14301f; --alerta:#f5b54a; --alerta-fundo:#33260f}
+  html[data-tema=escuro] .cartao{background:var(--superficie);box-shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}
+  html[data-tema=escuro] input,html[data-tema=escuro] select,html[data-tema=escuro] textarea{background:#2a2327;color:var(--texto);border-color:var(--borda)}
+  html[data-tema=escuro] button{color:#fff}
+  html[data-tema=escuro] button.sec,html[data-tema=escuro] button.perigo,html[data-tema=escuro] .ferr,html[data-tema=escuro] .pessoa,
+  html[data-tema=escuro] .app-bloco,html[data-tema=escuro] .dad-bloco,html[data-tema=escuro] .cat-card,html[data-tema=escuro] .enc-item,
+  html[data-tema=escuro] .fcard,html[data-tema=escuro] .lnk-item,html[data-tema=escuro] .qg-det,html[data-tema=escuro] .qg-kpi,
+  html[data-tema=escuro] .qg-mov>div,html[data-tema=escuro] .abas button{background:var(--superficie)}
+  html[data-tema=escuro] button.sec{color:var(--cor)} html[data-tema=escuro] button.perigo{color:var(--erro);border-color:#6b2a25}
+  html[data-tema=escuro] .ferr,html[data-tema=escuro] .abas button{color:var(--texto)} html[data-tema=escuro] .abas button.on{color:var(--cor)}
+  html[data-tema=escuro] .ferr:hover,html[data-tema=escuro] button.sec:hover,html[data-tema=escuro] .pessoa:hover{background:var(--cor-suave)}
+  html[data-tema=escuro] .bolha{background:#2a2327} html[data-tema=escuro] .bolha.interno{background:#33260f;border-color:#7a5a1d}
+  html[data-tema=escuro] .tag.cinza{background:#2a2327;color:#c9c2c6} html[data-tema=escuro] .tag.verde{background:#1f2e0d;color:#b6dd6a}
+  html[data-tema=escuro] .tag.lar{background:#3a2610;color:#f5b06a} html[data-tema=escuro] table.prev th,html[data-tema=escuro] table.prev td{border-color:var(--borda)}
+  html[data-tema=escuro] .prog .p i,html[data-tema=escuro] .mini i,html[data-tema=escuro] .barra{background:#3a3338}
+  html[data-tema=escuro] a{color:var(--cor)}
+  #tema{position:fixed;top:12px;right:12px;width:auto;margin:0;padding:8px 12px;font-size:14px;border-radius:999px;z-index:60;
+    background:var(--superficie);color:var(--texto);border:1px solid var(--borda);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  #tema:hover{background:var(--cor-suave)}
+  @media print{#tema{display:none}}
 </style>
 </head>
 <body>
+<button id="tema" type="button" aria-label="Alternar modo noturno"></button>
 <main class="cartao" id="cartao">
   <div class="marca">
     <div class="selo">SGT</div>
@@ -245,6 +278,7 @@
           <option value="m:cat">Ferramenta: CAT</option><option value="m:ouvidoria">Ferramenta: Ouvidoria</option>
           <option value="m:banco_talentos">Ferramenta: Banco de Talentos</option><option value="m:encaminhamentos">Ferramenta: Encaminhamentos</option>
           <option value="m:linktree">Ferramenta: Links</option><option value="m:dados_contatos">Ferramenta: Dados e Contatos</option>
+          <option value="m:quadro_geral">Ferramenta: Quadro Geral</option><option value="m:painel_vagas">Ferramenta: Painel de Vagas</option>
         </select>
         <select id="f-situacao">
           <option value="">Todas as situações</option>
@@ -333,6 +367,8 @@
         <label class="check"><input type="checkbox" data-modulo="encaminhamentos"><span><b>Encaminhamentos (gestão)</b><br>vê e atende todas as solicitações</span></label>
         <label class="check"><input type="checkbox" data-modulo="dados_contatos"><span><b>Dados e Contatos (gestão)</b><br>vê e exporta os contatos de todos</span></label>
         <label class="check"><input type="checkbox" data-modulo="linktree"><span><b>Links do Projeto</b><br>adiciona e edita os links</span></label>
+        <label class="check"><input type="checkbox" data-modulo="quadro_geral"><span><b>Quadro Geral do Time</b><br>consulta vagas, ocupantes e valores</span></label>
+        <label class="check"><input type="checkbox" data-modulo="painel_vagas"><span><b>Painel de Vagas</b><br>consulta vagas abertas e vacância</span></label>
       </div>
       <button type="submit">Salvar alterações</button>
     </form>
@@ -387,13 +423,14 @@ let usuarios = [];        // cache da lista do painel
 let editando = null;
 
 const NOMES_PAPEIS = { superadmin: "Programador(a)", admin: "Administrador(a)", gerencia: "Gerente", rh: "Gestão de Pessoas", lideranca: "Liderança de equipe", colaborador: "Consultor(a)" };
-const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos" };
+const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app)/.test(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv)/.test(id));
+  $("cartao").classList.toggle("amplo", /^v-(qg|pv)/.test(id));
   window.scrollTo(0, 0);
 }
 function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso" + (texto ? " " + tipo : ""); a.textContent = texto; }
@@ -599,6 +636,8 @@ async function abrirInicio(){
   if (temModulo("ouvidoria")) f.push(`<button class="ferr" id="ir-ouv"><span class="ico">✉</span><span>Ouvidoria<small>Manifestações recebidas e respostas</small></span></button>`);
   f.push(`<button class="ferr" id="ir-links"><span class="ico">🔗</span><span>Links do Projeto<small>${pode("admin") || temModulo("linktree") ? "Ver e editar os links úteis" : "Links úteis do projeto"}</small></span></button>`);
   if (pode("admin","rh","gerencia") || temModulo("banco_talentos")) f.push(`<button class="ferr" id="ir-talentos"><span class="ico">★</span><span>Banco de Talentos<small>Inscrições, ranking, aderência às vagas e banco de questões</small></span></button>`);
+  if (pode("admin","rh") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-qg"><span class="ico">▦</span><span>Quadro Geral do Time<small>Vagas, ocupantes, valores e movimentações</small></span></button>`);
+  if (pode("admin","rh") || temModulo("painel_vagas") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-pv"><span class="ico">◷</span><span>Painel de Vagas<small>Vagas abertas e tempo de vacância</small></span></button>`);
   if (ehSuper()) f.push(`<button class="ferr" id="ir-tecnica"><span class="ico">&lt;/&gt;</span><span>Área técnica<small>Código, banco de dados e configurações do SGT</small></span></button>`);
   $("ferramentas").innerHTML = f.join("");
   if ($("ir-painel")) $("ir-painel").addEventListener("click", abrirPainel);
@@ -609,6 +648,8 @@ async function abrirInicio(){
   if ($("ir-ouv")) $("ir-ouv").addEventListener("click", () => window.Ouvidoria && Ouvidoria.abrir());
   if ($("ir-links")) $("ir-links").addEventListener("click", () => window.Links && Links.abrir());
   if ($("ir-app")) $("ir-app").addEventListener("click", () => App.abrir());
+  if ($("ir-qg")) $("ir-qg").addEventListener("click", () => window.Quadro && Quadro.abrir());
+  if ($("ir-pv")) $("ir-pv").addEventListener("click", () => window.PainelVagas && PainelVagas.abrir());
   if ($("ir-dados")) $("ir-dados").addEventListener("click", () => window.Dados && Dados.abrir());
   if (window.Dados) Dados.checar();
   mostrar("v-inicio");
@@ -899,8 +940,16 @@ $("importar").addEventListener("click", async () => {
 <script src="encaminhamentos.js?v=1"></script>
 <script src="ouvidoria.js?v=1"></script>
 <script src="links.js?v=1"></script>
+<script>
+  (function(){ var b = document.getElementById("tema");
+    function rotulo(){ var e = document.documentElement.getAttribute("data-tema") === "escuro"; b.textContent = e ? "☀ Modo claro" : "☾ Modo noturno"; b.setAttribute("aria-pressed", e); }
+    b.addEventListener("click", function(){ var n = document.documentElement.getAttribute("data-tema") === "escuro" ? "claro" : "escuro";
+      document.documentElement.setAttribute("data-tema", n); try { localStorage.setItem("sgt-tema", n); } catch (e) {} rotulo(); });
+    rotulo(); })();
+</script>
 <script src="dados.js?v=1"></script>
 <script src="app.js?v=2"></script>
+<script src="quadro.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>
