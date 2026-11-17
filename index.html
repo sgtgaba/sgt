@@ -4,6 +4,764 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SGT · Projeto GA BA</title>
+<meta name="theme-color" content="#e71181">
+<style>
+  :root{
+    --cor:#c40f6d; --cor-forte:#9c0b56; --cor-suave:#fde8f2;
+    --magenta:#e71181; --laranja:#ee7f08; --verde:#92c01f;
+    --texto:#1f2937; --texto-2:#6b7280; --borda:#e0d6dc; --fundo:#faf6f8;
+    --erro:#b42318; --erro-fundo:#fef3f2; --ok:#067647; --ok-fundo:#ecfdf3; --alerta:#b54708; --alerta-fundo:#fffaeb;
+    --raio:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--fundo);color:var(--texto);padding:40px 16px}
+  .cartao{position:relative;overflow:hidden;width:100%;max-width:400px;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(231,17,129,.08);padding:36px 28px 32px;transition:max-width .2s}
+  .cartao::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--magenta) 0 34%,var(--laranja) 34% 67%,var(--verde) 67% 100%)}
+  .cartao.largo{max-width:980px}
+  .marca{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .selo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--magenta) 0 55%,var(--laranja) 55% 80%,var(--verde) 80%);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);display:grid;place-items:center;font-weight:700;letter-spacing:.02em;flex:none}
+  .marca b{display:block;font-size:18px}
+  .marca span{font-size:13px;color:var(--texto-2)}
+  h1{font-size:20px;margin:0 0 6px}
+  h2{font-size:16px;margin:22px 0 8px}
+  p.sub{margin:0 0 20px;color:var(--texto-2);font-size:14px;line-height:1.45}
+  label{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  input[type=text],input[type=password],input[type=date],input[type=email],input[type=search],select{width:100%;padding:12px 14px;font-size:16px;border:1px solid var(--borda);border-radius:var(--raio);background:#fff;color:var(--texto);font-family:inherit}
+  input:focus,select:focus{outline:2px solid var(--cor);outline-offset:1px;border-color:var(--cor)}
+  .ajuda{font-size:12.5px;color:var(--texto-2);margin-top:6px;line-height:1.4}
+  .codigo{letter-spacing:10px;text-align:center;font-size:24px!important;font-weight:700}
+  .check{display:flex;gap:10px;align-items:flex-start;margin:18px 0 4px;font-size:13.5px;line-height:1.45;font-weight:400}
+  .check input{margin-top:3px;width:18px;height:18px;accent-color:var(--cor);flex:none}
+  button{width:100%;margin-top:20px;padding:13px;font-size:16px;font-weight:600;border:0;border-radius:var(--raio);background:var(--cor);color:#fff;cursor:pointer;font-family:inherit}
+  button:hover{background:var(--cor-forte)}
+  button:disabled{opacity:.55;cursor:default}
+  button.sec{background:#fff;color:var(--cor);border:1px solid var(--borda)}
+  button.sec:hover{background:var(--cor-suave)}
+  button.perigo{background:#fff;color:var(--erro);border:1px solid #f4c7c3}
+  button.perigo:hover{background:var(--erro-fundo)}
+  .link{background:none;color:var(--cor);padding:6px;margin-top:10px;font-weight:600;font-size:14px}
+  .link:hover{background:none;text-decoration:underline}
+  .aviso{border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.45;margin-top:16px;display:none;white-space:pre-line}
+  .aviso.erro{display:block;background:var(--erro-fundo);color:var(--erro)}
+  .aviso.ok{display:block;background:var(--ok-fundo);color:var(--ok)}
+  .aviso.alerta{display:block;background:var(--alerta-fundo);color:var(--alerta)}
+  .passos{display:flex;gap:6px;margin-bottom:18px}
+  .passos i{flex:1;height:4px;border-radius:4px;background:var(--cor-suave)}
+  .passos i.on{background:var(--magenta)}
+  .passos i.on + i.on{background:var(--laranja)}
+  .oculto{display:none!important}
+  .rodape{text-align:center;font-size:12px;color:var(--texto-2);margin-top:22px}
+
+  /* Início: grade de ferramentas */
+  .ferramentas{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px}
+  .ferr{display:flex;align-items:center;gap:12px;text-align:left;margin:0;padding:14px;background:#fff;color:var(--texto);border:1px solid var(--borda);font-weight:600;font-size:15px}
+  .ferr:hover{background:var(--cor-suave)}
+  a.ferr{text-decoration:none;border-radius:var(--raio)}
+  .ferr small{display:block;font-weight:400;color:var(--texto-2);font-size:12.5px;margin-top:2px}
+  .ferr .ico{width:36px;height:36px;border-radius:9px;background:var(--cor-suave);color:var(--magenta);display:grid;place-items:center;font-weight:700;flex:none}
+  .ferr[disabled]{opacity:.6}
+
+  /* Painel */
+  .topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .topo button{width:auto;margin:0;padding:9px 14px;font-size:14px}
+  .abas{display:flex;gap:6px;border-bottom:1px solid var(--borda);margin:16px 0 18px;overflow-x:auto}
+  .abas button{width:auto;margin:0;background:none;color:var(--texto-2);border-radius:0;padding:10px 12px;font-size:14.5px;border-bottom:2px solid transparent;white-space:nowrap}
+  .abas button.on{color:var(--cor);border-bottom-color:var(--cor)}
+  .filtros{display:grid;grid-template-columns:1fr 180px 180px;gap:10px}
+  .filtros input,.filtros select{padding:10px 12px;font-size:15px}
+  .resumo{font-size:13px;color:var(--texto-2);margin:12px 0 8px}
+  .lista{display:flex;flex-direction:column;gap:8px}
+  .pessoa{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;border:1px solid var(--borda);border-radius:var(--raio);padding:12px 14px;cursor:pointer;background:#fff}
+  .pessoa:hover{border-color:var(--cor);background:#fbfdfd}
+  .pessoa b{font-size:15px}
+  .pessoa .meta{font-size:12.5px;color:var(--texto-2);margin-top:3px}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+  .tag{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--cor-suave);color:var(--cor);white-space:nowrap}
+  .tag.cinza{background:#f2f4f7;color:#475467}
+  .tag.verm{background:var(--erro-fundo);color:var(--erro)}
+  .tag.verde{background:#f1f8e2;color:#4d6b0b}
+  .tag.lar{background:#fff1e0;color:#a85500}
+  .grade2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  .papeis{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+  .papeis .check{margin:6px 0}
+  .acoes{display:flex;gap:10px;flex-wrap:wrap}
+  .acoes button{width:auto;flex:1;min-width:160px}
+  table.prev{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+  table.prev th,table.prev td{border-bottom:1px solid #eef0f2;padding:7px 8px;text-align:left;vertical-align:top}
+  table.prev th{background:var(--cor-suave);color:var(--cor);font-weight:600}
+  .rolar{max-height:320px;overflow:auto;border:1px solid var(--borda);border-radius:10px}
+  .arquivo{border:2px dashed var(--borda);border-radius:var(--raio);padding:22px;text-align:center;color:var(--texto-2);font-size:14px}
+  .arquivo input{margin-top:10px}
+  a.baixar{color:var(--cor);font-weight:600;font-size:14px}
+  @media (max-width:640px){
+    .filtros,.grade2,.papeis{grid-template-columns:1fr}
+    .pessoa{grid-template-columns:1fr}
+    .tags{justify-content:flex-start}
+    .cartao{padding:24px 18px}
+  }
+</style>
+</head>
+<body>
+<main class="cartao" id="cartao">
+  <div class="marca">
+    <div class="selo">SGT</div>
+    <div><b>Sistema Geral do Time</b><span>Projeto GA BA</span></div>
+  </div>
+
+  <!-- ENTRAR -->
+  <section id="v-entrar">
+    <h1>Entrar</h1>
+    <p class="sub">Use seu CPF e sua senha do SGT.</p>
+    <form id="f-entrar" novalidate>
+      <label for="e-cpf">CPF</label>
+      <input id="e-cpf" type="text" inputmode="numeric" autocomplete="username" placeholder="Somente números" maxlength="14">
+      <label for="e-senha">Senha</label>
+      <input id="e-senha" type="password" autocomplete="current-password">
+      <button type="submit">Entrar</button>
+    </form>
+    <div class="aviso" id="a-entrar"></div>
+    <button class="link" data-ir="v-pa1">Primeiro acesso</button>
+    <button class="link" data-ir="v-esqueci">Esqueci minha senha</button>
+  </section>
+
+  <!-- PRIMEIRO ACESSO · 1 -->
+  <section id="v-pa1" class="oculto">
+    <div class="passos"><i class="on"></i><i></i></div>
+    <h1>Primeiro acesso</h1>
+    <p class="sub">Confirme seus dados. Vamos enviar um código para o e-mail cadastrado no quadro do projeto.</p>
+    <form id="f-pa1" novalidate>
+      <label for="p-cpf">CPF</label>
+      <input id="p-cpf" type="text" inputmode="numeric" placeholder="Somente números" maxlength="14">
+      <label for="p-nasc">Data de nascimento</label>
+      <input id="p-nasc" type="date">
+      <button type="submit">Enviar código</button>
+    </form>
+    <div class="aviso" id="a-pa1"></div>
+    <button class="link" data-ir="v-entrar">Voltar para entrar</button>
+  </section>
+
+  <!-- PRIMEIRO ACESSO · 2 -->
+  <section id="v-pa2" class="oculto">
+    <div class="passos"><i class="on"></i><i class="on"></i></div>
+    <h1>Crie sua senha</h1>
+    <p class="sub" id="pa2-sub">Enviamos um código de 6 dígitos para o seu e-mail. Confira também a caixa de spam.</p>
+    <form id="f-pa2" novalidate>
+      <label for="p-cod">Código</label>
+      <input id="p-cod" class="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      <label for="p-senha">Nova senha</label>
+      <input id="p-senha" type="password" autocomplete="new-password">
+      <div class="ajuda">Pelo menos 8 caracteres, com letras e números.</div>
+      <label for="p-senha2">Repita a senha</label>
+      <input id="p-senha2" type="password" autocomplete="new-password">
+      <label class="check"><input id="p-lgpd" type="checkbox">
+        <span>Autorizo o uso do meu CPF, data de nascimento e e-mail para criar e proteger meu acesso ao SGT, conforme a Lei Geral de Proteção de Dados (LGPD).</span></label>
+      <button type="submit">Criar acesso</button>
+    </form>
+    <div class="aviso" id="a-pa2"></div>
+    <button class="link" id="reenviar">Pedir um novo código</button>
+  </section>
+
+  <!-- ESQUECI -->
+  <section id="v-esqueci" class="oculto">
+    <h1>Esqueci minha senha</h1>
+    <p class="sub">A recuperação automática de senha chega em breve. Por enquanto, procure a equipe de Gestão de Pessoas do projeto para liberar um novo acesso.</p>
+    <button class="link" data-ir="v-entrar">Voltar para entrar</button>
+  </section>
+
+  <!-- INÍCIO (logado) -->
+  <section id="v-inicio" class="oculto">
+    <h1 id="ola">Olá!</h1>
+    <p class="sub" id="perfil-txt">Escolha uma ferramenta.</p>
+    <div class="ferramentas" id="ferramentas"></div>
+    <button class="sec" id="sair">Sair</button>
+  </section>
+
+  <!-- PAINEL DOS ADM -->
+  <section id="v-painel" class="oculto">
+    <div class="topo">
+      <div><h1>Painel dos ADM</h1><div class="ajuda" style="margin:0">Cadastro do quadro e níveis de acesso</div></div>
+      <button class="sec" id="voltar-inicio">← Início</button>
+    </div>
+    <div class="abas">
+      <button data-aba="aba-usuarios" class="on">Usuários</button>
+      <button data-aba="aba-novo">Cadastrar pessoa</button>
+      <button data-aba="aba-lote">Importar planilha</button>
+    </div>
+
+    <!-- Usuários -->
+    <div id="aba-usuarios">
+      <div class="filtros">
+        <input id="busca" type="search" placeholder="Buscar por nome, CPF ou e-mail">
+        <select id="f-perfil">
+          <option value="">Todos os perfis</option>
+          <option value="superadmin">Superadministrador(a)</option><option value="admin">Administrador(a)</option><option value="gerencia">Gerência</option>
+          <option value="rh">Gestão de Pessoas</option><option value="lideranca">Liderança</option>
+        </select>
+        <select id="f-situacao">
+          <option value="">Todas as situações</option>
+          <option value="ativo">Ativo</option><option value="afastado">Afastado</option>
+          <option value="ferias">Férias</option><option value="desligado">Desligado</option>
+          <option value="sem-acesso">Sem acesso criado</option>
+        </select>
+      </div>
+      <div class="resumo" id="resumo"></div>
+      <div class="lista" id="lista"></div>
+      <div class="aviso" id="a-lista"></div>
+    </div>
+
+    <!-- Cadastrar pessoa -->
+    <div id="aba-novo" class="oculto">
+      <p class="sub">A pessoa só consegue fazer o primeiro acesso depois de cadastrada aqui, com CPF, data de nascimento e e-mail corretos.</p>
+      <form id="f-novo" novalidate>
+        <label for="n-nome">Nome completo</label>
+        <input id="n-nome" type="text" autocomplete="off">
+        <div class="grade2">
+          <div><label for="n-cpf">CPF</label><input id="n-cpf" type="text" inputmode="numeric" maxlength="14" placeholder="Somente números"></div>
+          <div><label for="n-nasc">Data de nascimento</label><input id="n-nasc" type="date"></div>
+          <div><label for="n-email">E-mail</label><input id="n-email" type="email" autocomplete="off"></div>
+          <div><label for="n-adm">Data de admissão <span style="font-weight:400;color:var(--texto-2)">(opcional)</span></label><input id="n-adm" type="date"></div>
+        </div>
+        <button type="submit">Cadastrar</button>
+      </form>
+      <div class="aviso" id="a-novo"></div>
+    </div>
+
+    <!-- Importar planilha -->
+    <div id="aba-lote" class="oculto">
+      <p class="sub">Envie a planilha do quadro em Excel (.xlsx) ou CSV. Quem já está cadastrado é atualizado pelo CPF; quem não está é incluído. Ninguém é apagado.</p>
+      <div class="arquivo">
+        <div>Colunas reconhecidas: <b>Nome</b>, <b>CPF</b>, <b>Data de nascimento</b>, <b>E-mail</b> e, se houver, <b>Código da vaga</b>, <b>Data de admissão</b> e <b>Situação</b>.</div>
+        <input id="arq" type="file" accept=".xlsx,.xls,.csv">
+        <div style="margin-top:8px"><a href="#" class="baixar" id="modelo">Baixar planilha modelo (.csv)</a></div>
+      </div>
+      <div class="aviso" id="a-lote"></div>
+      <div id="previa" class="oculto">
+        <h2 id="previa-tit"></h2>
+        <div class="rolar"><table class="prev" id="previa-tab"></table></div>
+        <button id="importar">Importar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDITAR PESSOA -->
+  <section id="v-editar" class="oculto">
+    <div class="topo">
+      <div><h1 id="ed-nome">Pessoa</h1><div class="ajuda" style="margin:0" id="ed-sub"></div></div>
+      <button class="sec" id="ed-voltar">← Voltar à lista</button>
+    </div>
+    <form id="f-editar" novalidate>
+      <h2>Dados do quadro</h2>
+      <label for="ed-nome-in">Nome completo</label>
+      <input id="ed-nome-in" type="text">
+      <div class="grade2">
+        <div><label for="ed-email">E-mail</label><input id="ed-email" type="email"></div>
+        <div><label for="ed-nasc">Data de nascimento</label><input id="ed-nasc" type="date"></div>
+        <div><label for="ed-adm">Data de admissão</label><input id="ed-adm" type="date"></div>
+        <div><label for="ed-sit">Situação</label>
+          <select id="ed-sit"><option value="ativo">Ativo</option><option value="afastado">Afastado</option><option value="ferias">Férias</option><option value="desligado">Desligado</option></select></div>
+      </div>
+      <div class="ajuda">Marcar como <b>Desligado</b> bloqueia o acesso na mesma hora. O histórico continua guardado.</div>
+
+      <h2>Níveis de acesso</h2>
+      <div class="ajuda" id="ed-perm-ajuda" style="margin-bottom:6px">Todos têm o nível Colaborador(a). Marque os demais.</div>
+      <div class="papeis">
+        <label class="check"><input type="checkbox" data-papel="lideranca"><span><b>Liderança</b><br>acompanha a própria equipe</span></label>
+        <label class="check"><input type="checkbox" data-papel="rh"><span><b>Gestão de Pessoas</b><br>vê todos e cadastra o quadro</span></label>
+        <label class="check"><input type="checkbox" data-papel="gerencia"><span><b>Gerência</b><br>vê todos e assina avisos</span></label>
+        <label class="check"><input type="checkbox" data-papel="admin"><span><b>Administrador(a)</b><br>define os níveis de acesso</span></label>
+        <label class="check oculto" id="ed-super"><input type="checkbox" data-papel="superadmin"><span><b>Superadministrador(a)</b><br>acesso absoluto e área técnica</span></label>
+      </div>
+      <button type="submit">Salvar alterações</button>
+    </form>
+    <div class="aviso" id="a-editar"></div>
+    <h2>Acesso</h2>
+    <div class="ajuda" id="ed-acesso"></div>
+    <button class="perigo" id="ed-liberar">Liberar novo primeiro acesso</button>
+  </section>
+
+  <!-- ÁREA TÉCNICA (só superadministrador) -->
+  <section id="v-tecnica" class="oculto">
+    <div class="topo">
+      <div><h1>Área técnica</h1><div class="ajuda" style="margin:0">Acesso exclusivo do superadministrador</div></div>
+      <button class="sec" data-ir="v-inicio">← Início</button>
+    </div>
+    <p class="sub" style="margin-top:14px">Atalhos para o código e a infraestrutura do SGT. Cada serviço pede o próprio login (conta GitHub <b>sgtgaba</b>). Alterações aqui afetam todos os usuários.</p>
+    <h2>Código da ferramenta</h2>
+    <div class="ferramentas">
+      <a class="ferr" href="https://github.com/sgtgaba/sgt/edit/main/index.html" target="_blank" rel="noopener"><span class="ico">&lt;/&gt;</span><span>Editar o código das telas<small>index.html no GitHub · salvar publica em ~1 minuto</small></span></a>
+      <a class="ferr" href="https://github.dev/sgtgaba/sgt" target="_blank" rel="noopener"><span class="ico">⌨</span><span>Editor completo<small>Abre o repositório no editor do GitHub (estilo VS Code)</small></span></a>
+      <a class="ferr" href="https://github.com/sgtgaba/sgt" target="_blank" rel="noopener"><span class="ico">⎇</span><span>Repositório e histórico de versões<small>github.com/sgtgaba/sgt</small></span></a>
+    </div>
+    <h2>Banco de dados e servidor</h2>
+    <div class="ferramentas">
+      <a class="ferr" href="https://supabase.com/dashboard/project/bjlhmkwxlrvatnlwjcln/sql/new" target="_blank" rel="noopener"><span class="ico">▤</span><span>SQL Editor<small>Rodar comandos no banco do SGT</small></span></a>
+      <a class="ferr" href="https://supabase.com/dashboard/project/bjlhmkwxlrvatnlwjcln/editor" target="_blank" rel="noopener"><span class="ico">▦</span><span>Tabelas<small>Ver e editar os dados diretamente</small></span></a>
+      <a class="ferr" href="https://supabase.com/dashboard/project/bjlhmkwxlrvatnlwjcln/functions/primeiro-acesso/code" target="_blank" rel="noopener"><span class="ico">ƒ</span><span>Função de primeiro acesso<small>Código do envio do código por e-mail</small></span></a>
+      <a class="ferr" href="https://supabase.com/dashboard/project/bjlhmkwxlrvatnlwjcln/auth/users" target="_blank" rel="noopener"><span class="ico">⚿</span><span>Logins<small>Usuários que já criaram senha</small></span></a>
+      <a class="ferr" href="https://supabase.com/dashboard/project/bjlhmkwxlrvatnlwjcln" target="_blank" rel="noopener"><span class="ico">◎</span><span>Painel geral do projeto<small>Saúde, uso e limites do plano gratuito</small></span></a>
+    </div>
+    <h2>E-mails</h2>
+    <div class="ferramentas">
+      <a class="ferr" href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noopener"><span class="ico">✉</span><span>Brevo<small>Envios, cota diária e chave de API (vence em 16/11/2027)</small></span></a>
+    </div>
+  </section>
+
+  <div class="rodape">SGT · Projeto GA BA</div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://bjlhmkwxlrvatnlwjcln.supabase.co";
+const CHAVE_PUBLICA = "sb_publishable_s4_6UV8RA2bFOH0BfR9jLw_EC4VV1N1"; // pública por natureza; a segurança está no banco (RLS)
+const FUNCAO = SUPABASE_URL + "/functions/v1/primeiro-acesso";
+const DOMINIO_INTERNO = "@sgt.interno";
+
+const $ = (id) => document.getElementById(id);
+const so_numeros = (s) => (s || "").replace(/\D/g, "");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+let cpfPrimeiroAcesso = "";
+let eu = null;            // { id, nome, papeis: [] }
+let usuarios = [];        // cache da lista do painel
+let editando = null;
+
+const NOMES_PAPEIS = { superadmin: "Superadministrador(a)", admin: "Administrador(a)", gerencia: "Gerência", rh: "Gestão de Pessoas", lideranca: "Liderança", colaborador: "Colaborador(a)" };
+const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
+
+function mostrar(id){
+  document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
+  document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
+  $("cartao").classList.toggle("largo", ["v-painel","v-editar","v-tecnica"].includes(id));
+  window.scrollTo(0, 0);
+}
+function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso " + tipo; a.textContent = texto; }
+function ocupado(form, sim){ form.querySelectorAll("button,input,select").forEach(e => e.disabled = sim); }
+document.querySelectorAll("[data-ir]").forEach(b => b.addEventListener("click", () => mostrar(b.dataset.ir)));
+
+function mascaraCPF(el){ el.addEventListener("input", e => {
+  const n = so_numeros(e.target.value).slice(0, 11);
+  e.target.value = n.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}); }
+["e-cpf","p-cpf","n-cpf"].forEach(id => mascaraCPF($(id)));
+const fmtCPF = (c) => c ? c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4") : "";
+const cpfOculto = (c) => c ? "***." + c.slice(3, 6) + "." + c.slice(6, 9) + "-**" : "";
+const fmtData = (d) => d ? d.split("-").reverse().join("/") : "";
+
+function cpfValido(c){
+  if (!/^\d{11}$/.test(c) || /^(\d)\1{10}$/.test(c)) return false;
+  const dv = (n) => { let s = 0; for (let i = 0; i < n; i++) s += +c[i] * (n + 1 - i); const d = (s * 10) % 11; return d === 10 ? 0 : d; };
+  return dv(9) === +c[9] && dv(10) === +c[10];
+}
+const emailValido = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+// ---------- Sessão e chamadas ao banco
+function guardarSessao(d){ try { sessionStorage.setItem("sgt", JSON.stringify({ t: d.access_token, r: d.refresh_token, u: d.user.id })); } catch {} }
+function lerSessao(){ try { return JSON.parse(sessionStorage.getItem("sgt")); } catch { return null; } }
+function limparSessao(){ try { sessionStorage.removeItem("sgt"); } catch {} }
+
+async function renovar(){
+  const s = lerSessao(); if (!s || !s.r) return false;
+  const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token", {
+    method: "POST", headers: { "Content-Type": "application/json", "apikey": CHAVE_PUBLICA }, body: JSON.stringify({ refresh_token: s.r }) });
+  if (!r.ok) return false;
+  guardarSessao(await r.json()); return true;
+}
+
+// Chamada autenticada à API do banco; renova a sessão uma vez se ela vencer
+async function api(caminho, opcoes = {}, tentou = false){
+  const s = lerSessao();
+  if (!s) throw new Error("sessao");
+  const r = await fetch(SUPABASE_URL + caminho, { ...opcoes, headers: {
+    "apikey": CHAVE_PUBLICA, "Authorization": "Bearer " + s.t, "Content-Type": "application/json", ...(opcoes.headers || {}) } });
+  if (r.status === 401 && !tentou && await renovar()) return api(caminho, opcoes, true);
+  if (r.status === 401) { limparSessao(); mostrar("v-entrar"); aviso("a-entrar", "Sua sessão expirou. Entre novamente."); throw new Error("sessao"); }
+  const txt = await r.text(); let corpo = null; try { corpo = txt ? JSON.parse(txt) : null; } catch { corpo = txt; }
+  if (!r.ok) { const e = new Error((corpo && (corpo.message || corpo.msg)) || "Erro " + r.status); e.status = r.status; e.corpo = corpo; throw e; }
+  return corpo;
+}
+
+function traduzErro(e){
+  const m = (e && e.message) || "";
+  if (/colaborador_cpf_key|duplicate key.*cpf/i.test(m)) return "Já existe uma pessoa cadastrada com este CPF.";
+  if (/colaborador_email_key|duplicate key.*email/i.test(m)) return "Este e-mail já está cadastrado para outra pessoa.";
+  if (/cpf_check|cpf_valido/i.test(m)) return "CPF inválido.";
+  if (/Somente o superadministrador/i.test(m)) return "Somente o superadministrador pode alterar este cadastro ou acesso.";
+  if (/pelo menos um superadministrador/i.test(m)) return "O SGT precisa de pelo menos um superadministrador.";
+  if (/pelo menos um administrador/i.test(m)) return "O SGT precisa de pelo menos um administrador ativo. Dê o nível de administrador a outra pessoa antes de tirar este.";
+  if (/permission denied|row-level security|Sem permissão/i.test(m)) return "Você não tem permissão para esta ação.";
+  if (/Failed to fetch|NetworkError/i.test(m)) return "Sem conexão com o SGT. Verifique sua internet.";
+  return m || "Não foi possível concluir agora. Tente de novo.";
+}
+
+async function chamarFuncao(corpo){
+  const r = await fetch(FUNCAO, { method: "POST", headers: { "Content-Type": "application/json", "apikey": CHAVE_PUBLICA }, body: JSON.stringify(corpo) });
+  let d = {}; try { d = await r.json(); } catch {}
+  return { ok: r.ok, ...d };
+}
+
+// ---------- Entrar
+$("f-entrar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const cpf = so_numeros($("e-cpf").value), senha = $("e-senha").value;
+  if (!cpfValido(cpf)) return aviso("a-entrar", "Confira o CPF digitado.");
+  if (!senha) return aviso("a-entrar", "Digite sua senha.");
+  ocupado(e.target, true);
+  try {
+    const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
+      method: "POST", headers: { "Content-Type": "application/json", "apikey": CHAVE_PUBLICA },
+      body: JSON.stringify({ email: cpf + DOMINIO_INTERNO, password: senha }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error("credenciais");
+    guardarSessao(d);
+    await abrirInicio();
+    e.target.reset();
+  } catch {
+    aviso("a-entrar", "CPF ou senha incorretos. Se ainda não criou sua senha, use Primeiro acesso.");
+  } finally { ocupado(e.target, false); }
+});
+
+// ---------- Primeiro acesso · 1
+async function solicitarCodigo(cpf, nasc, avisoId){
+  const d = await chamarFuncao({ acao: "solicitar_codigo", cpf, data_nascimento: nasc });
+  if (!d.ok) { aviso(avisoId, d.erro || "Não foi possível continuar agora. Tente de novo."); return false; }
+  $("pa2-sub").textContent = `Enviamos um código de 6 dígitos para ${d.enviado_para}. Ele vale por ${d.validade_min} minutos. Confira também a caixa de spam.`;
+  return true;
+}
+$("f-pa1").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const cpf = so_numeros($("p-cpf").value), nasc = $("p-nasc").value;
+  if (!cpfValido(cpf)) return aviso("a-pa1", "Confira o CPF digitado.");
+  if (!nasc) return aviso("a-pa1", "Informe sua data de nascimento.");
+  ocupado(e.target, true);
+  try {
+    if (await solicitarCodigo(cpf, nasc, "a-pa1")) { cpfPrimeiroAcesso = cpf; mostrar("v-pa2"); $("p-cod").focus(); }
+  } catch { aviso("a-pa1", "Sem conexão com o SGT. Verifique sua internet."); }
+  finally { ocupado(e.target, false); }
+});
+$("reenviar").addEventListener("click", async () => {
+  try {
+    if (await solicitarCodigo(cpfPrimeiroAcesso, $("p-nasc").value, "a-pa2")) aviso("a-pa2", "Novo código enviado.", "ok");
+  } catch { aviso("a-pa2", "Sem conexão com o SGT. Verifique sua internet."); }
+});
+
+// ---------- Primeiro acesso · 2
+$("f-pa2").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const codigo = so_numeros($("p-cod").value), senha = $("p-senha").value;
+  if (codigo.length !== 6) return aviso("a-pa2", "O código tem 6 dígitos.");
+  if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return aviso("a-pa2", "A senha precisa ter pelo menos 8 caracteres, com letras e números.");
+  if (senha !== $("p-senha2").value) return aviso("a-pa2", "As senhas não são iguais.");
+  if (!$("p-lgpd").checked) return aviso("a-pa2", "Para continuar, marque a caixa de autorização de uso dos dados.");
+  ocupado(e.target, true);
+  try {
+    const d = await chamarFuncao({ acao: "confirmar", cpf: cpfPrimeiroAcesso, codigo, senha, aceite_lgpd: true });
+    if (!d.ok) return aviso("a-pa2", d.erro || "Não foi possível criar o acesso agora.");
+    e.target.reset();
+    mostrar("v-entrar");
+    $("e-cpf").value = cpfPrimeiroAcesso; $("e-cpf").dispatchEvent(new Event("input"));
+    aviso("a-entrar", "Acesso criado! Agora entre com seu CPF e a senha que você criou.", "ok");
+    $("e-senha").focus();
+  } catch { aviso("a-pa2", "Sem conexão com o SGT. Verifique sua internet."); }
+  finally { ocupado(e.target, false); }
+});
+
+// ---------- Início
+const pode = (...p) => eu && eu.papeis.some(x => x === "superadmin" || p.includes(x));
+const ehSuper = () => eu && eu.papeis.includes("superadmin");
+
+async function abrirInicio(){
+  const s = lerSessao();
+  const [c] = await api(`/rest/v1/colaborador?select=id,nome&auth_user_id=eq.${s.u}`);
+  if (!c) throw new Error("sem cadastro");
+  const ps = await api(`/rest/v1/papel_usuario?select=papel&colaborador_id=eq.${c.id}`);
+  eu = { id: c.id, nome: c.nome, papeis: ps.map(p => p.papel) };
+  $("ola").textContent = "Olá, " + c.nome.split(" ")[0] + "!";
+  const nomes = ["superadmin","admin","gerencia","rh","lideranca","colaborador"].filter(p => eu.papeis.includes(p)).map(p => NOMES_PAPEIS[p]);
+  $("perfil-txt").textContent = "Seu perfil: " + (nomes.join(" · ") || "Colaborador(a)");
+
+  const f = [];
+  if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
+  f.push(`<button class="ferr" disabled><span class="ico">✈</span><span>Gestão de Férias<small>Em breve</small></span></button>`);
+  if (ehSuper()) f.push(`<button class="ferr" id="ir-tecnica"><span class="ico">&lt;/&gt;</span><span>Área técnica<small>Código, banco de dados e configurações do SGT</small></span></button>`);
+  $("ferramentas").innerHTML = f.join("");
+  if ($("ir-painel")) $("ir-painel").addEventListener("click", abrirPainel);
+  if ($("ir-tecnica")) $("ir-tecnica").addEventListener("click", () => mostrar("v-tecnica"));
+  mostrar("v-inicio");
+}
+$("sair").addEventListener("click", async () => {
+  try { await api("/auth/v1/logout", { method: "POST" }); } catch {}
+  limparSessao(); eu = null; mostrar("v-entrar");
+});
+
+// ---------- Painel
+function trocarAba(id){
+  document.querySelectorAll(".abas button").forEach(b => b.classList.toggle("on", b.dataset.aba === id));
+  ["aba-usuarios","aba-novo","aba-lote"].forEach(a => $(a).classList.toggle("oculto", a !== id));
+}
+document.querySelectorAll(".abas button").forEach(b => b.addEventListener("click", () => trocarAba(b.dataset.aba)));
+$("voltar-inicio").addEventListener("click", () => mostrar("v-inicio"));
+
+async function abrirPainel(){
+  mostrar("v-painel"); trocarAba("aba-usuarios");
+  await carregarUsuarios();
+}
+
+async function carregarUsuarios(){
+  $("lista").innerHTML = `<div class="resumo">Carregando…</div>`;
+  try {
+    usuarios = await api("/rest/v1/usuarios_admin?select=*&order=nome.asc");
+    desenharLista();
+  } catch (e) { if (e.message !== "sessao") aviso("a-lista", traduzErro(e)); $("lista").innerHTML = ""; }
+}
+
+function semAcento(s){ return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+
+function desenharLista(){
+  const q = semAcento($("busca").value.trim()), qn = so_numeros($("busca").value);
+  const fp = $("f-perfil").value, fs = $("f-situacao").value;
+  const vis = usuarios.filter(u =>
+    (!q || semAcento(u.nome).includes(q) || semAcento(u.email).includes(q) || (qn.length >= 3 && u.cpf.includes(qn))) &&
+    (!fp || u.papeis.includes(fp)) &&
+    (!fs || (fs === "sem-acesso" ? !u.acesso_ativado : u.situacao === fs)));
+  const ativados = usuarios.filter(u => u.acesso_ativado).length;
+  $("resumo").textContent = `${usuarios.length} pessoas no quadro · ${ativados} já criaram o acesso` + (vis.length !== usuarios.length ? ` · mostrando ${vis.length}` : "");
+  $("lista").innerHTML = vis.length ? vis.map(u => {
+    const extras = u.papeis.filter(p => p !== "colaborador").map(p => `<span class="tag${p === "superadmin" ? " lar" : ""}">${NOMES_PAPEIS[p]}</span>`).join("");
+    const sit = u.situacao === "desligado" ? `<span class="tag verm">Desligado</span>` : u.situacao !== "ativo" ? `<span class="tag cinza">${NOMES_SIT[u.situacao]}</span>` : "";
+    const acc = u.acesso_ativado ? `<span class="tag verde">Acesso ativo</span>` : `<span class="tag cinza">Sem acesso</span>`;
+    return `<div class="pessoa" data-id="${u.id}"><div><b>${esc(u.nome)}</b>
+      <div class="meta">${cpfOculto(u.cpf)} · ${esc(u.email)}${u.cargo ? " · " + esc(u.cargo) : ""}</div></div>
+      <div class="tags">${extras}${sit}${acc}</div></div>`;
+  }).join("") : `<div class="resumo">Ninguém encontrado.</div>`;
+  document.querySelectorAll(".pessoa").forEach(el => el.addEventListener("click", () => abrirEdicao(el.dataset.id)));
+}
+["busca","f-perfil","f-situacao"].forEach(id => $(id).addEventListener("input", desenharLista));
+
+// ---------- Editar pessoa
+function abrirEdicao(id){
+  editando = usuarios.find(u => u.id === id); if (!editando) return;
+  const u = editando, souAdmin = pode("admin"), alvoSuper = u.papeis.includes("superadmin"), bloqueado = alvoSuper && !ehSuper();
+  $("ed-nome").textContent = u.nome;
+  $("ed-sub").textContent = `CPF ${fmtCPF(u.cpf)}${u.vaga_codigo ? " · vaga " + u.vaga_codigo : ""}${u.cargo ? " · " + u.cargo : ""}`;
+  $("ed-nome-in").value = u.nome; $("ed-email").value = u.email; $("ed-nasc").value = u.data_nascimento || "";
+  $("ed-adm").value = u.data_admissao || ""; $("ed-sit").value = u.situacao;
+  document.querySelectorAll("[data-papel]").forEach(cb => { cb.checked = u.papeis.includes(cb.dataset.papel); cb.disabled = !souAdmin || bloqueado; });
+  $("ed-super").classList.toggle("oculto", !ehSuper());
+  $("ed-perm-ajuda").textContent = bloqueado ? "Esta pessoa é superadministradora. Só um superadministrador pode alterar este cadastro e os acessos dela."
+    : souAdmin ? "Todos têm o nível Colaborador(a). Marque os demais." : "Só administradores podem mudar os níveis de acesso.";
+  $("f-editar").querySelectorAll("input,select,button").forEach(el => { if (!el.dataset.papel) el.disabled = bloqueado; });
+  $("ed-acesso").textContent = u.acesso_ativado
+    ? "Esta pessoa já criou a senha. Se ela esqueceu, libere um novo primeiro acesso: o login atual é apagado e ela cria outra senha pelo botão Primeiro acesso. O cadastro e o histórico continuam."
+    : "Esta pessoa ainda não criou a senha. Ela deve usar o botão Primeiro acesso na tela de entrada.";
+  $("ed-liberar").classList.toggle("oculto", !(u.acesso_ativado && souAdmin && !bloqueado));
+  mostrar("v-editar");
+}
+$("ed-voltar").addEventListener("click", async () => { mostrar("v-painel"); trocarAba("aba-usuarios"); await carregarUsuarios(); });
+
+$("f-editar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const u = editando;
+  const dados = { nome: $("ed-nome-in").value.trim(), email: $("ed-email").value.trim().toLowerCase(),
+    data_nascimento: $("ed-nasc").value, data_admissao: $("ed-adm").value || null, situacao: $("ed-sit").value,
+    atualizado_em: new Date().toISOString() };
+  if (!dados.nome) return aviso("a-editar", "Informe o nome.");
+  if (!emailValido(dados.email)) return aviso("a-editar", "Confira o e-mail.");
+  if (!dados.data_nascimento) return aviso("a-editar", "Informe a data de nascimento.");
+  if (u.id === eu.id && dados.situacao === "desligado") return aviso("a-editar", "Você não pode marcar a si mesmo como desligado.");
+  const marcados = [...document.querySelectorAll("[data-papel]")].filter(c => c.checked).map(c => c.dataset.papel);
+  const tirar = pode("admin") ? u.papeis.filter(p => p !== "colaborador" && !marcados.includes(p)) : [];
+  const dar = pode("admin") ? marcados.filter(p => !u.papeis.includes(p)) : [];
+  if (u.id === eu.id && tirar.includes("superadmin")) return aviso("a-editar", "Você não pode tirar o seu próprio nível de superadministrador.");
+  if (u.id === eu.id && tirar.includes("admin")) return aviso("a-editar", "Você não pode tirar o seu próprio nível de administrador. Peça a outro administrador.");
+  ocupado(e.target, true);
+  try {
+    await api(`/rest/v1/colaborador?id=eq.${u.id}`, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: JSON.stringify(dados) });
+    for (const p of dar) await api("/rest/v1/papel_usuario", { method: "POST", headers: { "Prefer": "return=minimal" },
+      body: JSON.stringify({ colaborador_id: u.id, papel: p, origem: "manual", concedido_por: eu.id }) });
+    for (const p of tirar) await api(`/rest/v1/papel_usuario?colaborador_id=eq.${u.id}&papel=eq.${p}`, { method: "DELETE" });
+    Object.assign(u, dados, { papeis: [...u.papeis.filter(p => !tirar.includes(p)), ...dar] });
+    $("ed-nome").textContent = u.nome;
+    aviso("a-editar", "Alterações salvas.", "ok");
+  } catch (err) { if (err.message !== "sessao") aviso("a-editar", traduzErro(err)); }
+  finally { ocupado(e.target, false); if (!pode("admin")) document.querySelectorAll("[data-papel]").forEach(c => c.disabled = true); }
+});
+
+let confirmaLiberar = false;
+$("ed-liberar").addEventListener("click", async () => {
+  if (!confirmaLiberar) {
+    confirmaLiberar = true; $("ed-liberar").textContent = "Confirmar: apagar o login atual";
+    aviso("a-editar", `A senha atual de ${editando.nome.split(" ")[0]} deixará de funcionar. Clique de novo para confirmar.`, "alerta");
+    setTimeout(() => { confirmaLiberar = false; $("ed-liberar").textContent = "Liberar novo primeiro acesso"; }, 8000);
+    return;
+  }
+  confirmaLiberar = false; $("ed-liberar").textContent = "Liberar novo primeiro acesso";
+  try {
+    await api("/rest/v1/rpc/liberar_novo_acesso", { method: "POST", body: JSON.stringify({ p_colaborador: editando.id }) });
+    editando.acesso_ativado = false; $("ed-liberar").classList.add("oculto");
+    $("ed-acesso").textContent = "Novo primeiro acesso liberado. Avise a pessoa para usar o botão Primeiro acesso na tela de entrada.";
+    aviso("a-editar", "Pronto. O login anterior foi apagado.", "ok");
+  } catch (err) { if (err.message !== "sessao") aviso("a-editar", traduzErro(err)); }
+});
+
+// ---------- Cadastrar pessoa
+$("f-novo").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const d = { nome: $("n-nome").value.trim(), cpf: so_numeros($("n-cpf").value), data_nascimento: $("n-nasc").value,
+    email: $("n-email").value.trim().toLowerCase(), data_admissao: $("n-adm").value || null };
+  if (!d.nome) return aviso("a-novo", "Informe o nome completo.");
+  if (!cpfValido(d.cpf)) return aviso("a-novo", "CPF inválido. Confira os números.");
+  if (!d.data_nascimento) return aviso("a-novo", "Informe a data de nascimento.");
+  if (!emailValido(d.email)) return aviso("a-novo", "Confira o e-mail.");
+  ocupado(e.target, true);
+  try {
+    await api("/rest/v1/colaborador", { method: "POST", headers: { "Prefer": "return=minimal" }, body: JSON.stringify(d) });
+    e.target.reset();
+    aviso("a-novo", `${d.nome} foi cadastrado(a). Já pode fazer o primeiro acesso com CPF e data de nascimento.`, "ok");
+    usuarios = [];
+  } catch (err) { if (err.message !== "sessao") aviso("a-novo", traduzErro(err)); }
+  finally { ocupado(e.target, false); }
+});
+document.querySelector('[data-aba="aba-usuarios"]').addEventListener("click", () => { if (!usuarios.length) carregarUsuarios(); });
+
+// ---------- Importar planilha
+let linhasImport = [];
+
+$("modelo").addEventListener("click", (e) => {
+  e.preventDefault();
+  const csv = "﻿Nome;CPF;Data de nascimento;E-mail;Código da vaga;Data de admissão;Situação\n" +
+              "Maria da Silva;52998224725;21/03/1990;maria@exemplo.com;SN11-001;01/02/2025;Ativo\n";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "modelo_quadro_sgt.csv"; document.body.appendChild(a); a.click(); a.remove();
+});
+
+function carregarSheetJS(){
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, falha) => { const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"; s.onload = ok; s.onerror = falha; document.head.appendChild(s); });
+}
+
+// Converte o que vier na célula (número do Excel, dd/mm/aaaa, aaaa-mm-dd) em aaaa-mm-dd
+function paraISO(v){
+  if (v === null || v === undefined || v === "") return "";
+  if (typeof v === "number" && v > 1000 && v < 90000) {
+    const d = new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 864e5);
+    return d.toISOString().slice(0, 10);
+  }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) { let a = +m[3]; if (a < 100) a += a > 30 ? 1900 : 2000;
+    const dd = +m[1], mm = +m[2]; if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return "INVALIDA";
+    return `${a}-${String(mm).padStart(2,"0")}-${String(dd).padStart(2,"0")}`; }
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return "INVALIDA";
+}
+const norm = (h) => semAcento(h).replace(/[^a-z0-9]/g, "");
+function acharColuna(cabecalhos, testes){ return cabecalhos.find(h => testes.some(t => t(norm(h)))); }
+
+function normalizarSituacao(v){
+  const s = semAcento(String(v || "")).trim();
+  if (!s) return "";
+  if (s.startsWith("ativ")) return "ativo";
+  if (s.startsWith("afast") || s.includes("licen")) return "afastado";
+  if (s.startsWith("feri")) return "ferias";
+  if (s.startsWith("deslig") || s.includes("rescis") || s.startsWith("inativ")) return "desligado";
+  return "";
+}
+
+$("arq").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; $("previa").classList.add("oculto"); linhasImport = [];
+  if (!f) return;
+  aviso("a-lote", "Lendo a planilha…", "alerta");
+  try {
+    await carregarSheetJS();
+    const csv = /\.csv$/i.test(f.name);
+    const wb = csv ? XLSX.read(await f.text(), { type: "string", raw: true }) : XLSX.read(await f.arrayBuffer(), { type: "array" });
+    // usa a primeira aba que tenha uma coluna de CPF
+    let linhas = [], cab = [];
+    for (const nome of wb.SheetNames) {
+      const l = XLSX.utils.sheet_to_json(wb.Sheets[nome], { raw: true, defval: "" });
+      if (l.length && Object.keys(l[0]).some(h => norm(h).includes("cpf"))) { linhas = l; cab = Object.keys(l[0]); break; }
+    }
+    if (!linhas.length) return aviso("a-lote", "Não encontrei uma coluna de CPF na planilha. Confira o cabeçalho (primeira linha).");
+
+    const col = {
+      nome: acharColuna(cab, [h => h === "nome" || h === "nomecompleto" || h === "colaborador" || h === "colaboradora", h => h.startsWith("nome") && !h.includes("mae") && !h.includes("pai") && !h.includes("social")]),
+      cpf: acharColuna(cab, [h => h === "cpf", h => h.includes("cpf")]),
+      nasc: acharColuna(cab, [h => h.includes("nascimento"), h => h === "dtnasc" || h === "datanasc"]),
+      email: acharColuna(cab, [h => h === "email" || h === "emailpessoal", h => h.includes("email")]),
+      vaga: acharColuna(cab, [h => h.includes("codigodavaga") || h.includes("codigovaga") || h === "vaga" || h === "codvaga"]),
+      adm: acharColuna(cab, [h => h.includes("admissao")]),
+      sit: acharColuna(cab, [h => h === "situacao" || h === "status" || h.includes("situacao")]),
+    };
+    const faltam = [["nome","Nome"],["cpf","CPF"],["nasc","Data de nascimento"],["email","E-mail"]].filter(([k]) => !col[k]).map(([,n]) => n);
+    if (faltam.length) return aviso("a-lote", "Faltam colunas obrigatórias: " + faltam.join(", ") + ".");
+
+    linhasImport = linhas.map((l, i) => {
+      const r = { linha: i + 2, nome: String(l[col.nome]).trim(), cpf: so_numeros(String(l[col.cpf])).padStart(11, "0"),
+        data_nascimento: paraISO(l[col.nasc]), email: String(l[col.email]).trim().toLowerCase(),
+        vaga_codigo: col.vaga ? String(l[col.vaga]).trim() : "", data_admissao: col.adm ? paraISO(l[col.adm]) : "",
+        situacao: col.sit ? normalizarSituacao(l[col.sit]) : "" };
+      const p = [];
+      if (!r.nome) p.push("sem nome");
+      if (!cpfValido(r.cpf)) p.push("CPF inválido");
+      if (!r.data_nascimento || r.data_nascimento === "INVALIDA") p.push("data de nascimento inválida");
+      if (!emailValido(r.email)) p.push("e-mail inválido");
+      if (r.data_admissao === "INVALIDA") r.data_admissao = "";
+      r.problema = p.join(", ");
+      return r;
+    }).filter(r => r.nome || so_numeros(r.cpf) !== "00000000000");
+
+    const ok = linhasImport.filter(r => !r.problema), ruins = linhasImport.filter(r => r.problema);
+    const cpfs = new Set(), dup = [];
+    ok.forEach(r => { if (cpfs.has(r.cpf)) dup.push(r); cpfs.add(r.cpf); });
+    dup.forEach(r => r.problema = "CPF repetido na planilha");
+    const validas = linhasImport.filter(r => !r.problema);
+
+    $("previa-tit").textContent = `${validas.length} pessoas prontas para importar` + (linhasImport.length - validas.length ? ` · ${linhasImport.length - validas.length} com problema (não serão importadas)` : "");
+    $("previa-tab").innerHTML = `<tr><th>Linha</th><th>Nome</th><th>CPF</th><th>Nascimento</th><th>E-mail</th><th>Situação</th></tr>` +
+      [...linhasImport.filter(r => r.problema), ...validas].slice(0, 600).map(r => `<tr${r.problema ? ' style="background:#fef3f2"' : ""}>
+        <td>${r.linha}</td><td>${esc(r.nome)}${r.problema ? `<div style="color:#b42318;font-size:12px">${esc(r.problema)}</div>` : ""}</td>
+        <td>${cpfOculto(r.cpf)}</td><td>${r.data_nascimento === "INVALIDA" ? "—" : fmtData(r.data_nascimento)}</td><td>${esc(r.email)}</td>
+        <td>${NOMES_SIT[r.situacao] || "Ativo"}</td></tr>`).join("");
+    $("importar").textContent = `Importar ${validas.length} pessoas`;
+    $("importar").disabled = !validas.length;
+    $("previa").classList.remove("oculto");
+    aviso("a-lote", "Confira a prévia abaixo antes de importar.", "alerta");
+  } catch (err) { aviso("a-lote", "Não consegui ler o arquivo. Ele precisa ser .xlsx, .xls ou .csv."); }
+});
+
+$("importar").addEventListener("click", async () => {
+  const validas = linhasImport.filter(r => !r.problema);
+  if (!validas.length) return;
+  $("importar").disabled = true;
+  let importados = 0, semVaga = 0, erros = [];
+  try {
+    for (let i = 0; i < validas.length; i += 200) {
+      const lote = validas.slice(i, i + 200);
+      aviso("a-lote", `Importando… ${Math.min(i + 200, validas.length)} de ${validas.length}`, "alerta");
+      const r = await api("/rest/v1/rpc/importar_quadro", { method: "POST", body: JSON.stringify({ linhas: lote.map(({ linha, problema, ...x }) => x) }) });
+      importados += r.importados; semVaga += r.sem_vaga || 0;
+      (r.erros || []).forEach(er => erros.push(`Linha ${lote[er.linha - 1].linha} (${er.nome}): ${er.erro}`));
+    }
+    let msg = `${importados} pessoas importadas ou atualizadas.`;
+    if (semVaga) msg += `\n${semVaga} entraram sem vaga, porque o código ainda não existe no Quadro Geral.`;
+    if (erros.length) msg += `\n\nNão importadas:\n` + erros.slice(0, 30).join("\n") + (erros.length > 30 ? `\n… e mais ${erros.length - 30}.` : "");
+    aviso("a-lote", msg, erros.length ? "alerta" : "ok");
+    $("previa").classList.add("oculto"); $("arq").value = ""; usuarios = [];
+  } catch (err) { if (err.message !== "sessao") aviso("a-lote", traduzErro(err)); $("importar").disabled = false; }
+});
+
+// ---------- Ao abrir a página
+(async () => { if (lerSessao()) { try { await abrirInicio(); } catch { limparSessao(); mostrar("v-entrar"); } } })();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SGT · Projeto GA BA</title>
 <meta name="theme-color" content="#0f4c5c">
 <style>
   :root{
