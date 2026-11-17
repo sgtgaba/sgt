@@ -2,7 +2,7 @@
 // Usa as funções globais do index.html: api, aviso, mostrar, esc, eu, pode, traduzErro.
 (() => {
   const $ = (id) => document.getElementById(id);
-  const PORTAL = "https://sgtgaba.github.io/sgt/talentos/";
+  const PORTAL = "https://bancogeraldetalentosgaba.github.io/";
   const COMP = { comunicacao: "Comunicação", organizacao: "Organização", equipe: "Trabalho em equipe", resolucao: "Resolução de problemas",
     resultados: "Foco em resultados", escuta: "Escuta e postura democrática", dados: "Análise de dados", tecnologia: "Tecnologia",
     pedagogico: "Visão pedagógica", interpretacao: "Interpretação (teste 1)", logica: "Raciocínio lógico (teste 2)" };
