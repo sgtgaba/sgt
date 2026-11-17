@@ -332,10 +332,10 @@ const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", des
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || id.startsWith("v-fer"));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || id.startsWith("v-fer") || id.startsWith("v-tal"));
   window.scrollTo(0, 0);
 }
-function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso " + tipo; a.textContent = texto; }
+function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso" + (texto ? " " + tipo : ""); a.textContent = texto; }
 function ocupado(form, sim){ form.querySelectorAll("button,input,select").forEach(e => e.disabled = sim); }
 document.querySelectorAll("[data-ir]").forEach(b => b.addEventListener("click", () => mostrar(b.dataset.ir)));
 
@@ -483,10 +483,12 @@ async function abrirInicio(){
   const f = [];
   if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
   f.push(`<button class="ferr" id="ir-ferias"><span class="ico">✈</span><span>Gestão de Férias<small>Informar férias, enviar comprovante e aviso assinado</small></span></button>`);
+  if (pode("admin","rh","gerencia")) f.push(`<button class="ferr" id="ir-talentos"><span class="ico">★</span><span>Banco de Talentos<small>Inscrições, ranking, aderência às vagas e banco de questões</small></span></button>`);
   if (ehSuper()) f.push(`<button class="ferr" id="ir-tecnica"><span class="ico">&lt;/&gt;</span><span>Área técnica<small>Código, banco de dados e configurações do SGT</small></span></button>`);
   $("ferramentas").innerHTML = f.join("");
   if ($("ir-painel")) $("ir-painel").addEventListener("click", abrirPainel);
   if ($("ir-ferias")) $("ir-ferias").addEventListener("click", () => window.Ferias && Ferias.abrir());
+  if ($("ir-talentos")) $("ir-talentos").addEventListener("click", () => window.Talentos && Talentos.abrir());
   if ($("ir-tecnica")) $("ir-tecnica").addEventListener("click", () => mostrar("v-tecnica"));
   mostrar("v-inicio");
 }
@@ -758,5 +760,6 @@ $("importar").addEventListener("click", async () => {
 (async () => { if (lerSessao()) { try { await abrirInicio(); } catch { limparSessao(); mostrar("v-entrar"); } } })();
 </script>
 <script src="ferias.js?v=1"></script>
+<script src="talentos.js?v=1"></script>
 </body>
 </html>
