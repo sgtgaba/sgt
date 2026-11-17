@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formulário de Relatório · CAT · SGT</title>
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icones/favicon-32.png">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<meta name="theme-color" content="#1B3B64">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1B3B64; --navy2:#142D4D; --pink:#E61080; --green:#92BB21; --orange:#FB7C00;
+    --tint:#EAF0F7; --pinktint:#FDE7F2; --greentint:#F3F8E6; --line:#D7DFEA; --text:#22303F; --muted:#6B7A8C;
+    --bg:#F5F7FB; --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:Lato,Arial,sans-serif;color:var(--text);background:var(--bg);font-size:14.5px}
+  button{font-family:inherit}
+  /* ---------- top bar ---------- */
+  .top{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 22px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{height:34px}
+  .brand .t1{font-weight:900;font-size:16px;letter-spacing:.2px}
+  .brand .t2{font-size:11.5px;opacity:.75}
+  .stripe{height:4px;background:linear-gradient(90deg,var(--pink) 0 40%,var(--green) 40% 75%,var(--orange) 75%)}
+  .top .sp{flex:1}
+  .top .user{font-size:12px;opacity:.8;margin-right:6px}
+  .btn{border:0;border-radius:8px;padding:9px 16px;font-weight:700;font-size:13.5px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:rgba(255,255,255,.12);color:#fff}
+  .btn-ghost:hover{background:rgba(255,255,255,.22)}
+  .btn-primary{background:var(--pink);color:#fff}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-navy{background:var(--navy);color:#fff}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-line{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+  .btn-line:hover{border-color:var(--navy)}
+  .btn-sm{padding:6px 11px;font-size:12.5px}
+  /* ---------- layout ---------- */
+  .wrap{display:grid;grid-template-columns:250px minmax(0,1fr) 320px;gap:20px;max-width:1440px;margin:0 auto;padding:20px}
+  @media(max-width:1180px){.wrap{grid-template-columns:220px minmax(0,1fr)}.guide{display:none}}
+  @media(max-width:760px){.wrap{grid-template-columns:1fr}.steps{display:none}}
+  .steps{position:sticky;top:80px;align-self:start;background:#fff;border-radius:var(--r);border:1px solid var(--line);padding:10px}
+  .steps h4{margin:6px 10px 10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .step{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--text);font-size:13.5px}
+  .step:hover{background:var(--tint)}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;background:var(--tint);color:var(--navy);flex:none}
+  .step.on{background:var(--navy);color:#fff}
+  .step.on .n{background:var(--pink);color:#fff}
+  .step.ok .n{background:var(--green);color:#fff}
+  .deadline{margin-top:12px;border-radius:8px;padding:10px 12px;font-size:12.5px;background:var(--greentint);border-left:4px solid var(--green)}
+  .deadline.late{background:#FFF0F0;border-color:#D93025}
+  .deadline.soon{background:#FFF4E8;border-color:var(--orange)}
+  .deadline b{display:block;font-size:15px;color:var(--navy)}
+  /* ---------- main ---------- */
+  .card{background:#fff;border-radius:var(--r);border:1px solid var(--line);padding:26px 28px;margin-bottom:16px}
+  .card h2{margin:0 0 4px;color:var(--navy);font-size:21px;font-weight:900}
+  .card h2 .k{color:var(--pink);margin-right:6px}
+  .card .lead{color:var(--muted);margin:0 0 20px}
+  .sec{display:none}
+  .sec.on{display:block;animation:f .2s}
+  @keyframes f{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+  .grid .full{grid-column:1/-1}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  label.f{display:block;font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:5px}
+  label.f small{font-weight:400;color:var(--muted)}
+  input[type=text],input[type=password],input[type=date],input[type=time],input[type=url],input[type=number],select,textarea{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;color:var(--text);background:#fff;transition:.15s}
+  input:focus,select:focus,textarea:focus{outline:0;border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,59,100,.1)}
+  textarea{min-height:90px;resize:vertical;line-height:1.5}
+  textarea.big{min-height:230px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{position:relative}
+  .chip input{position:absolute;opacity:0}
+  .chip span{display:inline-block;border:1.5px solid var(--line);border-radius:20px;padding:7px 13px;font-size:13px;cursor:pointer;user-select:none;background:#fff}
+  .chip input:checked+span{background:var(--navy);border-color:var(--navy);color:#fff}
+  .chip input:focus-visible+span{box-shadow:0 0 0 3px rgba(230,16,128,.25)}
+  .hint{font-size:12px;color:var(--muted);margin-top:5px}
+  .box{border-radius:8px;padding:12px 14px;font-size:13px;margin:4px 0 16px}
+  .box.info{background:var(--tint);border-left:4px solid var(--navy)}
+  .box.warn{background:#FFF4E8;border-left:4px solid var(--orange)}
+  .box.pink{background:var(--pinktint);border-left:4px solid var(--pink)}
+  .divider{height:1px;background:var(--line);margin:22px 0}
+  h3.sub{font-size:14px;color:var(--pink);margin:0 0 12px;font-weight:900;text-transform:uppercase;letter-spacing:.6px}
+  /* quotes */
+  .quote{display:flex;gap:10px;align-items:flex-start;background:var(--greentint);border-left:4px solid var(--green);border-radius:6px;padding:10px 12px;margin-bottom:8px}
+  .quote .tx{flex:1;font-style:italic;white-space:pre-wrap}
+  .quote .cx{display:block;font-style:normal;color:var(--muted);font-size:12px;margin-top:4px}
+  .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+  .x:hover{background:#fff;color:#D93025}
+  /* comp questions */
+  .q{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
+  .q .qt{font-weight:700;color:var(--navy);font-size:13.5px;margin-bottom:8px}
+  .q .tag{display:inline-block;font-size:10.5px;background:var(--pinktint);color:var(--pink);border-radius:10px;padding:2px 8px;margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  /* dropzone */
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s;background:#FAFBFD}
+  .drop.over,.drop:hover{border-color:var(--pink);background:var(--pinktint);color:var(--pink)}
+  .drop b{color:var(--navy)}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:14px}
+  .thumb{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;position:relative}
+  .thumb .im{height:120px;background:#EEF2F7 center/cover no-repeat;display:grid;place-items:center;color:var(--muted);font-size:12px}
+  .thumb input{border:0;border-top:1px solid var(--line);border-radius:0;font-size:12.5px;padding:8px 10px}
+  .thumb .x{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.9)}
+  .linkrow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+  .linkitem{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:13px}
+  .linkitem a{color:var(--navy);word-break:break-all;flex:1}
+  /* nav */
+  .nav{display:flex;align-items:center;gap:10px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:16px 0 4px}
+  .nav .sp{flex:1}
+  .saved{font-size:12px;color:var(--muted)}
+  /* guide */
+  .guide{position:sticky;top:80px;align-self:start;max-height:calc(100vh - 100px);overflow:auto}
+  .gcard{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .gcard .gh{background:var(--navy);color:#fff;padding:12px 16px;font-weight:900;font-size:13px;display:flex;gap:8px;align-items:center}
+  .gcard .gh .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+  .gcard .gb{padding:14px 16px}
+  .gcard .gb h5{margin:12px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--pink)}
+  .gcard .gb h5:first-child{margin-top:0}
+  .fala{border-left:3px solid var(--green);padding:4px 10px;margin:6px 0;font-style:italic;color:#3A4756;font-size:13px;background:#FAFCF5;border-radius:0 6px 6px 0}
+  .gcard ul{margin:4px 0;padding-left:18px;font-size:13px}
+  .gcard li{margin:3px 0}
+  /* review */
+  .check{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .check .i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#fff;flex:none}
+  .check .i.ok{background:var(--green)} .check .i.no{background:var(--orange)}
+  .result{border:2px solid var(--green);background:var(--greentint);border-radius:10px;padding:18px;margin-top:16px}
+  .result h4{margin:0 0 10px;color:var(--navy)}
+  .result .btns{display:flex;flex-wrap:wrap;gap:8px}
+  .result a{text-decoration:none}
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(15,30,50,.55);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:60px 20px}
+  .modal.on{display:flex}
+  .mbox{background:#fff;border-radius:12px;width:min(1050px,100%);max-height:calc(100vh - 120px);display:flex;flex-direction:column;overflow:hidden}
+  .mhead{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+  .mhead h3{margin:0;color:var(--navy);flex:1}
+  .mbody{overflow:auto;padding:0 20px 20px}
+  table.reg{width:100%;border-collapse:collapse;font-size:13px}
+  table.reg th{position:sticky;top:0;background:#fff;text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:12px 8px;border-bottom:2px solid var(--line)}
+  table.reg td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.reg tr:hover td{background:#FAFBFD}
+  .badge{display:inline-block;border-radius:12px;padding:3px 9px;font-size:11.5px;font-weight:700}
+  .badge.r{background:#FFF4E8;color:#B35900}
+  .badge.g{background:var(--greentint);color:#5C7A12}
+  /* overlay & toast */
+  .ov{position:fixed;inset:0;background:rgba(255,255,255,.75);display:none;place-items:center;z-index:60}
+  .ov.on{display:grid}
+  .spin{width:46px;height:46px;border:5px solid var(--tint);border-top-color:var(--pink);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 12px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .ov .msg{text-align:center;color:var(--navy);font-weight:700}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--navy);color:#fff;padding:11px 18px;border-radius:8px;font-size:13.5px;opacity:0;transition:.25s;z-index:70;pointer-events:none}
+  .toast.on{opacity:1;transform:translateX(-50%)}
+  .toast.err{background:#B3261E}
+  .denied{max-width:560px;margin:80px auto;text-align:center}
+  .auth{max-width:440px;margin:60px auto;padding:0 16px}
+  .auth .card{padding:30px}
+  .auth h2{margin:0 0 6px}
+  .auth .em{display:inline-block;background:var(--tint);color:var(--navy);border-radius:6px;padding:4px 10px;font-weight:700;font-size:13px;margin:4px 0 18px}
+  .auth label.f{margin-top:12px}
+  .auth .btn{width:100%;justify-content:center;margin-top:18px;padding:12px}
+  .auth .msg{margin-top:12px;font-size:13px;color:#B3261E;min-height:18px}
+  .auth .rules{font-size:12px;color:var(--muted);margin-top:6px}
+  .pwwrap{position:relative}
+  .pwwrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:700}
+  .admin-only,.need-login{display:none!important}
+  body.logged .need-login{display:inline-flex!important}
+  body.logged.is-admin .admin-only{display:inline-flex!important}
+  .ugrid{display:grid;grid-template-columns:1fr 160px auto;gap:8px;margin:14px 0}
+  @media(max-width:600px){.ugrid{grid-template-columns:1fr}}
+  .mobile-steps{display:none;margin-bottom:12px;font-weight:700;color:var(--navy)}
+  @media(max-width:980px){
+    .top{padding:8px 12px;gap:8px;flex-wrap:nowrap}
+    .brand .t2,.top .user,.idtag{display:none}
+    .brand .t1{font-size:14px;white-space:nowrap}
+    .brand img{height:28px}
+    .top .btn{padding:7px 10px;font-size:12.5px;white-space:nowrap}
+  }
+  @media(max-width:760px){
+    .mobile-steps{display:block}
+    .wrap{padding:12px}
+    .card{padding:18px 16px}
+    .top .btn .lbl{display:none}
+  }
+  .tr-panel{border:1.5px solid var(--line);border-radius:10px;padding:14px;margin-bottom:22px;background:#FAFBFD}
+  .tr-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;color:var(--navy)}
+  .tr-head .sp{flex:1}
+  .tr-status{font-size:12px;color:var(--muted)}
+  .tr-status.on{color:#D93025;font-weight:700}
+  .tr-status.on::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#D93025;margin-right:6px;animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+  .tr-live{font-style:italic;color:var(--muted);min-height:18px;font-size:13px;margin-top:6px}
+  main a{color:var(--pink);font-weight:700}
+  .result a{color:inherit}
+  .idtag{font-size:12px;background:rgba(255,255,255,.14);border-radius:6px;padding:4px 9px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABDCAMAAAAbI/NCAAAAYFBMVEUAAAD6ewL3BXl9vAH8AICRrwf4gwLuew55wwDwBnmExAP/AAJuqRTRFHOoHGr//wDhexd6fAPbE3LrfBGXqBN7sg61cirfjxf/AP8A/wB9rhizbzXqgRh59wJxenOBsxr2CKStAAAAIHRSTlMA/fz+/v79E/4P/gEXXRIBYAKhpRqaCyEBAVL+nwMFZZE2MNgAAAPCSURBVHjapVeJlqowDE2hCyCyKO6j/v9fvjRdSFnmKdPDGQfl3tykSRoAPllD+Kf3nzV8u24eN7zv9/v7Hpk+Wf0N3i9oCV/nlV3qDcPtI3BdP+sBThXUbY+OID63S1V3uPwK3NG6upt3lVcneKL+k8PneaE60vRfz+uhrk+VQpun12gfLyE6uOzWkU2DV9MclFL0fI4aAh5vES90B2YFXUKZhaUKD0K0ivqF+JWhBMhkJqXM8GNk8NadfVoGzjFoANeRoBwVzBhUHvG6682I93/cP3uZZQteOAYRCUYPytchw7AFD/YZEaAPzovoPcof8UIfjd/LEg74cAOlsQvtOwFSEoX1wjOoguGRQZyt7J3FW0teAYjgPolI4pDgaSNs8G4HD4CLMZcOiR2YR3LBvie4QnOQ4TnE2ktoFkPnD3kxta8tgdMfVvxxQkAapvgjUEXtuVSy7xiSQFqGJf0QCOQUH7yQWdgS/mNM5TZV8FD8mUAQNiQT02WoGPYxhI8idTPo8iJmGrQeXSD7drMnGmSMwzIDKrg2XuCjcqXKntEpwQIDenH1xf+IycYCKTxcxt1MGCze1p5NhIjnGqKCmNtpJLWAQCCKseKCBq29WRk2Y67B9gAkwC+VmjKQ/syVYxKGJBcNEeDDOpZsbHrZaNmJoDueaz/ntrUER/pOJW1Hs1yOQZjhfQP7oS81dwIzKou1wPFpP+o5gfUiZ17EsMnoSGoffD+LBKkXgYEckLNi0D8mnAqtj4H3QjEG1hTm8Y9noxkJljUsJcDxPJ5KCQFnUCmD4lVi2KmWEth8UIyBH1CMwexGghZMkp1qQYJv7CMDV4AMHQ+P8iOAPQVBxuNNEaFeIkCGKEFrFc9QZ58d0bZe/IOX9GR/BQJ9HNxMwgPAj7bAYCajgSfAs45uaRTi/isWFr1OoHF3z31f9zgVKRWbMq9TlRfrBLZFGpop63oYhtKuQzbB++NlicD2p/nMcxgrzKLD8Ton0LY6w8TTPp/PvmnKEs5PqHh6L28jQNfZiWthcuxxvI3DXV4psULg0wEWvwzjqSqEWFOAg4VZmVxRA6UFRuCRxYo0q0PmEsNL2W0tHmyA6M6fE8CzxTgoBbwr6MsXElBDj28ZsLfLadCd2X3/ukKLOhs21N2XLzxYYXZ8B/IDR1TTw5ZlZ1iKw+Wjt40lvO/02wicfVrNFvvXMINvJaAd8E2iKTcRxJG2hI0EQcC3WcBdoGub/Z3bBNslt9mPabSZwL9MyWx/vf6JYQ8N/EXD1j0MDM0E/w9JQi14ApPgsAAAAABJRU5ErkJggg==" alt="">
+    <div><div class="t1">Formulário de Relatório · CAT</div><div class="t2">Gestão da Aprendizagem Bahia · Apoio à Gestão</div></div>
+  </div>
+  <span class="idtag need-login" id="idtag">Nova escuta</span>
+  <div class="sp"></div>
+  <span class="user" id="user"></span>
+  <button class="btn btn-ghost need-login" onclick="novaEscuta()" title="Nova escuta">＋<span class="lbl"> Nova escuta</span></button>
+  <button class="btn btn-ghost need-login" onclick="abrirRegistros()" title="Registros">☰<span class="lbl"> Registros</span></button>
+  <button class="btn btn-ghost need-login" id="btnSair" onclick="sairApp()" title="Voltar ao SGT">←<span class="lbl"> SGT</span></button>
+</div>
+<div class="stripe"></div>
+
+<div id="app" class="wrap" style="display:none">
+  <!-- ===== STEPS ===== -->
+  <nav class="steps">
+    <h4>Etapas da escuta</h4>
+    <div id="stepList"></div>
+    <div id="deadline" class="deadline" style="display:none"></div>
+  </nav>
+
+  <!-- ===== MAIN ===== -->
+  <main>
+    <select id="stepSel" class="mobile-steps" onchange="go(+this.value)"></select>
+    <form id="form" onsubmit="return false" autocomplete="off">
+
+    <!-- 1 -->
+    <section class="sec card" data-step="1">
+      <h2><span class="k">1</span>Identificação</h2>
+      <p class="lead">Quem está sendo ouvido(a) e como a conversa acontece.</p>
+      <div class="grid">
+        <div class="full"><label class="f">Colaborador(a) * <small>(digite para buscar no quadro do projeto)</small></label><input type="text" data-path="identificacao.colaborador" list="sgtColabs" autocomplete="off"><input type="hidden" data-path="identificacao.colaboradorId"><datalist id="sgtColabs"></datalist></div>
+        <div><label class="f">Tratamento no relatório</label>
+          <select data-path="identificacao.tratamento"><option value="">Colaborador(a)</option><option>Colaboradora</option><option>Colaborador</option></select></div>
+        <div><label class="f">Cargo / função</label><input type="text" data-path="identificacao.cargo"></div>
+        <div><label class="f">Lotação / equipe</label><input type="text" data-path="identificacao.lotacao"></div>
+        <div><label class="f">Liderança imediata</label><input type="text" data-path="identificacao.lideranca"></div>
+        <div><label class="f">Responsável pela escuta *</label><input type="text" data-path="identificacao.responsavel"></div>
+        <div><label class="f">Função de quem ouviu</label><input type="text" data-path="identificacao.responsavelFuncao" placeholder="Ex.: consultor de Apoio à Gestão"></div>
+        <div><label class="f">Data da escuta</label><input type="date" data-path="identificacao.dataEscuta"></div>
+        <div><label class="f">Meio da escuta</label>
+          <select data-path="identificacao.meio"><option value=""></option><option>Videochamada</option><option>Telefone</option><option>Presencial</option></select></div>
+        <div><label class="f">Início da escuta</label><input type="time" data-path="identificacao.horaInicio"></div>
+        <div><label class="f">Fim da escuta</label><input type="time" data-path="identificacao.horaFim"></div>
+        <div class="full"><label class="f">Ciência sobre o uso dos dados (LGPD) *</label>
+          <div class="box pink" style="margin-top:4px">Informe antes de começar: <i>“Este registro serve para subsidiar a Comunicação de Acidente de Trabalho (CAT). Suas informações serão tratadas com sigilo, só pelas pessoas responsáveis, conforme a LGPD.”</i></div>
+          <div class="chips" data-radio="identificacao.cienciaLgpd">
+            <label class="chip"><input type="radio" name="lgpd" value="Informada e de acordo"><span>A pessoa foi informada e está de acordo</span></label>
+          </div></div>
+        <div class="full"><label class="f">Consentimento para transcrição automática da fala</label>
+          <div class="box pink" style="margin-top:4px">Pergunte antes de iniciar: <i>“Posso transcrever automaticamente nossa conversa para registrar sua fala com fidelidade? O áudio não fica gravado, apenas o texto, que você poderá revisar. Você pode recusar sem nenhum problema.”</i></div>
+          <div class="chips" data-radio="identificacao.gravacao" id="consent">
+            <label class="chip"><input type="radio" name="grav" value="Não autorizada"><span>Não autorizada</span></label>
+            <label class="chip"><input type="radio" name="grav" value="Autorizada pela pessoa"><span>Autorizada pela pessoa</span></label>
+          </div>
+          <input type="hidden" data-path="identificacao.consentimentoEm" id="consentEm">
+          <div class="hint" id="consentInfo">Sem autorização, a transcrição automática fica bloqueada. O registro é feito por digitação.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="sec card" data-step="2">
+      <h2><span class="k">2</span>Relato livre</h2>
+      <p class="lead">Deixe a pessoa contar do jeito dela. Registre com as palavras dela, sem interpretar.</p>
+      <div class="tr-panel">
+        <div class="tr-head"><b>Transcrição automática</b><span class="tr-status" id="trStatus">Requer consentimento (etapa 1)</span><div class="sp"></div>
+          <button type="button" class="btn btn-primary btn-sm" id="trBtn" onclick="toggleTranscricao()" disabled>🎙 Iniciar transcrição</button></div>
+        <textarea data-path="relato.transcricao" id="trText" placeholder="A transcrição aparece aqui. Você também pode colar a transcrição do Teams ou do Meet." style="min-height:150px"></textarea>
+        <div class="tr-live" id="trLive"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button type="button" class="btn btn-line btn-sm" onclick="trechoDaSelecao()">❝ Selecionado → trecho da fala</button>
+          <button type="button" class="btn btn-line btn-sm" onclick="transcricaoParaRelato()">↓ Copiar para o relato</button>
+        </div>
+        <div class="hint">A transcrição automática pode conter erros: revise com a pessoa. O áudio não é gravado nem armazenado; só o texto. Funciona no Google Chrome com microfone liberado.</div>
+      </div>
+      <label class="f">Relato <small>(digite ou cole; deixe uma linha em branco entre parágrafos)</small></label>
+      <textarea class="big" data-path="relato.livre" placeholder="Ex.: Ela contou que saiu de casa por volta das 7h30..."></textarea>
+      <div class="divider"></div>
+      <h3 class="sub">Trechos da fala</h3>
+      <p class="hint" style="margin-top:-6px">Registre falas marcantes exatamente como foram ditas. Elas aparecem em destaque no relatório.</p>
+      <div class="grid" style="margin-top:10px">
+        <div class="full"><textarea id="trechoTx" placeholder="Cole ou digite a fala do(a) colaborador(a)…" style="min-height:70px"></textarea></div>
+        <div><input type="text" id="trechoCx" placeholder="Contexto (opcional) – ex.: ao descrever o socorro"></div>
+        <div><button type="button" class="btn btn-navy" onclick="addTrecho()">＋ Adicionar trecho</button></div>
+      </div>
+      <div id="trechos" style="margin-top:14px"></div>
+    </section>
+
+    <!-- 3 -->
+    <section class="sec card" data-step="3">
+      <h2><span class="k">3</span>Dados da ocorrência</h2>
+      <p class="lead">Complete com o que surgiu no relato. Quem conduz a escuta não decide o enquadramento: registre os fatos.</p>
+      <div class="grid">
+        <div class="full"><label class="f">Tipo para o eSocial (S-2210) *</label>
+          <div class="chips" data-radio="ocorrencia.tipo">
+            <label class="chip"><input type="radio" name="tipo" value="Típico"><span>Típico</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="Trajeto"><span>Trajeto</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="Doença relacionada ao trabalho"><span>Doença relacionada ao trabalho</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="A definir (consultar SESMT/jurídico)"><span>A definir</span></label>
+          </div></div>
+        <div class="full"><label class="f">Circunstância <small>(marque todas que se aplicam — define as perguntas da etapa 4)</small></label>
+          <div class="chips" data-multi="ocorrencia.circunstancias" id="circ">
+            <label class="chip"><input type="checkbox" value="No local e durante a atividade" data-k="local"><span>No local e durante a atividade</span></label>
+            <label class="chip"><input type="checkbox" value="A serviço, fora do local habitual" data-k="servico"><span>A serviço, fora do local habitual</span></label>
+            <label class="chip"><input type="checkbox" value="Intervalo ou pausa no local" data-k="intervalo"><span>Intervalo ou pausa no local</span></label>
+            <label class="chip"><input type="checkbox" value="Trajeto casa–trabalho" data-k="trajeto"><span>Trajeto casa–trabalho</span></label>
+            <label class="chip"><input type="checkbox" value="Ato de terceiro (agressão, conflito)" data-k="terceiros"><span>Ato de terceiro</span></label>
+            <label class="chip"><input type="checkbox" value="Evento externo (incêndio, contaminação etc.)" data-k="externo"><span>Evento externo</span></label>
+            <label class="chip"><input type="checkbox" value="Adoecimento físico" data-k="adoecimento"><span>Adoecimento físico</span></label>
+            <label class="chip"><input type="checkbox" value="Adoecimento emocional / psíquico" data-k="adoecimento"><span>Adoecimento emocional / psíquico</span></label>
+            <label class="chip"><input type="checkbox" value="Agravamento de condição anterior" data-k="agravamento"><span>Agravamento de condição anterior</span></label>
+          </div>
+          <input type="text" data-path="ocorrencia.outraCircunstancia" placeholder="Outra circunstância (opcional)" style="margin-top:10px">
+        </div>
+        <div><label class="f">Data da ocorrência *</label><input type="date" data-path="ocorrencia.data" onchange="atualizaPrazo()"></div>
+        <div><label class="f">Hora aproximada</label><input type="time" data-path="ocorrencia.hora"></div>
+        <div><label class="f">Início dos sintomas <small>(adoecimento)</small></label><input type="date" data-path="ocorrencia.inicioSintomas"></div>
+        <div><label class="f">Horas trabalhadas antes</label><input type="text" data-path="ocorrencia.horasTrabalhadas" placeholder="Ex.: 2h ou Não se aplica"></div>
+        <div class="full"><label class="f">Local *<small> (endereço, ponto de referência)</small></label><input type="text" data-path="ocorrencia.local"></div>
+        <div><label class="f">Município / UF</label><input type="text" data-path="ocorrencia.municipio"></div>
+        <div><label class="f">Percurso habitual <small>(trajeto)</small></label>
+          <select data-path="ocorrencia.percursoHabitual"><option value=""></option><option>Sim</option><option>Não</option><option>Não se aplica</option></select></div>
+        <div><label class="f">Agente causador</label><input type="text" data-path="ocorrencia.agente" placeholder="Ex.: veículo, piso molhado, equipamento"></div>
+        <div><label class="f">Natureza da lesão ou agravo</label><input type="text" data-path="ocorrencia.natureza" placeholder="Ex.: corte, entorse, crise de ansiedade"></div>
+        <div><label class="f">Parte do corpo atingida</label><input type="text" data-path="ocorrencia.parteCorpo"></div>
+        <div><label class="f">Lado</label>
+          <select data-path="ocorrencia.lateralidade"><option value=""></option><option>Direito</option><option>Esquerdo</option><option>Ambos</option><option>Não se aplica</option></select></div>
+        <div class="full"><label class="f">Testemunhas <small>(nome e contato)</small></label><textarea data-path="ocorrencia.testemunhas" style="min-height:60px"></textarea></div>
+        <div><label class="f">Boletim de ocorrência</label>
+          <select data-path="ocorrencia.bo"><option value=""></option><option>Sim</option><option>Não</option><option>Não se aplica</option></select></div>
+        <div><label class="f">Número do BO</label><input type="text" data-path="ocorrencia.boNumero"></div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="sec card" data-step="4">
+      <h2><span class="k">4</span>Perguntas complementares</h2>
+      <p class="lead">Aparecem conforme a circunstância marcada na etapa 3. Use só o que não surgiu no relato livre.</p>
+      <div id="compEmpty" class="box info">Marque pelo menos uma circunstância na etapa 3 para ver as perguntas específicas. <a href="#" onclick="mostrarTodas();return false">Mostrar todas</a></div>
+      <div id="compList"></div>
+    </section>
+
+    <!-- 5 -->
+    <section class="sec card" data-step="5">
+      <h2><span class="k">5</span>Atendimento e afastamento</h2>
+      <p class="lead">Use o atestado ou relatório médico. Colete apenas o necessário para a CAT.</p>
+      <div class="grid">
+        <div class="full"><label class="f">Unidade de saúde</label><input type="text" data-path="atendimento.unidade"></div>
+        <div><label class="f">Data do atendimento</label><input type="date" data-path="atendimento.data"></div>
+        <div><label class="f">Hora do atendimento</label><input type="time" data-path="atendimento.hora"></div>
+        <div><label class="f">Profissional</label><input type="text" data-path="atendimento.medico"></div>
+        <div><label class="f">Registro profissional (CRM)</label><input type="text" data-path="atendimento.crm"></div>
+        <div><label class="f">Internação</label>
+          <select data-path="atendimento.internacao"><option value=""></option><option>Não</option><option>Sim</option></select></div>
+        <div><label class="f">Dias de afastamento</label><input type="number" min="0" data-path="atendimento.diasAfastamento"></div>
+        <div><label class="f">CID</label><input type="text" data-path="atendimento.cid"></div>
+        <div><label class="f">Retorno previsto</label><input type="date" data-path="atendimento.retorno"></div>
+        <div class="full"><label class="f">Conduta <small>(o que foi feito no atendimento, sem detalhes de tratamento)</small></label><input type="text" data-path="atendimento.conduta" placeholder="Ex.: raio-X e curativos; sem fratura"></div>
+        <div class="full"><label class="f">Atestado recebido <small>(quando e por onde chegou)</small></label><input type="text" data-path="atendimento.atestado" placeholder="Ex.: 16/11/2026, por volta das 8h, pelo formulário do projeto"></div>
+      </div>
+      <div class="box warn" style="margin-top:18px">Não registre medicamentos, exames ou detalhes de tratamento além do necessário. São dados sensíveis (LGPD).</div>
+    </section>
+
+    <!-- 6 -->
+    <section class="sec card" data-step="6">
+      <h2><span class="k">6</span>Bem-estar e apoio</h2>
+      <p class="lead">Cuidar da pessoa para além do registro.</p>
+      <div class="grid">
+        <div class="full"><label class="f">Como a pessoa está <small>(física e emocionalmente, nas palavras dela)</small></label><textarea data-path="bemEstar.comoEsta"></textarea></div>
+        <div class="full"><label class="f">Apoio solicitado pela pessoa</label><textarea data-path="bemEstar.apoioSolicitado"></textarea></div>
+        <div class="full"><label class="f">Encaminhamentos de cuidado oferecidos</label><textarea data-path="bemEstar.encaminhamentos" placeholder="Ex.: canal de apoio psicológico, ajuste de agenda no retorno"></textarea></div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="sec card" data-step="7">
+      <h2><span class="k">7</span>Atuação da empresa e da liderança</h2>
+      <p class="lead">Como a pessoa percebeu o apoio recebido. O objetivo é aprimorar processos, não avaliar pessoas.</p>
+      <div class="grid">
+        <div><label class="f">Primeira pessoa comunicada</label><input type="text" data-path="lideranca.primeiroComunicado"></div>
+        <div><label class="f">Como e quando essa pessoa soube</label><input type="text" data-path="lideranca.comoSoube"></div>
+        <div class="full"><label class="f">Tempo até o primeiro contato da liderança imediata</label>
+          <div class="chips" data-radio="lideranca.tempoContato">
+            <label class="chip"><input type="radio" name="tc" value="No mesmo dia"><span>No mesmo dia</span></label>
+            <label class="chip"><input type="radio" name="tc" value="Em até 2 dias"><span>Em até 2 dias</span></label>
+            <label class="chip"><input type="radio" name="tc" value="Mais de 2 dias"><span>Mais de 2 dias</span></label>
+            <label class="chip"><input type="radio" name="tc" value="Não houve contato"><span>Não houve contato</span></label>
+          </div></div>
+        <div class="full"><label class="f">Apoio recebido</label>
+          <div class="chips" data-multi="lideranca.apoios">
+            <label class="chip"><input type="checkbox" value="Orientação sobre o que fazer / onde buscar atendimento"><span>Orientação</span></label>
+            <label class="chip"><input type="checkbox" value="Socorro ou acompanhamento no momento"><span>Socorro / acompanhamento</span></label>
+            <label class="chip"><input type="checkbox" value="Apoio com transporte"><span>Transporte</span></label>
+            <label class="chip"><input type="checkbox" value="Contato de acompanhamento após o ocorrido"><span>Contato posterior</span></label>
+            <label class="chip"><input type="checkbox" value="Ajuste de agenda, atividades ou demandas"><span>Ajuste de agenda/demandas</span></label>
+            <label class="chip"><input type="checkbox" value="Nenhum apoio"><span>Nenhum apoio</span></label>
+          </div>
+          <input type="text" data-path="lideranca.outroApoio" placeholder="Outro apoio (opcional)" style="margin-top:10px"></div>
+        <div class="full"><label class="f">A pessoa se sentiu apoiada?</label>
+          <div class="chips" data-radio="lideranca.sentiuApoiado">
+            <label class="chip"><input type="radio" name="sa" value="Sim"><span>Sim</span></label>
+            <label class="chip"><input type="radio" name="sa" value="Parcialmente"><span>Parcialmente</span></label>
+            <label class="chip"><input type="radio" name="sa" value="Não"><span>Não</span></label>
+            <label class="chip"><input type="radio" name="sa" value="Preferiu não opinar"><span>Preferiu não opinar</span></label>
+          </div></div>
+        <div class="full"><label class="f">O que funcionou bem</label><textarea data-path="lideranca.funcionou"></textarea></div>
+        <div class="full"><label class="f">O que poderia ter sido diferente</label><textarea data-path="lideranca.diferente"></textarea></div>
+        <div class="full"><label class="f">Síntese para o relatório <small>(opcional: se preenchida, substitui a tabela desta seção no relatório)</small></label><textarea data-path="lideranca.sintese" placeholder="Ex.: Após chegar ao hospital, a colaboradora comunicou o ocorrido à coordenação, que a acolheu e orientou."></textarea></div>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="sec card" data-step="8">
+      <h2><span class="k">8</span>Evidências e anexos</h2>
+      <p class="lead">Imagens enviadas pela pessoa, links de vídeos e outros documentos. Tudo fica guardado no SGT, com acesso restrito.</p>
+      <h3 class="sub">Imagens</h3>
+      <div class="drop" id="drop" onclick="document.getElementById('fileIn').click()">
+        <b>Arraste imagens aqui</b> ou clique para selecionar<br><span class="hint">JPG ou PNG · as imagens são otimizadas automaticamente</span>
+      </div>
+      <input type="file" id="fileIn" accept="image/*" multiple style="display:none">
+      <div class="thumbs" id="thumbs"></div>
+      <div class="divider"></div>
+      <h3 class="sub">Vídeos</h3>
+      <div class="linkrow"><input type="url" id="vidUrl" placeholder="https://…"><input type="text" id="vidDesc" placeholder="Descrição (ex.: vídeo enviado pela pessoa)"><button type="button" class="btn btn-navy btn-sm" onclick="addLink('videos','vid')">＋ Adicionar</button></div>
+      <div id="videos"></div>
+      <div class="divider"></div>
+      <h3 class="sub">Outros documentos e links</h3>
+      <div class="linkrow"><input type="url" id="docUrl" placeholder="https://… (Drive, BO, etc.)"><input type="text" id="docDesc" placeholder="Descrição"><button type="button" class="btn btn-navy btn-sm" onclick="addLink('documentos','doc')">＋ Adicionar</button></div>
+      <div id="documentos"></div>
+    </section>
+
+    <!-- 9 -->
+    <section class="sec card" data-step="9">
+      <h2><span class="k">9</span>Encaminhamentos e controle</h2>
+      <p class="lead">Acompanhe o cumprimento das obrigações e do cuidado após a escuta.</p>
+      <div class="grid">
+        <div><label class="f">CAT enviada em</label><input type="date" data-path="controle.catEnviada"></div>
+        <div><label class="f">Nº do recibo (eSocial S-2210)</label><input type="text" data-path="controle.recibo"></div>
+        <div><label class="f">Cópia da CAT entregue em</label><input type="date" data-path="controle.copiaEntregue"></div>
+        <div><label class="f">Resumo confirmado pela pessoa</label>
+          <select data-path="controle.resumoConfirmado"><option value=""></option><option>Sim</option><option>Aguardando</option><option>Com ajustes solicitados</option></select></div>
+        <div><label class="f">CIPA / SESMT comunicados</label>
+          <select data-path="controle.cipa"><option value=""></option><option>Sim</option><option>Não</option><option>Pendente</option></select></div>
+        <div><label class="f">Devolutiva à liderança</label>
+          <select data-path="controle.devolutiva"><option value=""></option><option>Realizada</option><option>Pendente</option><option>Não se aplica</option></select></div>
+        <div class="full"><label class="f">Texto de encaminhamento <small>(seção 6 do relatório)</small></label><textarea data-path="controle.encaminhamentoTexto"></textarea></div>
+        <div class="full"><label class="f">Observações</label><textarea data-path="controle.observacoes"></textarea></div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="sec card" data-step="10">
+      <h2><span class="k">10</span>Revisão e relatório</h2>
+      <p class="lead">Confira os itens essenciais e gere o relatório em Word no formato institucional.</p>
+      <div id="review"></div>
+      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-primary" onclick="gerar()">⬇ Gerar relatório em Word</button>
+        <button type="button" class="btn btn-line" onclick="copiarResumo()">Copiar resumo para confirmação</button>
+      </div>
+      <div id="result"></div>
+    </section>
+
+    </form>
+
+    <div class="nav">
+      <button type="button" class="btn btn-line" id="prev" onclick="go(cur-1)">← Anterior</button>
+      <button type="button" class="btn btn-navy" id="next" onclick="go(cur+1)">Próximo →</button>
+      <div class="sp"></div>
+      <span class="saved" id="saved">Não salvo</span>
+      <button type="button" class="btn btn-green" onclick="salvar()">✓ Salvar</button>
+    </div>
+  </main>
+
+  <!-- ===== GUIDE ===== -->
+  <aside class="guide"><div class="gcard"><div class="gh"><span class="dot"></span>Guia da conversa</div><div class="gb" id="guide"></div></div></aside>
+</div>
+
+<div id="auth" class="auth" style="display:none">
+  <div class="card">
+    <div id="authCriar" style="display:none">
+      <h2>Crie sua senha de acesso</h2>
+      <p class="lead" style="margin-bottom:6px">Primeiro acesso. Esta senha protege os registros de escuta, que contêm dados sensíveis.</p>
+      <span class="em" id="authEmail1"></span>
+      <label class="f">Nova senha</label>
+      <div class="pwwrap"><input type="password" id="pw1" autocomplete="new-password"><button type="button" onclick="verSenha('pw1',this)">mostrar</button></div>
+      <label class="f">Confirme a senha</label>
+      <div class="pwwrap"><input type="password" id="pw2" autocomplete="new-password" onkeydown="if(event.key==='Enter')criarSenhaUI()"><button type="button" onclick="verSenha('pw2',this)">mostrar</button></div>
+      <div class="rules">Mínimo de 8 caracteres, com letras e números. Não use a mesma senha do seu e-mail.</div>
+      <button class="btn btn-primary" onclick="criarSenhaUI()">Criar senha e entrar</button>
+      <div class="msg" id="msgCriar"></div>
+    </div>
+    <div id="authEntrar" style="display:none">
+      <h2>Entrar</h2>
+      <p class="lead" style="margin-bottom:6px">Digite sua senha.</p>
+      <span class="em" id="authEmail2"></span>
+      <label class="f">Senha</label>
+      <div class="pwwrap"><input type="password" id="pwLogin" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrarUI()"><button type="button" onclick="verSenha('pwLogin',this)">mostrar</button></div>
+      <button class="btn btn-primary" onclick="entrarUI()">Entrar</button>
+      <div class="msg" id="msgEntrar"></div>
+      <div class="hint" style="margin-top:10px">Esqueceu a senha? Peça a um administrador para redefini-la.</div>
+    </div>
+  </div>
+</div>
+
+<!-- administração -->
+<div class="modal" id="adminModal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="mbox">
+    <div class="mhead"><h3>Administração · Usuários</h3><button class="btn btn-line btn-sm" onclick="document.getElementById('adminModal').classList.remove('on')">Fechar</button></div>
+    <div class="mbody">
+      <p class="hint" style="margin-top:12px">Ao adicionar uma pessoa, a pasta de registros é compartilhada com ela automaticamente. No primeiro acesso, ela cria a própria senha.</p>
+      <div class="ugrid">
+        <input type="text" id="novoEmail" placeholder="e-mail da pessoa (conta Google)">
+        <select id="novoPapel"><option>Usuário</option><option>Administrador</option></select>
+        <button class="btn btn-navy" onclick="adicionarUsuarioUI()">＋ Adicionar</button>
+      </div>
+      <table class="reg"><thead><tr><th>E-mail</th><th>Papel</th><th>Situação</th><th>Senha</th><th>Último acesso</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
+      <div class="divider"></div>
+      <h3 class="sub">Minha senha</h3>
+      <div class="ugrid" style="grid-template-columns:1fr 1fr 1fr auto">
+        <input type="password" id="pwAtual" placeholder="Senha atual">
+        <input type="password" id="pwNova1" placeholder="Nova senha">
+        <input type="password" id="pwNova2" placeholder="Confirme a nova senha">
+        <button class="btn btn-line" onclick="alterarSenhaUI()">Alterar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="denied" class="denied" style="display:none">
+  <div class="card"><h2>Acesso não autorizado</h2><p class="lead" id="deniedMsg"></p>
+  <p>Solicite acesso à equipe de Apoio à Gestão do projeto.</p></div>
+</div>
+
+<!-- registros -->
+<div class="modal" id="modal" onclick="if(event.target===this)fecharModal()">
+  <div class="mbox">
+    <div class="mhead"><h3>Registros de escuta</h3><input type="text" id="busca" placeholder="Buscar por nome, ID ou status…" style="max-width:300px" oninput="renderRegistros()"><button class="btn btn-line btn-sm" onclick="fecharModal()">Fechar</button></div>
+    <div class="mbody"><table class="reg"><thead><tr><th>ID</th><th>Colaborador(a)</th><th>Tipo</th><th>Ocorrência</th><th>Prazo CAT</th><th>Status</th><th>Atualizado</th><th></th></tr></thead><tbody id="regBody"></tbody></table></div>
+  </div>
+</div>
+
+<div class="ov" id="ov"><div><div class="spin"></div><div class="msg" id="ovMsg">Carregando…</div></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="cat-relatorio.js?v=1"></script>
+<script>
+/* ===================== LIGAÇÃO COM O SGT =====================
+ * A interface é a mesma da ferramenta original (Apps Script). As chamadas ao servidor
+ * (google.script.run.*) passam a usar o banco do SGT, com o login do SGT.
+ * Acesso: só quem tem a ferramenta "Formulário de Relatório · CAT" liberada no Painel dos ADM. */
+var SUPABASE_URL = "https://bjlhmkwxlrvatnlwjcln.supabase.co";
+var CHAVE_PUBLICA = "sb_publishable_s4_6UV8RA2bFOH0BfR9jLw_EC4VV1N1";
+var LOGO_HORIZONTAL = "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";
+var TEXTO_ENCAMINHAMENTO = "Esse relatório será encaminhado para a Superintendência de Gestão de Pessoas da Diretoria de Desenvolvimento da Gestão Pública e Políticas Educacionais da Fundação Getulio Vargas (FGV DGPE), como subsídio, para que seja iniciado o devido processo para a emissão da CAT (eSocial S-2210).";
+var SGT = { codigos: {}, colabs: [], eu: null };
+
+function sgtSessao() { try { return JSON.parse(sessionStorage.getItem("sgt")); } catch (e) { return null; } }
+function sgtVoltar(msg) { try { if (msg) sessionStorage.setItem("sgt-aviso", msg); } catch (e) {} location.href = "./"; }
+async function sgtRenovar() {
+  var s = sgtSessao(); if (!s || !s.r) return false;
+  var r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token", { method: "POST",
+    headers: { "Content-Type": "application/json", apikey: CHAVE_PUBLICA }, body: JSON.stringify({ refresh_token: s.r }) });
+  if (!r.ok) return false;
+  var d = await r.json();
+  try { sessionStorage.setItem("sgt", JSON.stringify({ t: d.access_token, r: d.refresh_token, u: d.user.id })); } catch (e) {}
+  return true;
+}
+async function sgtFetch(url, op, tentou) {
+  var s = sgtSessao(); if (!s) { sgtVoltar(); throw new Error("Sessão encerrada."); }
+  op = op || {};
+  var h = Object.assign({ apikey: CHAVE_PUBLICA, Authorization: "Bearer " + s.t }, op.headers || {});
+  var r = await fetch(url, Object.assign({}, op, { headers: h }));
+  if (r.status === 401 && !tentou && await sgtRenovar()) return sgtFetch(url, op, true);
+  if (r.status === 401) { dirty = false; sgtVoltar("Sua sessão expirou. Entre novamente."); throw new Error("Sessão expirada."); }
+  return r;
+}
+async function sgtRpc(nome, corpo) {
+  var r = await sgtFetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo || {}) });
+  var t = await r.text(), d = null; try { d = t ? JSON.parse(t) : null; } catch (e) { d = t; }
+  if (!r.ok) throw new Error((d && d.message) || "Não foi possível concluir agora.");
+  return d;
+}
+async function sgtRest(caminho) {
+  var r = await sgtFetch(SUPABASE_URL + "/rest/v1/" + caminho);
+  if (!r.ok) throw new Error("Não foi possível carregar os dados.");
+  return r.json();
+}
+function sgtUuid(codigo) {
+  if (reg && reg.id === codigo && reg.meta && reg.meta.uuid) return reg.meta.uuid;
+  return SGT.codigos[codigo];
+}
+async function sgtUrlImagem(caminho) {
+  var r = await sgtFetch(SUPABASE_URL + "/storage/v1/object/sign/cat/" + caminho, { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ expiresIn: 3600 }) });
+  var d = await r.json();
+  if (!r.ok || !d.signedURL) throw new Error("Imagem indisponível.");
+  return SUPABASE_URL + "/storage/v1" + d.signedURL;
+}
+function sgtBytes(b64) { var bin = atob(b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+function sgtCarregarScript(src) {
+  return new Promise(function (ok, falha) { var e = document.createElement("script"); e.src = src; e.onload = ok; e.onerror = function () { falha(new Error("Sem conexão para gerar o Word. Tente de novo.")); }; document.head.appendChild(e); });
+}
+
+var SERVIDOR = {
+  getContexto: async function () {
+    var s = sgtSessao();
+    if (!s) { sgtVoltar("Entre no SGT para usar o Formulário de Relatório · CAT."); return { ok: false, erro: "" }; }
+    var c = (await sgtRest("colaborador?select=id,nome&auth_user_id=eq." + s.u))[0];
+    if (!c) return { ok: false, erro: "Seu acesso ao SGT não está ativo." };
+    var ms = await sgtRest("acesso_modulo?select=modulo&colaborador_id=eq." + c.id);
+    var ps = await sgtRest("papel_usuario?select=papel&colaborador_id=eq." + c.id);
+    var pode = ms.some(function (m) { return m.modulo === "cat"; }) || ps.some(function (p) { return p.papel === "superadmin"; });
+    SGT.eu = c;
+    if (!pode) return { ok: false, email: c.nome, erro: "Você não tem acesso ao Formulário de Relatório · CAT. Peça a liberação a um administrador do SGT." };
+    sgtRpc("cat_colaboradores").then(function (l) {
+      SGT.colabs = l || [];
+      document.getElementById("sgtColabs").innerHTML = SGT.colabs.map(function (p) { return '<option value="' + esc(p.nome) + '">' + esc(p.cargo || "") + "</option>"; }).join("");
+    }).catch(function () {});
+    return { ok: true, email: c.nome, papel: "Usuário", admin: false, senhaCriada: true, sessaoAtiva: true };
+  },
+  salvarRegistro: async function (d) {
+    var r = await sgtRpc("cat_salvar", { p: d });
+    SGT.codigos[r.id] = r.meta.uuid;
+    return r;
+  },
+  listarRegistros: async function () {
+    var l = await sgtRpc("cat_listar");
+    l.forEach(function (x) {
+      SGT.codigos[x.id] = x.uuid;
+      var p = x.dataIso && CatRelatorio.prazoCat(x.dataIso);
+      x.prazo = p ? p.toLocaleDateString("pt-BR") : "";
+    });
+    return l;
+  },
+  carregarRegistro: async function (codigo) {
+    var r = await sgtRpc("cat_carregar", { p_id: sgtUuid(codigo) });
+    if (!r) throw new Error("Registro não encontrado.");
+    return r;
+  },
+  enviarImagem: async function (codigo, arq) {
+    var uuid = sgtUuid(codigo); if (!uuid) throw new Error("Salve o registro antes de enviar imagens.");
+    var caminho = uuid + "/" + Date.now() + "_" + Math.random().toString(36).slice(2, 7) + ".jpg";
+    var r = await sgtFetch(SUPABASE_URL + "/storage/v1/object/cat/" + caminho, { method: "POST",
+      headers: { "Content-Type": "image/jpeg" }, body: new Blob([sgtBytes(arq.base64)], { type: "image/jpeg" }) });
+    if (!r.ok) throw new Error("Não foi possível enviar a imagem.");
+    return { fileId: caminho, nome: arq.nome, legenda: arq.legenda || "" };
+  },
+  removerImagem: async function (caminho) {
+    await sgtFetch(SUPABASE_URL + "/storage/v1/object/cat/" + caminho, { method: "DELETE" });
+    return true;
+  },
+  miniatura: async function (caminho) { return sgtUrlImagem(caminho); },
+  gerarRelatorio: async function (codigo) {
+    var r = await SERVIDOR.carregarRegistro(codigo);
+    if (!window.docx) await sgtCarregarScript("https://cdn.jsdelivr.net/npm/docx@9.15.4/dist/index.iife.js");
+    var imagens = [];
+    for (var im of ((r.evidencias && r.evidencias.imagens) || [])) {
+      try {
+        var resp = await sgtFetch(SUPABASE_URL + "/storage/v1/object/authenticated/cat/" + im.fileId);
+        if (!resp.ok) continue;
+        var blob = await resp.blob(), bmp = await createImageBitmap(blob);
+        imagens.push({ dados: new Uint8Array(await blob.arrayBuffer()), largura: bmp.width, altura: bmp.height, legenda: im.legenda || "" });
+      } catch (e) {}
+    }
+    var perguntas = {};
+    PERGUNTAS_RELATORIO.forEach(function (c) { perguntas[c.k] = c.q; });
+    var arquivo = await CatRelatorio.gerar(window.docx, r, { logo: sgtBytes(LOGO_HORIZONTAL), imagens: imagens, perguntas: perguntas });
+    var nome = "Relatório de escuta – CAT – " + ((r.identificacao && r.identificacao.colaborador) || "") + " – " + r.id + ".docx";
+    var url = URL.createObjectURL(arquivo);
+    var a = document.createElement("a"); a.href = url; a.download = nome.replace(/[\\/:*?"<>|]+/g, " "); document.body.appendChild(a); a.click(); a.remove();
+    r.meta = r.meta || {}; r.meta.status = "Relatório gerado";
+    r.meta.relatorio = { geradoEm: new Date().toISOString(), geradoPor: SGT.eu ? SGT.eu.nome : "" };
+    var salvo = await SERVIDOR.salvarRegistro(r);
+    return { registro: salvo, downloadUrl: url, nome: nome };
+  },
+  sair: async function () { location.href = "./"; return true; }
+};
+
+/* google.script.run → SERVIDOR */
+window.google = { script: { get run() {
+  var ok = function () {}, falha = function (e) { erro(e); };
+  var p = new Proxy({}, { get: function (_, nome) {
+    if (nome === "withSuccessHandler") return function (f) { ok = f; return p; };
+    if (nome === "withFailureHandler") return function (f) { falha = f; return p; };
+    return function () {
+      var args = arguments;
+      if (!SERVIDOR[nome]) { falha(new Error("Função indisponível: " + String(nome))); return; }
+      Promise.resolve().then(function () { return SERVIDOR[nome].apply(null, args); }).then(function (v) { ok(v); }, function (e) { falha(e); });
+    };
+  } });
+  return p;
+} } };
+
+</script>
+<script>
+/* ===================== CONTEÚDO DO GUIA ===================== */
+var STEPS = ['Identificação','Relato livre','Dados da ocorrência','Perguntas complementares','Atendimento','Bem-estar e apoio','Liderança e empresa','Evidências','Encaminhamentos','Revisão e relatório'];
+var GUIDE = {
+  1:{t:'Antes e no início da conversa', falas:['Olá, [nome]. Obrigado(a) por conversar comigo. Antes de tudo: como você está?','Sinto muito pelo que você passou. Se quiser pausar em algum momento, é só me dizer.','Posso transcrever automaticamente nossa conversa? O áudio não fica gravado, apenas o texto, que você poderá revisar. Você pode recusar sem problema.'],
+     dicas:['Leia o atestado antes: data, dias de afastamento, CID.','Garanta um ambiente reservado, sem interrupções.','Peça o consentimento para a transcrição antes de iniciar. A recusa deve ser respeitada sem insistência.']},
+  2:{t:'Propósito e relato livre', falas:['Esta conversa serve para registrarmos a CAT. Ela é um direito seu e assegura sua proteção junto ao INSS.','Não é uma investigação nem uma busca por culpados.','Pode me contar, do seu jeito, o que aconteceu?','E o que aconteceu em seguida?'],
+     dicas:['Não interrompa nem complete frases.','Anote as palavras da pessoa; destaque trechos marcantes.','Em situações delicadas, ofereça a presença de alguém de confiança.']},
+  3:{t:'Completar os fatos', falas:['Quando aconteceu? Lembra mais ou menos o horário?','Onde você estava? Consegue me dizer um ponto de referência?','O que você sentiu ou o que foi afetado?','Alguém presenciou ou ajudou você?'],
+     dicas:['A CAT é devida mesmo sem afastamento.','Na dúvida sobre o tipo, marque "A definir" e consulte SESMT/jurídico.']},
+  4:{t:'Perguntas por situação', falas:['Pode me contar um pouco mais sobre esse momento?'],
+     dicas:['Pergunte apenas o que não apareceu no relato.','Em casos de violência ou adoecimento emocional, não exija detalhes.']},
+  5:{t:'Atendimento', falas:['Você recebeu atendimento? Onde e quando?','Houve afastamento ou internação?'],
+     dicas:['Não peça lista de medicamentos.','Os dados médicos vêm do atestado.']},
+  6:{t:'Bem-estar', falas:['Como você está se sentindo, física e emocionalmente?','Está conseguindo descansar e cuidar de você?','Há algo em que possamos apoiar você neste momento?'],
+     dicas:['Acolha sem pressa.','Indique canais de apoio disponíveis, se fizer sentido.']},
+  7:{t:'Apoio recebido', falas:['Queria entender como foi o apoio que você recebeu. Sua percepção nos ajuda a cuidar melhor das pessoas.','Quem foi a primeira pessoa a saber? Como sua liderança reagiu?','Recebeu orientação sobre o que fazer ou com quem falar?','O que fez diferença? E o que poderia ter sido diferente?'],
+     dicas:['Deixe claro que o objetivo é melhorar processos.','Trate as percepções com sigilo.']},
+  8:{t:'Evidências', falas:['Você tem fotos, vídeos ou documentos que queira compartilhar? Só se sentir confortável.'],
+     dicas:['Imagens de lesões são dados sensíveis.','Prefira links do Drive com acesso restrito.']},
+  9:{t:'Encerramento', falas:['Deixa eu resumir o que entendi, para ver se está correto…','Os próximos passos são: registraremos a CAT e você receberá uma cópia e um resumo desta conversa. Suas percepções serão tratadas com sigilo.','Seu retorno está previsto para [data]. Se precisar de algo, conte comigo.','Obrigado(a) pela confiança. Desejo uma boa recuperação!'],
+     dicas:['Prazo da CAT: 1º dia útil seguinte à ocorrência.','Entregue cópia da CAT à pessoa (art. 22, §1º, Lei 8.213/91).']},
+  10:{t:'Depois da conversa', falas:[], dicas:['Envie o resumo para a pessoa confirmar.','Envie a CAT no eSocial e anote o recibo.','Comunique CIPA/SESMT para análise e prevenção.','Dê devolutiva construtiva à liderança.','Mantenha contato de acompanhamento até o retorno.']}
+};
+var COMP = [
+  {k:'local', tag:'No local / durante a atividade', q:'Que tarefa você realizava? Algum equipamento, objeto ou condição do ambiente contribuiu?'},
+  {k:'servico', tag:'A serviço, fora do local', q:'Qual era a atividade (visita, viagem, evento, capacitação) e quem a solicitou?'},
+  {k:'intervalo', tag:'Intervalo ou pausa', q:'Onde você estava e o que fazia no momento?'},
+  {k:'trajeto', tag:'Trajeto', q:'De onde saiu, para onde ia e qual meio de transporte? É o percurso que costuma fazer?'},
+  {k:'terceiros', tag:'Ato de terceiro', q:'Você se sente à vontade para contar o que aconteceu? Houve registro policial?'},
+  {k:'adoecimento', tag:'Adoecimento físico ou emocional', q:'Quando começou e o que você relaciona ao trabalho?'},
+  {k:'externo', tag:'Evento externo', q:'O que ocorreu no local (incêndio, desabamento, contaminação, intempérie)?'},
+  {k:'agravamento', tag:'Agravamento de condição anterior', q:'O que no trabalho contribuiu para piorar uma condição que já existia?'}
+];
+
+/* ===================== ESTADO ===================== */
+var cur = 1, reg = novoReg(), dirty = false, mostrarTodasComp = false, registrosCache = [];
+function novoReg(){ return {id:null, meta:{}, relato:{trechos:[]}, complementares:{}, evidencias:{imagens:[],videos:[],documentos:[]}, controle:{encaminhamentoTexto: TEXTO_ENCAMINHAMENTO}}; }
+
+/* ===================== INICIALIZAÇÃO ===================== */
+window.addEventListener('load', function(){
+  overlay(true,'Verificando acesso…');
+  google.script.run.withSuccessHandler(function(ctx){
+    overlay(false); CTX = ctx;
+    document.getElementById('user').textContent = ctx.email || '';
+    if(!ctx.ok){ document.getElementById('denied').style.display='block'; document.getElementById('deniedMsg').textContent = ctx.erro; return; }
+    document.body.classList.toggle('is-admin', !!ctx.admin);
+    if(ctx.sessaoAtiva) iniciarApp(); else mostrarAuth(ctx.senhaCriada ? 'entrar' : 'criar');
+  }).withFailureHandler(erro).getContexto();
+
+  document.getElementById('form').addEventListener('input', function(){ marcarSujo(); });
+  document.getElementById('form').addEventListener('change', function(e){ marcarSujo(); if(e.target.closest('#circ')) montarComp(); if(e.target.closest('#consent')) atualizaConsentimento(true); atualizaPrazo(); });
+  var drop = document.getElementById('drop');
+  ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add('over');}); });
+  ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove('over');}); });
+  drop.addEventListener('drop', function(e){ enviarArquivos(e.dataTransfer.files); });
+  document.getElementById('fileIn').addEventListener('change', function(e){ enviarArquivos(e.target.files); e.target.value=''; });
+  setInterval(function(){ if(dirty && reg.id && document.getElementById('app').style.display!=='none') salvar(true); }, 90000);
+  window.addEventListener('beforeunload', function(e){ if(dirty || gravando){ e.preventDefault(); e.returnValue=''; } });
+});
+
+/* ===================== NAVEGAÇÃO ===================== */
+function montarSteps(){
+  document.getElementById('stepSel').innerHTML = STEPS.map(function(s,i){ return '<option value="'+(i+1)+'">Etapa '+(i+1)+' de 10 · '+s+'</option>'; }).join('');
+  document.getElementById('stepList').innerHTML = STEPS.map(function(s,i){
+    return '<div class="step" data-s="'+(i+1)+'" onclick="go('+(i+1)+')"><span class="n">'+(i+1)+'</span>'+s+'</div>';
+  }).join('');
+}
+function go(n){
+  if(n<1||n>10) return;
+  cur = n;
+  document.querySelectorAll('.sec').forEach(function(s){ s.classList.toggle('on', +s.dataset.step===n); });
+  document.querySelectorAll('.step').forEach(function(s){ s.classList.toggle('on', +s.dataset.s===n); });
+  document.getElementById('stepSel').value = String(n);
+  document.getElementById('prev').disabled = n===1;
+  document.getElementById('next').style.display = n===10 ? 'none' : '';
+  renderGuide(n);
+  if(n===10) renderReview();
+  window.scrollTo({top:0,behavior:'smooth'});
+  marcarConcluidas();
+}
+function renderGuide(n){
+  var g = GUIDE[n], h = '<h5>'+g.t+'</h5>';
+  if(g.falas.length) h += '<h5>Falas sugeridas</h5>' + g.falas.map(function(f){return '<div class="fala">“'+esc(f)+'”</div>';}).join('');
+  h += '<h5>Atenção</h5><ul>'+g.dicas.map(function(d){return '<li>'+esc(d)+'</li>';}).join('')+'</ul>';
+  document.getElementById('guide').innerHTML = h;
+}
+function marcarConcluidas(){
+  var d = coletar();
+  var ok = {
+    1: !!(g(d,'identificacao.colaborador') && g(d,'identificacao.responsavel')),
+    2: !!g(d,'relato.livre'),
+    3: !!(g(d,'ocorrencia.tipo') && g(d,'ocorrencia.data') && g(d,'ocorrencia.local')),
+    4: Object.keys(d.complementares||{}).some(function(k){return d.complementares[k];}),
+    5: !!(g(d,'atendimento.diasAfastamento') || g(d,'atendimento.unidade')),
+    6: !!g(d,'bemEstar.comoEsta'),
+    7: !!g(d,'lideranca.sentiuApoiado'),
+    8: (d.evidencias.imagens.length + d.evidencias.videos.length + d.evidencias.documentos.length) > 0,
+    9: !!g(d,'controle.recibo'),
+    10: !!(reg.meta && reg.meta.relatorio)
+  };
+  document.querySelectorAll('.step').forEach(function(s){ s.classList.toggle('ok', ok[+s.dataset.s] && +s.dataset.s!==cur); });
+}
+
+/* ===================== COLETA / PREENCHIMENTO ===================== */
+function coletar(){
+  var d = JSON.parse(JSON.stringify(reg));
+  document.querySelectorAll('[data-path]').forEach(function(el){ s(d, el.dataset.path, el.value.trim ? el.value.trim() : el.value); });
+  document.querySelectorAll('[data-radio]').forEach(function(box){ var c = box.querySelector('input:checked'); s(d, box.dataset.radio, c ? c.value : ''); });
+  document.querySelectorAll('[data-multi]').forEach(function(box){ s(d, box.dataset.multi, Array.prototype.map.call(box.querySelectorAll('input:checked'), function(i){return i.value;})); });
+  d.complementares = {};
+  document.querySelectorAll('[data-comp]').forEach(function(t){ if(t.value.trim()) d.complementares[t.dataset.comp] = t.value.trim(); });
+  Object.keys(reg.complementares||{}).forEach(function(k){ if(!document.querySelector('[data-comp="'+k+'"]') && reg.complementares[k]) d.complementares[k] = reg.complementares[k]; });
+  return d;
+}
+function preencher(d){
+  reg = d; reg.relato = reg.relato || {}; reg.relato.trechos = reg.relato.trechos || [];
+  reg.evidencias = reg.evidencias || {}; ['imagens','videos','documentos'].forEach(function(k){ reg.evidencias[k] = reg.evidencias[k] || []; });
+  reg.complementares = reg.complementares || {};
+  document.getElementById('form').reset();
+  document.querySelectorAll('[data-path]').forEach(function(el){ el.value = g(d, el.dataset.path) || ''; });
+  document.querySelectorAll('[data-radio]').forEach(function(box){ var v = g(d, box.dataset.radio); box.querySelectorAll('input').forEach(function(i){ i.checked = i.value === v; }); });
+  document.querySelectorAll('[data-multi]').forEach(function(box){ var v = g(d, box.dataset.multi) || []; box.querySelectorAll('input').forEach(function(i){ i.checked = v.indexOf(i.value) > -1; }); });
+  mostrarTodasComp = false; montarComp();
+  renderTrechos(); renderThumbs(); renderLinks('videos'); renderLinks('documentos');
+  atualizaPrazo(); atualizaId(); atualizaConsentimento(false); document.getElementById('result').innerHTML = '';
+  if(reg.meta && reg.meta.relatorio) mostrarResultado(reg.meta.relatorio);
+}
+function g(o,p){ return p.split('.').reduce(function(a,k){ return (a===undefined||a===null)?undefined:a[k]; }, o); }
+function s(o,p,v){ var ks=p.split('.'), last=ks.pop(); var t=ks.reduce(function(a,k){ if(!a[k]||typeof a[k]!=='object') a[k]={}; return a[k]; }, o); t[last]=v; }
+
+/* ===================== COMPLEMENTARES ===================== */
+function montarComp(){
+  var guard = {};
+  document.querySelectorAll('[data-comp]').forEach(function(t){ guard[t.dataset.comp] = t.value; });
+  var ks = {};
+  document.querySelectorAll('#circ input:checked').forEach(function(i){ ks[i.dataset.k] = 1; });
+  Object.keys(reg.complementares||{}).forEach(function(k){ if(reg.complementares[k]) ks[k]=1; });
+  Object.keys(guard).forEach(function(k){ if(guard[k]) ks[k]=1; });
+  var lista = COMP.filter(function(c){ return mostrarTodasComp || ks[c.k]; });
+  document.getElementById('compEmpty').style.display = lista.length ? 'none' : 'block';
+  document.getElementById('compList').innerHTML = lista.map(function(c){
+    var v = guard[c.k] !== undefined ? guard[c.k] : (reg.complementares[c.k] || '');
+    return '<div class="q"><span class="tag">'+c.tag+'</span><div class="qt">'+c.q+'</div><textarea data-comp="'+c.k+'">'+esc(v)+'</textarea></div>';
+  }).join('') + (lista.length && !mostrarTodasComp ? '<a href="#" class="hint" onclick="mostrarTodas();return false">Mostrar perguntas de todas as situações</a>' : '');
+}
+function mostrarTodas(){ mostrarTodasComp = true; montarComp(); }
+
+/* ===================== TRECHOS ===================== */
+function addTrecho(){
+  var tx = document.getElementById('trechoTx'), cx = document.getElementById('trechoCx');
+  if(!tx.value.trim()) return toast('Digite ou cole o trecho da fala.', true);
+  reg.relato.trechos.push({texto: tx.value.trim(), contexto: cx.value.trim()});
+  tx.value=''; cx.value=''; renderTrechos(); marcarSujo();
+}
+function renderTrechos(){
+  document.getElementById('trechos').innerHTML = (reg.relato.trechos||[]).map(function(t,i){
+    return '<div class="quote"><div class="tx">“'+esc(t.texto)+'”'+(t.contexto?'<span class="cx">'+esc(t.contexto)+'</span>':'')+'</div><button type="button" class="x" title="Remover" onclick="delTrecho('+i+')">×</button></div>';
+  }).join('');
+}
+function delTrecho(i){ reg.relato.trechos.splice(i,1); renderTrechos(); marcarSujo(); }
+
+/* ===================== IMAGENS ===================== */
+var thumbCache = {};
+function enviarArquivos(files){
+  files = Array.prototype.filter.call(files, function(f){ return /^image\//.test(f.type); });
+  if(!files.length) return;
+  var go_ = function(){
+    var i = 0;
+    (function prox(){
+      if(i >= files.length){ overlay(false); salvar(true); return; }
+      var f = files[i++];
+      overlay(true, 'Enviando imagem '+i+' de '+files.length+'…');
+      otimizar(f, function(dataUrl){
+        var b64 = dataUrl.split(',')[1];
+        google.script.run.withSuccessHandler(function(im){
+          thumbCache[im.fileId] = dataUrl; reg.evidencias.imagens.push(im); renderThumbs(); prox();
+        }).withFailureHandler(function(e){ erro(e); prox(); })
+          .enviarImagem(reg.id, {nome: f.name.replace(/\.\w+$/,'')+'.jpg', mimeType:'image/jpeg', base64:b64, legenda:''});
+      });
+    })();
+  };
+  if(!reg.id){ salvar(false, go_); } else { go_(); }
+}
+function otimizar(file, cb){
+  var r = new FileReader();
+  r.onload = function(){ var img = new Image(); img.onload = function(){
+    var max = 1600, w = img.width, h = img.height, k = Math.min(1, max/Math.max(w,h));
+    var c = document.createElement('canvas'); c.width = Math.round(w*k); c.height = Math.round(h*k);
+    var ctx = c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+    cb(c.toDataURL('image/jpeg', .85)); }; img.src = r.result; };
+  r.readAsDataURL(file);
+}
+function renderThumbs(){
+  var el = document.getElementById('thumbs');
+  el.innerHTML = reg.evidencias.imagens.map(function(im,i){
+    var bg = thumbCache[im.fileId] ? 'style="background-image:url('+thumbCache[im.fileId]+')"' : '';
+    return '<div class="thumb"><div class="im" id="th_'+im.fileId+'" '+bg+'>'+(bg?'':'carregando…')+'</div><button type="button" class="x" onclick="delImg('+i+')" title="Remover">×</button>'+
+      '<input type="text" placeholder="Legenda" value="'+esc(im.legenda||'')+'" oninput="reg.evidencias.imagens['+i+'].legenda=this.value;marcarSujo()"></div>';
+  }).join('');
+  reg.evidencias.imagens.forEach(function(im){
+    if(!thumbCache[im.fileId]) google.script.run.withSuccessHandler(function(u){ thumbCache[im.fileId]=u; var t=document.getElementById('th_'+im.fileId); if(t){ t.style.backgroundImage='url('+u+')'; t.textContent=''; } }).miniatura(im.fileId);
+  });
+}
+function delImg(i){
+  if(!confirm('Remover esta imagem do registro? Ela será apagada do SGT.')) return;
+  var im = reg.evidencias.imagens.splice(i,1)[0]; renderThumbs();
+  google.script.run.removerImagem(im.fileId); salvar(true);
+}
+
+/* ===================== LINKS ===================== */
+function addLink(tipo, pre){
+  var u = document.getElementById(pre+'Url'), d = document.getElementById(pre+'Desc');
+  if(!/^https?:\/\//i.test(u.value.trim())) return toast('Informe um link válido (começando com http).', true);
+  reg.evidencias[tipo].push({url:u.value.trim(), descricao:d.value.trim()});
+  u.value=''; d.value=''; renderLinks(tipo); marcarSujo();
+}
+function renderLinks(tipo){
+  document.getElementById(tipo).innerHTML = reg.evidencias[tipo].map(function(x,i){
+    return '<div class="linkitem"><span>'+(tipo==='videos'?'▶':'🔗')+'</span><div style="flex:1"><b>'+esc(x.descricao||'Sem descrição')+'</b><br><a href="'+esc(x.url)+'" target="_blank">'+esc(x.url)+'</a></div><button type="button" class="x" onclick="reg.evidencias.'+tipo+'.splice('+i+',1);renderLinks(\''+tipo+'\');marcarSujo()">×</button></div>';
+  }).join('');
+}
+
+/* ===================== SALVAR / ABRIR ===================== */
+function marcarSujo(){ dirty = true; document.getElementById('saved').textContent = 'Alterações não salvas'; }
+function salvar(silencioso, depois){
+  var d = coletar();
+  if(!g(d,'identificacao.colaborador')){ if(!silencioso) { go(1); toast('Informe o nome do(a) colaborador(a) para salvar.', true); } return; }
+  if(!silencioso) overlay(true,'Salvando…');
+  google.script.run.withSuccessHandler(function(r){
+    var antes = reg; reg = r; reg.relato.trechos = reg.relato.trechos || []; dirty = false;
+    overlay(false); atualizaId();
+    document.getElementById('saved').textContent = 'Salvo às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    if(!silencioso) toast('Registro salvo.');
+    marcarConcluidas();
+    if(depois) depois();
+  }).withFailureHandler(erro).salvarRegistro(d);
+}
+function atualizaId(){ document.getElementById('idtag').textContent = reg.id ? reg.id + ' · ' + ((reg.meta&&reg.meta.status)||'Rascunho') : 'Nova escuta'; }
+function novaEscuta(){
+  if(dirty && !confirm('Há alterações não salvas. Deseja descartá-las e iniciar uma nova escuta?')) return;
+  preencher(novoReg()); dirty=false; document.getElementById('saved').textContent='Não salvo';
+  document.querySelector('[data-path="identificacao.dataEscuta"]').value = iso(new Date());
+  go(1);
+}
+function abrirRegistros(){
+  document.getElementById('modal').classList.add('on');
+  document.getElementById('regBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px">Carregando…</td></tr>';
+  google.script.run.withSuccessHandler(function(l){ registrosCache = l; renderRegistros(); }).withFailureHandler(erro).listarRegistros();
+}
+function renderRegistros(){
+  var q = document.getElementById('busca').value.toLowerCase();
+  var l = registrosCache.filter(function(r){ return !q || (r.id+' '+r.colaborador+' '+r.status+' '+r.tipo).toLowerCase().indexOf(q)>-1; });
+  document.getElementById('regBody').innerHTML = l.length ? l.map(function(r){
+    return '<tr><td><b>'+esc(r.id)+'</b></td><td>'+esc(r.colaborador)+'</td><td>'+esc(r.tipo)+'</td><td>'+esc(r.dataOcorrencia)+'</td><td>'+esc(r.prazo)+'</td>'+
+      '<td><span class="badge '+(r.status==='Relatório gerado'?'g':'r')+'">'+esc(r.status)+'</span></td><td>'+esc(r.atualizadoEm)+'</td>'+
+      '<td style="white-space:nowrap"><button class="btn btn-navy btn-sm" onclick="abrir(\''+r.id+'\')">Abrir</button> '+
+      (r.docxUrl?'<a class="btn btn-line btn-sm" href="'+r.docxUrl+'" target="_blank">Word</a>':'')+'</td></tr>';
+  }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px">Nenhum registro encontrado.</td></tr>';
+}
+function abrir(id){
+  if(dirty && !confirm('Há alterações não salvas. Deseja descartá-las?')) return;
+  fecharModal(); overlay(true,'Abrindo registro…');
+  google.script.run.withSuccessHandler(function(r){ overlay(false); preencher(r); dirty=false; document.getElementById('saved').textContent='Registro aberto'; go(1); }).withFailureHandler(erro).carregarRegistro(id);
+}
+function fecharModal(){ document.getElementById('modal').classList.remove('on'); }
+
+/* ===================== PRAZO ===================== */
+var FERIADOS = ['01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25'];
+function prazoCat(isoStr){
+  if(!isoStr) return null; var p = isoStr.split('-'); var d = new Date(+p[0], +p[1]-1, +p[2]);
+  do { d.setDate(d.getDate()+1); var md = ('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  while(d.getDay()===0 || d.getDay()===6 || FERIADOS.indexOf(md)>-1);
+  return d;
+}
+function atualizaPrazo(){
+  var el = document.getElementById('deadline');
+  var v = document.querySelector('[data-path="ocorrencia.data"]').value;
+  var p = prazoCat(v); if(!p){ el.style.display='none'; return; }
+  var hoje = new Date(); hoje.setHours(0,0,0,0);
+  var enviada = document.querySelector('[data-path="controle.catEnviada"]').value;
+  var diff = Math.round((p-hoje)/86400000);
+  el.className = 'deadline' + (enviada ? '' : diff<0 ? ' late' : diff<=1 ? ' soon' : '');
+  el.style.display='block';
+  el.innerHTML = 'Prazo legal da CAT<b>'+p.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'})+'</b>' +
+    (enviada ? '✓ CAT enviada em '+br(enviada) : diff<0 ? 'Prazo vencido: envie o quanto antes.' : diff===0 ? 'Vence hoje.' : diff===1 ? 'Vence amanhã.' : 'Faltam '+diff+' dias.') +
+    '<div class="hint">Considera fins de semana e feriados nacionais fixos.</div>';
+}
+
+/* ===================== REVISÃO E RELATÓRIO ===================== */
+function renderReview(){
+  var d = coletar();
+  var itens = [
+    ['Nome do(a) colaborador(a)', g(d,'identificacao.colaborador'), 1],
+    ['Responsável pela escuta', g(d,'identificacao.responsavel'), 1],
+    ['Relato livre registrado', g(d,'relato.livre'), 2],
+    ['Tipo de acidente (eSocial)', g(d,'ocorrencia.tipo'), 3],
+    ['Data da ocorrência', g(d,'ocorrencia.data'), 3],
+    ['Local da ocorrência', g(d,'ocorrencia.local'), 3],
+    ['Dias de afastamento / CID', g(d,'atendimento.diasAfastamento') || g(d,'atendimento.cid'), 5],
+    ['Percepção sobre o apoio recebido', g(d,'lideranca.sentiuApoiado'), 7],
+    ['Recibo da CAT (pode ser preenchido depois)', g(d,'controle.recibo'), 9]
+  ];
+  document.getElementById('review').innerHTML = '<div class="box info">Itens sem preenchimento aparecerão como "Não informado" no relatório.</div>' +
+    itens.map(function(it){ return '<div class="check"><span class="i '+(it[1]?'ok':'no')+'">'+(it[1]?'✓':'!')+'</span><span style="flex:1">'+it[0]+'</span>'+(it[1]?'':'<a href="#" onclick="go('+it[2]+');return false">Preencher</a>')+'</div>'; }).join('');
+}
+function gerar(){
+  salvar(false, function(){
+    overlay(true,'Gerando relatório em Word… isso pode levar alguns segundos.');
+    google.script.run.withSuccessHandler(function(r){
+      overlay(false); reg = r.registro; atualizaId(); mostrarResultado(r); marcarConcluidas(); toast('Relatório gerado com sucesso.');
+    }).withFailureHandler(erro).gerarRelatorio(reg.id);
+  });
+}
+function mostrarResultado(r){
+  document.getElementById('result').innerHTML = '<div class="result"><h4>✓ Relatório pronto</h4><div class="btns">'+
+    '<a class="btn btn-primary" href="'+r.downloadUrl+'" target="_blank">⬇ Baixar Word (.docx)</a>'+
+    '<a class="btn btn-line" href="'+r.docxUrl+'" target="_blank">Abrir no Drive</a>'+
+    '<a class="btn btn-line" href="'+r.docUrl+'" target="_blank">Editar no Google Docs</a>'+
+    (r.pastaUrl?'<a class="btn btn-line" href="'+r.pastaUrl+'" target="_blank">Pasta do caso</a>':'')+
+    '</div><div class="hint" style="margin-top:10px">Gerar novamente substitui a versão anterior.</div></div>';
+}
+function copiarResumo(){
+  var d = coletar();
+  var t = 'Olá, '+(g(d,'identificacao.colaborador')||'[nome]').split(' ')[0]+'! Obrigado(a) pela conversa. Segue o resumo do que registramos:\n\n'+
+    '• Data e hora: '+(br(g(d,'ocorrencia.data'))||'—')+(g(d,'ocorrencia.hora')?' às '+g(d,'ocorrencia.hora'):'')+'\n'+
+    '• Local: '+(g(d,'ocorrencia.local')||'—')+'\n'+
+    '• O que aconteceu: '+((g(d,'relato.livre')||'—').replace(/\s+/g,' ').slice(0,600))+'\n'+
+    '• Atendimento: '+(g(d,'atendimento.unidade')||'—')+(g(d,'atendimento.diasAfastamento')?' · '+g(d,'atendimento.diasAfastamento')+' dias de afastamento':'')+'\n\n'+
+    'Pode conferir se está tudo correto? Se quiser ajustar algo, é só me avisar. Desejo uma boa recuperação!';
+  navigator.clipboard.writeText(t).then(function(){ toast('Resumo copiado. Cole no WhatsApp ou e-mail.'); }, function(){ prompt('Copie o resumo:', t); });
+}
+
+
+/* ===================== CONSENTIMENTO E TRANSCRIÇÃO ===================== */
+var rec = null, gravando = false;
+function consentido(){ var c = document.querySelector('#consent input:checked'); return c && c.value === 'Autorizada pela pessoa'; }
+function atualizaConsentimento(registrar){
+  var ok = consentido(), em = document.getElementById('consentEm');
+  if(ok && registrar && !em.value) em.value = new Date().toLocaleString('pt-BR');
+  if(!ok) em.value = '';
+  document.getElementById('consentInfo').textContent = ok ? ('Consentimento registrado em ' + (em.value || '—') + '.') : 'Sem autorização, a transcrição automática fica bloqueada. O registro é feito por digitação.';
+  var sup = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  var btn = document.getElementById('trBtn'), st = document.getElementById('trStatus');
+  btn.disabled = !ok || !sup;
+  if(!sup) st.textContent = 'Navegador sem suporte: use o Chrome ou cole a transcrição do Teams/Meet.';
+  else if(!ok){ st.textContent = 'Requer consentimento (etapa 1)'; if(gravando) pararTranscricao(); }
+  else if(!gravando) st.textContent = 'Pronta para iniciar';
+}
+function toggleTranscricao(){ gravando ? pararTranscricao() : iniciarTranscricao(); }
+function iniciarTranscricao(){
+  if(!consentido()) return toast('Registre o consentimento da pessoa na etapa 1.', true);
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  rec = new SR(); rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true;
+  rec.onresult = function(e){
+    var interim = '';
+    for(var i = e.resultIndex; i < e.results.length; i++){
+      var t = e.results[i][0].transcript;
+      if(e.results[i].isFinal){
+        var ta = document.getElementById('trText');
+        var frase = t.trim(); if(!frase) continue;
+        frase = frase.charAt(0).toUpperCase() + frase.slice(1);
+        if(!/[.!?]$/.test(frase)) frase += '.';
+        ta.value += (ta.value && !/\s$/.test(ta.value) ? ' ' : '') + frase;
+        ta.scrollTop = ta.scrollHeight; marcarSujo();
+      } else interim += t;
+    }
+    document.getElementById('trLive').textContent = interim;
+  };
+  rec.onerror = function(e){
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      gravando = false; pararUI();
+      toast('O microfone foi bloqueado. Libere o acesso no navegador ou cole a transcrição do Teams/Meet.', true);
+    } else if(e.error === 'no-speech'){ /* silêncio: continua */ }
+    else toast('Transcrição: ' + e.error, true);
+  };
+  rec.onend = function(){ if(gravando){ try{ rec.start(); }catch(x){} } else pararUI(); };
+  try{ rec.start(); gravando = true; }catch(x){ return toast('Não foi possível iniciar a transcrição.', true); }
+  var ta = document.getElementById('trText');
+  if(ta.value.trim()) ta.value += '\n\n';
+  ta.value += '[' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) + '] ';
+  document.getElementById('trBtn').textContent = '■ Parar transcrição';
+  var st = document.getElementById('trStatus'); st.textContent = 'Transcrevendo…'; st.classList.add('on');
+}
+function pararTranscricao(){ gravando = false; if(rec) try{ rec.stop(); }catch(x){} pararUI(); salvar(true); }
+function pararUI(){
+  document.getElementById('trBtn').textContent = '🎙 Iniciar transcrição';
+  var st = document.getElementById('trStatus'); st.classList.remove('on'); st.textContent = consentido() ? 'Pronta para iniciar' : 'Requer consentimento (etapa 1)';
+  document.getElementById('trLive').textContent = '';
+}
+function trechoDaSelecao(){
+  var ta = document.getElementById('trText'), sel = ta.value.substring(ta.selectionStart, ta.selectionEnd).trim();
+  if(!sel) return toast('Selecione um trecho da transcrição primeiro.', true);
+  reg.relato.trechos.push({texto: sel.replace(/^\[\d{2}:\d{2}\]\s*/,''), contexto: 'Trecho da transcrição'}); renderTrechos(); marcarSujo(); toast('Trecho adicionado.');
+}
+function transcricaoParaRelato(){
+  var t = document.getElementById('trText').value.replace(/\[\d{2}:\d{2}\]\s*/g,'').trim();
+  if(!t) return toast('Não há transcrição para copiar.', true);
+  var r = document.querySelector('[data-path="relato.livre"]');
+  if(r.value.trim() && !confirm('Acrescentar a transcrição ao final do relato já escrito?')) return;
+  r.value = (r.value.trim() ? r.value.trim() + '\n\n' : '') + t; marcarSujo(); toast('Transcrição copiada para o relato. Revise o texto.');
+}
+
+
+/* ===================== ACESSO ===================== */
+var CTX = {}, appIniciado = false;
+function iniciarApp(){
+  document.getElementById('auth').style.display='none';
+  document.getElementById('app').style.display='grid';
+  document.body.classList.add('logged');
+  if(appIniciado) return;
+  appIniciado = true;
+  montarSteps(); montarComp(); go(1); atualizaConsentimento(false);
+  document.querySelector('[data-path="identificacao.dataEscuta"]').value = iso(new Date());
+}
+function mostrarAuth(modo){
+  document.getElementById('app').style.display='none';
+  document.body.classList.remove('logged');
+  document.getElementById('adminModal').classList.remove('on'); document.getElementById('modal').classList.remove('on');
+  document.getElementById('auth').style.display='block';
+  document.getElementById('authCriar').style.display = modo==='criar' ? 'block' : 'none';
+  document.getElementById('authEntrar').style.display = modo==='entrar' ? 'block' : 'none';
+  document.getElementById('authEmail1').textContent = CTX.email; document.getElementById('authEmail2').textContent = CTX.email;
+  setTimeout(function(){ var el = document.getElementById(modo==='criar'?'pw1':'pwLogin'); if(el) el.focus(); }, 50);
+}
+function verSenha(id, b){ var i=document.getElementById(id); i.type = i.type==='password'?'text':'password'; b.textContent = i.type==='password'?'mostrar':'ocultar'; }
+function criarSenhaUI(){
+  var a=document.getElementById('pw1').value, b=document.getElementById('pw2').value, m=document.getElementById('msgCriar'); m.textContent='';
+  if(a.length<8 || !/[A-Za-zÀ-ÿ]/.test(a) || !/\d/.test(a)) { m.textContent='Use pelo menos 8 caracteres, com letras e números.'; return; }
+  if(a!==b){ m.textContent='As senhas não conferem.'; return; }
+  overlay(true,'Criando sua senha…');
+  google.script.run.withSuccessHandler(function(){ overlay(false); document.getElementById('pw1').value=''; document.getElementById('pw2').value=''; toast('Senha criada. Bem-vindo(a)!'); iniciarApp(); })
+    .withFailureHandler(function(e){ overlay(false); m.textContent = e.message || e; }).criarSenha(a,b);
+}
+function entrarUI(){
+  var p=document.getElementById('pwLogin').value, m=document.getElementById('msgEntrar'); m.textContent='';
+  if(!p){ m.textContent='Digite sua senha.'; return; }
+  overlay(true,'Entrando…');
+  google.script.run.withSuccessHandler(function(){ overlay(false); document.getElementById('pwLogin').value=''; iniciarApp(); })
+    .withFailureHandler(function(e){ overlay(false); m.textContent = e.message || e; }).entrar(p);
+}
+function sairApp(){
+  if(dirty && !confirm('Há alterações não salvas. Deseja sair mesmo assim?')) return;
+  google.script.run.withSuccessHandler(function(){ dirty=false; mostrarAuth('entrar'); toast('Você saiu da ferramenta.'); }).sair();
+}
+function abrirAdmin(){ document.getElementById('adminModal').classList.add('on'); carregarUsuarios(); }
+function carregarUsuarios(){
+  document.getElementById('userBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Carregando…</td></tr>';
+  google.script.run.withSuccessHandler(renderUsuarios).withFailureHandler(erro).listarUsuarios();
+}
+function renderUsuarios(l){
+  document.getElementById('userBody').innerHTML = l.map(function(u){
+    var eu = u.email === CTX.email;
+    return '<tr><td><b>'+esc(u.email)+'</b>'+(eu?' <span class="hint">(você)</span>':'')+'</td><td>'+esc(u.papel)+'</td>'+
+      '<td><span class="badge '+(u.ativo?'g':'r')+'">'+(u.ativo?'Ativo':'Removido')+'</span></td>'+
+      '<td>'+(u.senhaCriada?'Criada':'<span class="hint">Aguardando 1º acesso</span>')+'</td><td>'+esc(u.ultimoAcesso||'—')+'</td>'+
+      '<td style="white-space:nowrap">'+(u.ativo && !eu ? '<button class="btn btn-line btn-sm" onclick="redefinirUI(\''+u.email+'\')">Redefinir senha</button> <button class="btn btn-line btn-sm" onclick="removerUI(\''+u.email+'\')">Remover</button>' :
+      (!u.ativo ? '<button class="btn btn-line btn-sm" onclick="reativarUI(\''+u.email+'\',\''+u.papel+'\')">Reativar</button>' : ''))+'</td></tr>';
+  }).join('');
+}
+function adicionarUsuarioUI(){
+  var e=document.getElementById('novoEmail').value.trim(), p=document.getElementById('novoPapel').value;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return toast('Informe um e-mail válido.', true);
+  overlay(true,'Adicionando e compartilhando a pasta…');
+  google.script.run.withSuccessHandler(function(l){ overlay(false); document.getElementById('novoEmail').value=''; renderUsuarios(l); toast('Acesso concedido a '+e+'. Envie o link da ferramenta para a pessoa.'); }).withFailureHandler(erro).adicionarUsuario(e,p);
+}
+function reativarUI(e,p){ overlay(true,'Reativando…'); google.script.run.withSuccessHandler(function(l){ overlay(false); renderUsuarios(l); toast('Acesso reativado.'); }).withFailureHandler(erro).adicionarUsuario(e,p); }
+function removerUI(e){
+  if(!confirm('Remover o acesso de '+e+'? A pessoa deixará de ver a pasta de registros e precisará de novo cadastro para voltar.')) return;
+  overlay(true,'Removendo acesso…'); google.script.run.withSuccessHandler(function(l){ overlay(false); renderUsuarios(l); toast('Acesso removido.'); }).withFailureHandler(erro).removerUsuario(e);
+}
+function redefinirUI(e){
+  if(!confirm('Redefinir a senha de '+e+'? No próximo acesso, a pessoa criará uma nova senha.')) return;
+  overlay(true,'Redefinindo…'); google.script.run.withSuccessHandler(function(l){ overlay(false); renderUsuarios(l); toast('Senha redefinida.'); }).withFailureHandler(erro).redefinirSenha(e);
+}
+function alterarSenhaUI(){
+  var a=document.getElementById('pwAtual').value, n1=document.getElementById('pwNova1').value, n2=document.getElementById('pwNova2').value;
+  overlay(true,'Alterando senha…');
+  google.script.run.withSuccessHandler(function(){ overlay(false); ['pwAtual','pwNova1','pwNova2'].forEach(function(i){document.getElementById(i).value='';}); toast('Senha alterada.'); }).withFailureHandler(erro).alterarSenha(a,n1,n2);
+}
+
+/* ===================== UTIL ===================== */
+function overlay(on,msg){ document.getElementById('ov').classList.toggle('on',on); if(msg) document.getElementById('ovMsg').textContent=msg; }
+function toast(m,err){ var t=document.getElementById('toast'); t.textContent=m; t.className='toast on'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(function(){t.className='toast'+(err?' err':'');},3500); }
+function erro(e){
+  overlay(false); var msg = (e && e.message) ? e.message : String(e);
+  if(msg.indexOf('SESSAO_EXPIRADA')>-1){ mostrarAuth('entrar'); document.getElementById('msgEntrar').textContent='Sua sessão expirou por inatividade. Entre novamente; suas alterações na tela continuam aqui.'; document.getElementById('app').style.display='none'; return; }
+  if(msg.indexOf('ACESSO_NEGADO')>-1){ document.getElementById('app').style.display='none'; document.getElementById('denied').style.display='block'; document.getElementById('deniedMsg').textContent=msg.replace('ACESSO_NEGADO: ',''); return; }
+  toast('Erro: '+msg, true);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function iso(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function br(i){ if(!i) return ''; var p=i.split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : i; }
+
+/* ===================== AJUSTES DO SGT ===================== */
+// Perguntas complementares no relatório (mesmo texto do original)
+var PERGUNTAS_RELATORIO = [
+  { k: 'local', q: 'No local de trabalho ou durante a atividade: que tarefa era realizada? Algum equipamento, objeto ou condição do ambiente contribuiu?' },
+  { k: 'servico', q: 'A serviço, fora do local habitual: qual era a atividade e quem a solicitou?' },
+  { k: 'intervalo', q: 'Em intervalo ou pausa no local de trabalho: onde a pessoa estava e o que fazia?' },
+  { k: 'trajeto', q: 'No trajeto casa–trabalho: origem, destino, meio de transporte e se era o percurso habitual.' },
+  { k: 'terceiros', q: 'Envolvendo outra pessoa (agressão, conflito, ato de terceiro): o que aconteceu?' },
+  { k: 'adoecimento', q: 'Adoecimento físico ou emocional: quando começou e o que a pessoa relaciona ao trabalho?' },
+  { k: 'externo', q: 'Evento externo (incêndio, desabamento, contaminação, intempérie): o que ocorreu no local?' },
+  { k: 'agravamento', q: 'Agravamento de condição anterior: o que no trabalho contribuiu para a piora?' }
+];
+
+// O relatório é gerado no navegador e baixado na hora; pode ser gerado de novo quando quiser.
+function mostrarResultado(r) {
+  var quando = r && r.geradoEm ? new Date(r.geradoEm).toLocaleString('pt-BR') : (r && r.downloadUrl ? 'agora' : '');
+  document.getElementById('result').innerHTML = '<div class="result"><h4>✓ Relatório ' + (quando ? 'gerado ' + (quando === 'agora' ? 'agora' : 'em ' + quando) : 'pronto') + '</h4><div class="btns">' +
+    (r && r.downloadUrl ? '<a class="btn btn-primary" href="' + r.downloadUrl + '" download="' + esc(r.nome || 'relatorio.docx') + '">⬇ Baixar Word (.docx) de novo</a>' : '') +
+    '<button type="button" class="btn btn-line" onclick="gerar()">Gerar novamente com os dados atuais</button>' +
+    '</div><div class="hint" style="margin-top:10px">O arquivo foi baixado no seu dispositivo. Abra no Word para revisar antes de enviar. Ele não fica guardado no SGT: os dados ficam, e o relatório pode ser gerado de novo a qualquer momento.</div></div>';
+}
+
+// Ao escolher um nome do quadro, preenche cargo e liderança (se estiverem vazios) e guarda o vínculo
+(function () {
+  var campo = document.querySelector('[data-path="identificacao.colaborador"]');
+  var idEl = document.querySelector('[data-path="identificacao.colaboradorId"]');
+  campo.addEventListener('change', function () {
+    var p = SGT.colabs.find(function (x) { return x.nome === campo.value.trim(); });
+    idEl.value = p ? p.id : '';
+    if (!p) return;
+    var cg = document.querySelector('[data-path="identificacao.cargo"]'), ld = document.querySelector('[data-path="identificacao.lideranca"]');
+    if (!cg.value && p.cargo) cg.value = p.cargo;
+    if (!ld.value && p.lider) ld.value = p.lider;
+    marcarSujo();
+  });
+  // Quem ouve: por padrão, a própria pessoa logada
+  var origIniciar = iniciarApp;
+  iniciarApp = function () {
+    origIniciar();
+    var r = document.querySelector('[data-path="identificacao.responsavel"]');
+    if (r && !r.value && SGT.eu) r.value = SGT.eu.nome;
+    var e = document.querySelector('[data-path="controle.encaminhamentoTexto"]');
+    if (e && !e.value) e.value = TEXTO_ENCAMINHAMENTO;
+  };
+  var origNova = novaEscuta;
+  novaEscuta = function () {
+    origNova();
+    var r = document.querySelector('[data-path="identificacao.responsavel"]');
+    if (r && !r.value && SGT.eu) r.value = SGT.eu.nome;
+  };
+  // Sair = voltar ao SGT
+  sairApp = function () {
+    if (dirty && !confirm('Há alterações não salvas. Deseja voltar ao SGT mesmo assim?')) return;
+    dirty = false; location.href = './';
+  };
+  // Registros abertos não têm mais link para o Drive
+  var origRender = renderRegistros;
+  renderRegistros = function () { registrosCache.forEach(function (x) { x.docxUrl = ''; }); origRender(); };
+})();
+// O relatório só é gerado depois de registrada a ciência da pessoa sobre o uso dos dados (LGPD)
+(function () {
+  var origGerar = gerar;
+  gerar = function () {
+    var c = document.querySelector('[data-radio="identificacao.cienciaLgpd"] input:checked');
+    if (!c) { go(1); toast('Registre na etapa 1 que a pessoa foi informada sobre o uso dos dados (LGPD).', true); return; }
+    origGerar();
+  };
+})();
+
+</script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
+</body>
+</html>

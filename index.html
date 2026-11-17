@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SGT · Projeto GA BA</title>
 <meta name="theme-color" content="#e71181">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icones/favicon-32.png">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGT">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root{
     --cor:#c40f6d; --cor-forte:#9c0b56; --cor-suave:#fde8f2;
@@ -52,6 +59,9 @@
   .passos i.on + i.on{background:var(--laranja)}
   .oculto{display:none!important}
   .rodape{text-align:center;font-size:12px;color:var(--texto-2);margin-top:22px}
+  .externos{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--borda)}
+  .externos a{font-size:13px;color:var(--texto-2);text-decoration:none;padding:6px 10px;border-radius:999px;background:var(--fundo)}
+  .externos a:hover{color:var(--cor);background:var(--cor-suave)}
 
   /* Início: grade de ferramentas */
   .ferramentas{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:4px}
@@ -125,6 +135,10 @@
     <div class="aviso" id="a-entrar"></div>
     <button class="link" data-ir="v-pa1">Primeiro acesso</button>
     <button class="link" data-ir="v-esqueci">Esqueci minha senha</button>
+    <div class="externos">
+      <a href="ouvidoria/">Ouvidoria · fale sem se identificar</a>
+      <a href="links/">Links do Projeto</a>
+    </div>
   </section>
 
   <!-- PRIMEIRO ACESSO · 1 -->
@@ -164,10 +178,39 @@
     <button class="link" id="reenviar">Pedir um novo código</button>
   </section>
 
-  <!-- ESQUECI -->
+  <!-- ESQUECI · 1 -->
   <section id="v-esqueci" class="oculto">
+    <div class="passos"><i class="on"></i><i></i></div>
     <h1>Esqueci minha senha</h1>
-    <p class="sub">A recuperação automática de senha chega em breve. Por enquanto, procure a equipe de Gestão de Pessoas do projeto para liberar um novo acesso.</p>
+    <p class="sub">Confirme seus dados. Vamos enviar um código para o e-mail cadastrado no quadro do projeto.</p>
+    <form id="f-rec1" novalidate>
+      <label for="r-cpf">CPF</label>
+      <input id="r-cpf" type="text" inputmode="numeric" placeholder="Somente números" maxlength="14">
+      <label for="r-nasc">Data de nascimento</label>
+      <input id="r-nasc" type="date">
+      <button type="submit">Enviar código</button>
+    </form>
+    <div class="aviso" id="a-rec1"></div>
+    <button class="link" data-ir="v-entrar">Voltar para entrar</button>
+  </section>
+
+  <!-- ESQUECI · 2 -->
+  <section id="v-esqueci2" class="oculto">
+    <div class="passos"><i class="on"></i><i class="on"></i></div>
+    <h1>Crie uma nova senha</h1>
+    <p class="sub" id="rec2-sub">Enviamos um código de 6 dígitos para o seu e-mail. Confira também a caixa de spam.</p>
+    <form id="f-rec2" novalidate>
+      <label for="r-cod">Código</label>
+      <input id="r-cod" class="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      <label for="r-senha">Nova senha</label>
+      <input id="r-senha" type="password" autocomplete="new-password">
+      <div class="ajuda">Pelo menos 8 caracteres, com letras e números.</div>
+      <label for="r-senha2">Repita a nova senha</label>
+      <input id="r-senha2" type="password" autocomplete="new-password">
+      <button type="submit">Salvar nova senha</button>
+    </form>
+    <div class="aviso" id="a-rec2"></div>
+    <button class="link" id="r-reenviar">Pedir um novo código</button>
     <button class="link" data-ir="v-entrar">Voltar para entrar</button>
   </section>
 
@@ -199,6 +242,9 @@
           <option value="">Todos os perfis</option>
           <option value="superadmin">Superadministrador(a)</option><option value="admin">Administrador(a)</option><option value="gerencia">Gerência</option>
           <option value="rh">Gestão de Pessoas</option><option value="lideranca">Liderança</option>
+          <option value="m:cat">Ferramenta: CAT</option><option value="m:ouvidoria">Ferramenta: Ouvidoria</option>
+          <option value="m:banco_talentos">Ferramenta: Banco de Talentos</option><option value="m:encaminhamentos">Ferramenta: Encaminhamentos</option>
+          <option value="m:linktree">Ferramenta: Links</option>
         </select>
         <select id="f-situacao">
           <option value="">Todas as situações</option>
@@ -274,6 +320,15 @@
         <label class="check"><input type="checkbox" data-papel="admin"><span><b>Administrador(a)</b><br>define os níveis de acesso</span></label>
         <label class="check oculto" id="ed-super"><input type="checkbox" data-papel="superadmin"><span><b>Superadministrador(a)</b><br>acesso absoluto e área técnica</span></label>
       </div>
+      <h2>Ferramentas liberadas</h2>
+      <div class="ajuda" style="margin-bottom:6px">Ferramentas com dados restritos. Só quem estiver marcado aqui vê a ferramenta.</div>
+      <div class="papeis">
+        <label class="check"><input type="checkbox" data-modulo="cat"><span><b>Formulário de Relatório · CAT</b><br>registra escutas e gera relatórios</span></label>
+        <label class="check"><input type="checkbox" data-modulo="ouvidoria"><span><b>Ouvidoria</b><br>lê as manifestações e responde</span></label>
+        <label class="check"><input type="checkbox" data-modulo="banco_talentos"><span><b>Banco de Talentos</b><br>vê inscrições e ranking</span></label>
+        <label class="check"><input type="checkbox" data-modulo="encaminhamentos"><span><b>Encaminhamentos (gestão)</b><br>vê e atende todas as solicitações</span></label>
+        <label class="check"><input type="checkbox" data-modulo="linktree"><span><b>Links do Projeto</b><br>adiciona e edita os links</span></label>
+      </div>
       <button type="submit">Salvar alterações</button>
     </form>
     <div class="aviso" id="a-editar"></div>
@@ -309,6 +364,12 @@
     </div>
   </section>
 
+  <div id="instalar" class="oculto" style="margin-top:18px;border:1px solid var(--borda);border-radius:var(--raio);padding:12px 14px;background:var(--fundo);font-size:13.5px;line-height:1.45">
+    <b>Instale o SGT no seu celular ou computador</b>
+    <div id="instalar-txt" class="ajuda" style="margin-top:4px">O SGT ganha um ícone na tela inicial e abre como aplicativo.</div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button id="instalar-sim" style="width:auto;margin:0;padding:9px 16px;font-size:14px">Instalar app</button>
+      <button id="instalar-nao" class="sec" style="width:auto;margin:0;padding:9px 16px;font-size:14px">Agora não</button></div>
+  </div>
   <div class="rodape">SGT · Projeto GA BA</div>
 </main>
 
@@ -327,12 +388,13 @@ let usuarios = [];        // cache da lista do painel
 let editando = null;
 
 const NOMES_PAPEIS = { superadmin: "Superadministrador(a)", admin: "Administrador(a)", gerencia: "Gerência", rh: "Gestão de Pessoas", lideranca: "Liderança", colaborador: "Colaborador(a)" };
+const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || id.startsWith("v-fer") || id.startsWith("v-tal"));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk)/.test(id));
   window.scrollTo(0, 0);
 }
 function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso" + (texto ? " " + tipo : ""); a.textContent = texto; }
@@ -343,7 +405,7 @@ function mascaraCPF(el){ el.addEventListener("input", e => {
   const n = so_numeros(e.target.value).slice(0, 11);
   e.target.value = n.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }); }
-["e-cpf","p-cpf","n-cpf"].forEach(id => mascaraCPF($(id)));
+["e-cpf","p-cpf","n-cpf","r-cpf"].forEach(id => mascaraCPF($(id)));
 const fmtCPF = (c) => c ? c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4") : "";
 const cpfOculto = (c) => c ? "***." + c.slice(3, 6) + "." + c.slice(6, 9) + "-**" : "";
 const fmtData = (d) => d ? d.split("-").reverse().join("/") : "";
@@ -445,6 +507,49 @@ $("reenviar").addEventListener("click", async () => {
   } catch { aviso("a-pa2", "Sem conexão com o SGT. Verifique sua internet."); }
 });
 
+// ---------- Esqueci minha senha
+let cpfRecuperacao = "";
+async function pedirCodigoRecuperacao(cpf, nasc, avisoId){
+  const d = await chamarFuncao({ acao: "recuperar_codigo", cpf, data_nascimento: nasc });
+  if (!d.ok) { aviso(avisoId, d.erro || "Não foi possível continuar agora. Tente de novo."); return false; }
+  $("rec2-sub").textContent = `Enviamos um código de 6 dígitos para ${d.enviado_para}. Ele vale por ${d.validade_min} minutos. Confira também a caixa de spam.`;
+  return true;
+}
+$("f-rec1").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const cpf = so_numeros($("r-cpf").value), nasc = $("r-nasc").value;
+  if (!cpfValido(cpf)) return aviso("a-rec1", "Confira o CPF digitado.");
+  if (!nasc) return aviso("a-rec1", "Informe sua data de nascimento.");
+  ocupado(e.target, true);
+  try {
+    if (await pedirCodigoRecuperacao(cpf, nasc, "a-rec1")) { cpfRecuperacao = cpf; mostrar("v-esqueci2"); $("r-cod").focus(); }
+  } catch { aviso("a-rec1", "Sem conexão com o SGT. Verifique sua internet."); }
+  finally { ocupado(e.target, false); }
+});
+$("r-reenviar").addEventListener("click", async () => {
+  try {
+    if (await pedirCodigoRecuperacao(cpfRecuperacao, $("r-nasc").value, "a-rec2")) aviso("a-rec2", "Novo código enviado.", "ok");
+  } catch { aviso("a-rec2", "Sem conexão com o SGT. Verifique sua internet."); }
+});
+$("f-rec2").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const codigo = so_numeros($("r-cod").value), senha = $("r-senha").value;
+  if (codigo.length !== 6) return aviso("a-rec2", "O código tem 6 dígitos.");
+  if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return aviso("a-rec2", "A senha precisa ter pelo menos 8 caracteres, com letras e números.");
+  if (senha !== $("r-senha2").value) return aviso("a-rec2", "As senhas não são iguais.");
+  ocupado(e.target, true);
+  try {
+    const d = await chamarFuncao({ acao: "redefinir", cpf: cpfRecuperacao, codigo, senha });
+    if (!d.ok) return aviso("a-rec2", d.erro || "Não foi possível salvar a nova senha agora.");
+    e.target.reset(); $("f-rec1").reset();
+    mostrar("v-entrar");
+    $("e-cpf").value = cpfRecuperacao; $("e-cpf").dispatchEvent(new Event("input"));
+    aviso("a-entrar", "Senha alterada! Agora entre com seu CPF e a nova senha.", "ok");
+    $("e-senha").focus();
+  } catch { aviso("a-rec2", "Sem conexão com o SGT. Verifique sua internet."); }
+  finally { ocupado(e.target, false); }
+});
+
 // ---------- Primeiro acesso · 2
 $("f-pa2").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -469,13 +574,16 @@ $("f-pa2").addEventListener("submit", async (e) => {
 // ---------- Início
 const pode = (...p) => eu && eu.papeis.some(x => x === "superadmin" || p.includes(x));
 const ehSuper = () => eu && eu.papeis.includes("superadmin");
+const temModulo = (m) => ehSuper() || (eu && (eu.modulos || []).includes(m));
 
 async function abrirInicio(){
   const s = lerSessao();
   const [c] = await api(`/rest/v1/colaborador?select=id,nome&auth_user_id=eq.${s.u}`);
   if (!c) throw new Error("sem cadastro");
-  const ps = await api(`/rest/v1/papel_usuario?select=papel&colaborador_id=eq.${c.id}`);
-  eu = { id: c.id, nome: c.nome, papeis: ps.map(p => p.papel) };
+  const [ps, ms] = await Promise.all([
+    api(`/rest/v1/papel_usuario?select=papel&colaborador_id=eq.${c.id}`),
+    api(`/rest/v1/acesso_modulo?select=modulo&colaborador_id=eq.${c.id}`)]);
+  eu = { id: c.id, nome: c.nome, papeis: ps.map(p => p.papel), modulos: ms.map(m => m.modulo) };
   $("ola").textContent = "Olá, " + c.nome.split(" ")[0] + "!";
   const nomes = ["superadmin","admin","gerencia","rh","lideranca","colaborador"].filter(p => eu.papeis.includes(p)).map(p => NOMES_PAPEIS[p]);
   $("perfil-txt").textContent = "Seu perfil: " + (nomes.join(" · ") || "Colaborador(a)");
@@ -483,13 +591,20 @@ async function abrirInicio(){
   const f = [];
   if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
   f.push(`<button class="ferr" id="ir-ferias"><span class="ico">✈</span><span>Gestão de Férias<small>Informar férias, enviar comprovante e aviso assinado</small></span></button>`);
-  if (pode("admin","rh","gerencia")) f.push(`<button class="ferr" id="ir-talentos"><span class="ico">★</span><span>Banco de Talentos<small>Inscrições, ranking, aderência às vagas e banco de questões</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-enc"><span class="ico">⇄</span><span>Encaminhamentos<small>Solicitações à gestão do projeto, com acompanhamento</small></span></button>`);
+  if (temModulo("cat")) f.push(`<a class="ferr" href="cat.html"><span class="ico">✚</span><span>Formulário de Relatório · CAT<small>Escuta e relatório para subsidiar a CAT</small></span></a>`);
+  if (temModulo("ouvidoria")) f.push(`<button class="ferr" id="ir-ouv"><span class="ico">✉</span><span>Ouvidoria<small>Manifestações recebidas e respostas</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-links"><span class="ico">🔗</span><span>Links do Projeto<small>${pode("admin") || temModulo("linktree") ? "Ver e editar os links úteis" : "Links úteis do projeto"}</small></span></button>`);
+  if (pode("admin","rh","gerencia") || temModulo("banco_talentos")) f.push(`<button class="ferr" id="ir-talentos"><span class="ico">★</span><span>Banco de Talentos<small>Inscrições, ranking, aderência às vagas e banco de questões</small></span></button>`);
   if (ehSuper()) f.push(`<button class="ferr" id="ir-tecnica"><span class="ico">&lt;/&gt;</span><span>Área técnica<small>Código, banco de dados e configurações do SGT</small></span></button>`);
   $("ferramentas").innerHTML = f.join("");
   if ($("ir-painel")) $("ir-painel").addEventListener("click", abrirPainel);
   if ($("ir-ferias")) $("ir-ferias").addEventListener("click", () => window.Ferias && Ferias.abrir());
   if ($("ir-talentos")) $("ir-talentos").addEventListener("click", () => window.Talentos && Talentos.abrir());
   if ($("ir-tecnica")) $("ir-tecnica").addEventListener("click", () => mostrar("v-tecnica"));
+  if ($("ir-enc")) $("ir-enc").addEventListener("click", () => window.Encaminhamentos && Encaminhamentos.abrir());
+  if ($("ir-ouv")) $("ir-ouv").addEventListener("click", () => window.Ouvidoria && Ouvidoria.abrir());
+  if ($("ir-links")) $("ir-links").addEventListener("click", () => window.Links && Links.abrir());
   mostrar("v-inicio");
 }
 $("sair").addEventListener("click", async () => {
@@ -525,12 +640,13 @@ function desenharLista(){
   const fp = $("f-perfil").value, fs = $("f-situacao").value;
   const vis = usuarios.filter(u =>
     (!q || semAcento(u.nome).includes(q) || semAcento(u.email).includes(q) || (qn.length >= 3 && u.cpf.includes(qn))) &&
-    (!fp || u.papeis.includes(fp)) &&
+    (!fp || (fp.startsWith("m:") ? (u.modulos || []).includes(fp.slice(2)) : u.papeis.includes(fp))) &&
     (!fs || (fs === "sem-acesso" ? !u.acesso_ativado : u.situacao === fs)));
   const ativados = usuarios.filter(u => u.acesso_ativado).length;
   $("resumo").textContent = `${usuarios.length} pessoas no quadro · ${ativados} já criaram o acesso` + (vis.length !== usuarios.length ? ` · mostrando ${vis.length}` : "");
   $("lista").innerHTML = vis.length ? vis.map(u => {
-    const extras = u.papeis.filter(p => p !== "colaborador").map(p => `<span class="tag${p === "superadmin" ? " lar" : ""}">${NOMES_PAPEIS[p]}</span>`).join("");
+    const extras = u.papeis.filter(p => p !== "colaborador").map(p => `<span class="tag${p === "superadmin" ? " lar" : ""}">${NOMES_PAPEIS[p]}</span>`).join("")
+      + (u.modulos || []).map(m => `<span class="tag cinza">${NOMES_MODULOS[m] || m}</span>`).join("");
     const sit = u.situacao === "desligado" ? `<span class="tag verm">Desligado</span>` : u.situacao !== "ativo" ? `<span class="tag cinza">${NOMES_SIT[u.situacao]}</span>` : "";
     const acc = u.acesso_ativado ? `<span class="tag verde">Acesso ativo</span>` : `<span class="tag cinza">Sem acesso</span>`;
     return `<div class="pessoa" data-id="${u.id}"><div><b>${esc(u.nome)}</b>
@@ -550,6 +666,7 @@ function abrirEdicao(id){
   $("ed-nome-in").value = u.nome; $("ed-email").value = u.email; $("ed-nasc").value = u.data_nascimento || "";
   $("ed-adm").value = u.data_admissao || ""; $("ed-sit").value = u.situacao;
   document.querySelectorAll("[data-papel]").forEach(cb => { cb.checked = u.papeis.includes(cb.dataset.papel); cb.disabled = !souAdmin || bloqueado; });
+  document.querySelectorAll("[data-modulo]").forEach(cb => { cb.checked = (u.modulos || []).includes(cb.dataset.modulo); cb.disabled = !souAdmin || bloqueado; });
   $("ed-super").classList.toggle("oculto", !ehSuper());
   $("ed-perm-ajuda").textContent = bloqueado ? "Esta pessoa é superadministradora. Só um superadministrador pode alterar este cadastro e os acessos dela."
     : souAdmin ? "Todos têm o nível Colaborador(a). Marque os demais." : "Só administradores podem mudar os níveis de acesso.";
@@ -575,6 +692,10 @@ $("f-editar").addEventListener("submit", async (e) => {
   const marcados = [...document.querySelectorAll("[data-papel]")].filter(c => c.checked).map(c => c.dataset.papel);
   const tirar = pode("admin") ? u.papeis.filter(p => p !== "colaborador" && !marcados.includes(p)) : [];
   const dar = pode("admin") ? marcados.filter(p => !u.papeis.includes(p)) : [];
+  const modsMarcados = [...document.querySelectorAll("[data-modulo]")].filter(c => c.checked).map(c => c.dataset.modulo);
+  const modsAtuais = u.modulos || [];
+  const modTirar = pode("admin") ? modsAtuais.filter(m => !modsMarcados.includes(m) && document.querySelector(`[data-modulo="${m}"]`)) : [];
+  const modDar = pode("admin") ? modsMarcados.filter(m => !modsAtuais.includes(m)) : [];
   if (u.id === eu.id && tirar.includes("superadmin")) return aviso("a-editar", "Você não pode tirar o seu próprio nível de superadministrador.");
   if (u.id === eu.id && tirar.includes("admin")) return aviso("a-editar", "Você não pode tirar o seu próprio nível de administrador. Peça a outro administrador.");
   ocupado(e.target, true);
@@ -583,11 +704,15 @@ $("f-editar").addEventListener("submit", async (e) => {
     for (const p of dar) await api("/rest/v1/papel_usuario", { method: "POST", headers: { "Prefer": "return=minimal" },
       body: JSON.stringify({ colaborador_id: u.id, papel: p, origem: "manual", concedido_por: eu.id }) });
     for (const p of tirar) await api(`/rest/v1/papel_usuario?colaborador_id=eq.${u.id}&papel=eq.${p}`, { method: "DELETE" });
-    Object.assign(u, dados, { papeis: [...u.papeis.filter(p => !tirar.includes(p)), ...dar] });
+    for (const m of modDar) await api("/rest/v1/acesso_modulo", { method: "POST", headers: { "Prefer": "return=minimal" },
+      body: JSON.stringify({ colaborador_id: u.id, modulo: m, concedido_por: eu.id }) });
+    for (const m of modTirar) await api(`/rest/v1/acesso_modulo?colaborador_id=eq.${u.id}&modulo=eq.${m}`, { method: "DELETE" });
+    Object.assign(u, dados, { papeis: [...u.papeis.filter(p => !tirar.includes(p)), ...dar],
+      modulos: [...modsAtuais.filter(m => !modTirar.includes(m)), ...modDar] });
     $("ed-nome").textContent = u.nome;
     aviso("a-editar", "Alterações salvas.", "ok");
   } catch (err) { if (err.message !== "sessao") aviso("a-editar", traduzErro(err)); }
-  finally { ocupado(e.target, false); if (!pode("admin")) document.querySelectorAll("[data-papel]").forEach(c => c.disabled = true); }
+  finally { ocupado(e.target, false); if (!pode("admin")) document.querySelectorAll("[data-papel],[data-modulo]").forEach(c => c.disabled = true); }
 });
 
 let confirmaLiberar = false;
@@ -756,10 +881,39 @@ $("importar").addEventListener("click", async () => {
   } catch (err) { if (err.message !== "sessao") aviso("a-lote", traduzErro(err)); $("importar").disabled = false; }
 });
 
+// ---------- Instalar como aplicativo (ícone na tela inicial)
+(() => {
+  let pedido = null;
+  const instalado = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const dispensado = () => { try { return localStorage.getItem("sgt-instalar") === "nao"; } catch { return false; } };
+  if (instalado || dispensado()) return;
+  const caixa = $("instalar");
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); pedido = e; caixa.classList.remove("oculto"); });
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+    $("instalar-txt").innerHTML = "No iPhone: toque em <b>Compartilhar</b> (o quadrado com a seta) e depois em <b>Adicionar à Tela de Início</b>.";
+    $("instalar-sim").classList.add("oculto"); caixa.classList.remove("oculto");
+  }
+  $("instalar-sim").addEventListener("click", async () => {
+    if (!pedido) return;
+    pedido.prompt(); const r = await pedido.userChoice; pedido = null;
+    if (r.outcome === "accepted") caixa.classList.add("oculto");
+  });
+  $("instalar-nao").addEventListener("click", () => { caixa.classList.add("oculto"); try { localStorage.setItem("sgt-instalar", "nao"); } catch {} });
+  addEventListener("appinstalled", () => caixa.classList.add("oculto"));
+})();
+
 // ---------- Ao abrir a página
-(async () => { if (lerSessao()) { try { await abrirInicio(); } catch { limparSessao(); mostrar("v-entrar"); } } })();
+(async () => {
+  let msg = ""; try { msg = sessionStorage.getItem("sgt-aviso") || ""; sessionStorage.removeItem("sgt-aviso"); } catch {}
+  if (lerSessao()) { try { await abrirInicio(); return; } catch { limparSessao(); mostrar("v-entrar"); } }
+  if (msg) aviso("a-entrar", msg, "alerta");
+})();
 </script>
 <script src="ferias.js?v=1"></script>
 <script src="talentos.js?v=1"></script>
+<script src="encaminhamentos.js?v=1"></script>
+<script src="ouvidoria.js?v=1"></script>
+<script src="links.js?v=1"></script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
 </html>

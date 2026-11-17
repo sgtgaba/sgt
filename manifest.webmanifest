@@ -1,0 +1,22 @@
+{
+  "name": "SGT · Sistema Geral do Time",
+  "short_name": "SGT",
+  "description": "Portal de ferramentas de gestão do Projeto GA BA",
+  "lang": "pt-BR",
+  "id": "/sgt/",
+  "start_url": "/sgt/",
+  "scope": "/sgt/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf6f8",
+  "theme_color": "#e71181",
+  "icons": [
+    { "src": "icones/sgt-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icones/sgt-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icones/sgt-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ouvidoria", "url": "/sgt/ouvidoria/", "icons": [{ "src": "icones/sgt-192.png", "sizes": "192x192" }] },
+    { "name": "Links do Projeto", "url": "/sgt/links/", "icons": [{ "src": "icones/sgt-192.png", "sizes": "192x192" }] }
+  ]
+}
