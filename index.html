@@ -798,7 +798,7 @@ $("ed-2fa").addEventListener("click", async (e) => {
     setTimeout(() => { b.dataset.ok = ""; b.textContent = "Redefinir verificação em 2 fatores"; }, 8000); return; }
   b.dataset.ok = ""; b.textContent = "Redefinir verificação em 2 fatores";
   try {
-    if (!Seguranca.totpRecente() && !(await Seguranca.pedirCodigo("Redefinir 2 fatores", "Confirme com o código do seu autenticador."))) return;
+    if (!Seguranca.totpRecente() && !(await Seguranca.pedirCodigo("Redefinir 2 fatores", "Confirme com o código do aplicativo autenticador ou com o código enviado por e-mail."))) return;
     await api("/rest/v1/rpc/redefinir_2fa", { method: "POST", body: JSON.stringify({ p_colaborador: editando.id }) });
     aviso("a-editar", "Pronto. A verificação em 2 fatores foi redefinida e as sessões dessa pessoa foram encerradas.", "ok");
   } catch (err) { if (err.message !== "sessao") aviso("a-editar", traduzErro(err)); }
@@ -996,7 +996,7 @@ $("importar").addEventListener("click", async () => {
 <script src="ganews.js?v=1"></script>
 <script src="orcamento.js?v=1"></script>
 <script src="ciclos.js?v=1"></script>
-<script src="seguranca.js?v=1"></script>
+<script src="seguranca.js?v=2"></script>
 <script src="notificacoes.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
