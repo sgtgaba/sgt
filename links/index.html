@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Links do Projeto · Projeto GA BA</title>
+<meta name="theme-color" content="#e71181">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../icones/favicon-32.png">
+<link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGT">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root{--cor:#c40f6d;--cor-forte:#9c0b56;--cor-suave:#fde8f2;--magenta:#e71181;--laranja:#ee7f08;--verde:#92c01f;
+    --texto:#1f2937;--texto-2:#6b7280;--borda:#e0d6dc;--fundo:#faf6f8;--raio:14px}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--fundo);color:var(--texto);padding:36px 14px}
+  .cartao{position:relative;overflow:hidden;width:100%;max-width:520px;background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(231,17,129,.08);padding:34px 22px 26px;text-align:center}
+  .cartao::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--magenta) 0 34%,var(--laranja) 34% 67%,var(--verde) 67% 100%)}
+  .selo{width:64px;height:64px;margin:0 auto 12px;border-radius:16px;background:linear-gradient(135deg,var(--magenta) 0 55%,var(--laranja) 55% 80%,var(--verde) 80%);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);display:grid;place-items:center;font-weight:700;font-size:20px}
+  h1{font-size:21px;margin:0 0 4px} .sub{color:var(--texto-2);font-size:14px;margin:0 0 22px}
+  h2{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--texto-2);margin:22px 0 10px}
+  a.lk{display:flex;align-items:center;gap:12px;text-align:left;text-decoration:none;color:var(--texto);border:1px solid var(--borda);border-radius:var(--raio);padding:14px 16px;margin:10px 0;background:#fff;transition:.15s}
+  a.lk:hover{border-color:var(--cor);background:var(--cor-suave);transform:translateY(-1px)}
+  a.lk .ic{width:38px;height:38px;border-radius:10px;background:var(--cor-suave);display:grid;place-items:center;font-size:18px;flex:none}
+  a.lk b{display:block;font-size:15.5px} a.lk small{display:block;color:var(--texto-2);font-size:13px;margin-top:2px}
+  .vazio,.rodape{color:var(--texto-2);font-size:13px}
+  .rodape{margin-top:24px} .rodape a{color:var(--texto-2)}
+</style>
+</head>
+<body>
+<main class="cartao">
+  <div class="selo">GA</div>
+  <h1>Projeto GA BA</h1>
+  <p class="sub">Links úteis do projeto</p>
+  <div id="links"><p class="vazio">Carregando…</p></div>
+  <div class="rodape"><a href="../">SGT</a> · <a href="../ouvidoria/">Ouvidoria</a></div>
+</main>
+<script>
+const SUPABASE_URL = "https://bjlhmkwxlrvatnlwjcln.supabase.co";
+const CHAVE_PUBLICA = "sb_publishable_s4_6UV8RA2bFOH0BfR9jLw_EC4VV1N1";
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const seguro = (u) => /^https?:\/\//i.test(u) ? u : "#";
+(async () => {
+  const el = document.getElementById("links");
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/link_item?select=titulo,url,descricao,grupo,icone,ordem&ativo=eq.true&order=grupo.asc,ordem.asc,titulo.asc`,
+      { headers: { apikey: CHAVE_PUBLICA } });
+    if (!r.ok) throw new Error();
+    const l = await r.json();
+    if (!l.length) { el.innerHTML = `<p class="vazio">Nenhum link publicado ainda.</p>`; return; }
+    const grupos = [...new Set(l.map(x => x.grupo))];
+    el.innerHTML = grupos.map(g => (grupos.length > 1 ? `<h2>${esc(g)}</h2>` : "") + l.filter(x => x.grupo === g).map(x =>
+      `<a class="lk" href="${esc(seguro(x.url))}" target="_blank" rel="noopener"><span class="ic">${esc(x.icone || "🔗")}</span><span><b>${esc(x.titulo)}</b>${x.descricao ? `<small>${esc(x.descricao)}</small>` : ""}</span></a>`).join("")).join("");
+  } catch { el.innerHTML = `<p class="vazio">Não foi possível carregar os links agora. Tente de novo em instantes.</p>`; }
+})();
+</script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("../sw.js", { scope: "../" }).catch(() => {}));</script>
+</body>
+</html>
