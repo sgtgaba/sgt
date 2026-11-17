@@ -77,6 +77,6 @@
     if (ehIOS) corpo.insertBefore(ios, and); else corpo.insertBefore(and, ios);
   }
 
-  window.App = { abrir, cartao: () => instalado() ? "" :
-    `<button class="ferr" id="ir-app"><span class="ico">📱</span><span>App no celular<small>Baixar e instalar o SGT no seu aparelho</small></span></button>` };
+  window.App = { abrir, cartao: () =>
+    `<button class="ferr" id="ir-app"><span class="ico">📱</span><span>App no celular<small>${instalado() ? "Baixar o app para Android e compartilhar com colegas" : "Baixar e instalar o SGT no seu aparelho"}</small></span></button>` };
 })();
