@@ -1,5 +1,6 @@
 // SGT · Segurança
-//  - Verificação em 2 fatores (aplicativo autenticador) para Administrador(a) e Programador(a)
+//  - Verificação em 2 fatores (aplicativo autenticador ou e-mail) para Administrador(a) e Programador(a)
+//    Vale por 24 horas: o aparelho onde a pessoa confirmou fica dispensado nesse período
 //  - Confirmação das mudanças de acesso por quem as fez
 //  - Troca de senha (código por e-mail) e lembrete semestral
 //  - Dispositivos conectados (ADM e Programador(a))
@@ -32,7 +33,7 @@
   $("cartao").querySelector(".rodape").insertAdjacentHTML("beforebegin", `
   <section id="v-2fa" class="oculto">
     <h1>Verificação em 2 fatores</h1>
-    <p class="sub" id="s2-intro">Seu nível de acesso exige uma segunda confirmação além da senha. Escolha como quer receber o código:</p>
+    <p class="sub" id="s2-intro">Seu nível de acesso exige uma segunda confirmação além da senha. Escolha como quer receber o código. Depois de confirmar, este aparelho fica dispensado por 24 horas.</p>
     <div id="s2-escolha" class="acoes">
       <button type="button" id="s2-ir-email">Receber código por e-mail</button>
       <button type="button" class="sec" id="s2-ir-app">Usar aplicativo autenticador</button>
@@ -103,6 +104,16 @@
 
   // ------------------------------------------------------------ 2 fatores
   let ultimaVerif = 0, modo = "app";
+  // Aparelho confiável: chave aleatória guardada só neste navegador; o servidor guarda apenas o resumo (hash)
+  function chaveAparelho(){
+    try {
+      let k = localStorage.getItem("sgt-aparelho");
+      if (!k || k.length < 32) { k = [...crypto.getRandomValues(new Uint8Array(24))].map(b => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem("sgt-aparelho", k); }
+      return k;
+    } catch { return ""; }
+  }
+  const confiarAparelho = () => rpc("dispositivo_registrar", { p_token: chaveAparelho() }).catch(() => {});
+  const usarAparelho = async () => { const k = chaveAparelho(); return !!k && (await rpc("dispositivo_usar", { p_token: k }).catch(() => false)) === true; };
   async function fatores(){
     const u = await api("/auth/v1/user");
     return (u.factors || []).filter(f => f.factor_type === "totp");
@@ -161,6 +172,7 @@
   async function exigir(continuar){
     info = await rpc("minha_seguranca").catch(() => null);
     if (!info || !info.precisa_2fa || info.verificado) return true;
+    if (await usarAparelho()) { info.verificado = true; return true; }
     depois = continuar;
     fator = (await fatores()).find(f => f.status === "verified") || null;
     mostrar("v-2fa");
@@ -179,6 +191,8 @@
         await verificar(fator.id, codigo);
         if (fator.novo) sessionStorage.setItem("sgt-aviso-ok", "Aplicativo autenticador cadastrado. Nos próximos acessos, use o código do aplicativo (ou peça o código por e-mail).");
       }
+      await confiarAparelho();
+      if (info) info.verificado = true;
       if (depois) await depois();
     } catch (err) {
       if (err.message !== "sessao") aviso("a-2fa", msgErro(err));
@@ -215,7 +229,7 @@
         const c = inp.value.replace(/\D/g, "");
         if (c.length !== 6) return aviso("a-modal", "O código tem 6 dígitos.");
         ocupado(e.target, true);
-        try { if (m2 === "email") await verificarEmail(c); else await verificar(f.id, c); m.remove(); ok(true); }
+        try { if (m2 === "email") await verificarEmail(c); else await verificar(f.id, c); await confiarAparelho(); m.remove(); ok(true); }
         catch (err) { aviso("a-modal", msgErro(err)); ocupado(e.target, false); }
       };
       ajustar();
@@ -366,6 +380,14 @@
   function cartao(){
     return `<button class="ferr" id="ir-seg"><span class="ico">🔒</span><span>Segurança<small>${defineAcessos() ? "Senha, confirmações de acesso e dispositivos conectados" : "Trocar minha senha"}</small></span></button>`;
   }
+
+  // Quem fica com o SGT aberto: passadas 24 horas da última confirmação, pede o código de novo
+  setInterval(async () => {
+    if (!info || !info.precisa_2fa || document.hidden || !$("v-2fa").classList.contains("oculto")) return;
+    const atual = await rpc("minha_seguranca").catch(() => null);
+    if (!atual || atual.verificado) return;
+    if (typeof abrirInicio === "function") exigir(abrirInicio);
+  }, 15 * 60 * 1000);
 
   window.Seguranca = { exigir, abrir, cartao, avisosInicio, solicitar, pedirCodigo, totpRecente };
 })();
