@@ -448,7 +448,16 @@ function navegar(id){
   if (/^v-(entrar|pa\d|esqueci|2fa)/.test(id)) { NAV.guarda = false; NAV.pilha = [id]; NAV.pos = 0; try { history.replaceState({ v: id, i: 0 }, ""); } catch {} return; }
   if (!NAV.guarda && id === "v-inicio") {
     NAV.guarda = true; NAV.pilha = [id]; NAV.pos = 0;
-    try { history.replaceState({ guarda: true }, ""); history.pushState({ v: id, i: 0 }, ""); } catch {}
+    // O Chrome ignora na seta "voltar" as entradas criadas antes de a pessoa tocar na página.
+    // Por isso a proteção contra sair do SGT só é criada no primeiro toque, clique ou tecla.
+    const instalar = () => {
+      ["pointerdown", "keydown", "touchstart"].forEach(n => removeEventListener(n, instalar, true));
+      if (NAV.pos !== 0 || !lerSessao()) return;
+      try { history.replaceState({ guarda: true }, ""); history.pushState({ v: NAV.pilha[0], i: 0 }, ""); } catch {}
+    };
+    try { history.replaceState({ v: id, i: 0 }, ""); } catch {}
+    if (navigator.userActivation && navigator.userActivation.hasBeenActive) instalar();
+    else ["pointerdown", "keydown", "touchstart"].forEach(n => addEventListener(n, instalar, true));
     return;
   }
   const i = NAV.pilha.lastIndexOf(id, NAV.pos);
@@ -463,8 +472,14 @@ window.addEventListener("popstate", (e) => {
   if (document.querySelector(".seg-modal")) { document.querySelector(".seg-modal button.sec")?.click(); }
   if (st.guarda || !st.v) {
     // Chegou ao começo: fica na tela inicial em vez de sair do SGT
-    NAV.pos = 0; try { history.pushState({ v: NAV.pilha[0] || "v-inicio", i: 0 }, ""); } catch {}
+    NAV.pos = 0;
     if (lerSessao() && NAV.pilha[0]) mostrar(NAV.pilha[0], true);
+    // Recoloca a proteção no próximo toque (o Chrome só respeita entradas criadas depois de um toque)
+    const repor = () => {
+      ["pointerdown", "keydown", "touchstart"].forEach(n => removeEventListener(n, repor, true));
+      if (lerSessao() && (history.state || {}).guarda) try { history.pushState({ v: NAV.pilha[0] || "v-inicio", i: 0 }, ""); } catch {}
+    };
+    ["pointerdown", "keydown", "touchstart"].forEach(n => addEventListener(n, repor, true));
     return;
   }
   if (!lerSessao() && !/^v-(entrar|pa\d|esqueci)/.test(st.v)) return;
