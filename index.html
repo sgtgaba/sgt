@@ -371,6 +371,7 @@
       <div class="ajuda" style="margin-bottom:6px">Ferramentas com dados restritos. Só quem estiver marcado aqui vê a ferramenta.</div>
       <div class="papeis">
         <label class="check"><input type="checkbox" data-modulo="cat"><span><b>Formulário de Relatório · CAT</b><br>registra escutas e gera relatórios</span></label>
+        <label class="check"><input type="checkbox" data-modulo="relatorios_rpa"><span><b>Relatórios RPA</b><br>gera, envia e confere os relatórios de atividades</span></label>
         <label class="check"><input type="checkbox" data-modulo="ouvidoria"><span><b>Ouvidoria</b><br>lê as manifestações e responde</span></label>
         <label class="check"><input type="checkbox" data-modulo="banco_talentos"><span><b>Banco de Talentos</b><br>vê inscrições e ranking</span></label>
         <label class="check"><input type="checkbox" data-modulo="encaminhamentos"><span><b>Encaminhamentos (gestão)</b><br>vê e atende todas as solicitações</span></label>
@@ -438,14 +439,14 @@ let usuarios = [];        // cache da lista do painel
 let editando = null;
 
 const NOMES_PAPEIS = { superadmin: "Programador(a)", admin: "Administrador(a)", gerencia: "Gerente", rh: "Gestão de Pessoas", lideranca: "Liderança de equipe", colaborador: "Consultor(a)" };
-const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas", ganews: "GANews (edição)", orcamento: "Orçamento", ciclos: "Ciclos (gestão)" };
+const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas", ganews: "GANews (edição)", orcamento: "Orçamento", ciclos: "Ciclos (gestão)", relatorios_rpa: "Relatórios RPA" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
 function mostrar(id){
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
-  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd|seg|not)/.test(id));
-  $("cartao").classList.toggle("amplo", /^v-(qg|pv|car|gan|orc|cd)/.test(id));
+  $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd|seg|not|rpa)/.test(id));
+  $("cartao").classList.toggle("amplo", /^v-(qg|pv|car|gan|orc|cd|rpa)/.test(id));
   window.scrollTo(0, 0);
 }
 function aviso(id, texto, tipo = "erro"){ const a = $(id); a.className = "aviso" + (texto ? " " + tipo : ""); a.textContent = texto; }
@@ -654,6 +655,7 @@ async function abrirInicio(){
   if (pode("admin","rh","gerencia") || temModulo("banco_talentos")) f.push(`<button class="ferr" id="ir-talentos"><span class="ico">★</span><span>Banco de Talentos<small>Inscrições, ranking, aderência às vagas e banco de questões</small></span></button>`);
   if (pode("admin","rh") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-qg"><span class="ico">▦</span><span>Quadro Geral do Time<small>Vagas, ocupantes, valores e movimentações</small></span></button>`);
   if (pode("admin","rh") || temModulo("painel_vagas") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-pv"><span class="ico">◷</span><span>Painel de Vagas<small>Vagas abertas e tempo de vacância</small></span></button>`);
+  if ((pode("admin","rh") || temModulo("relatorios_rpa")) && window.RelatoriosRPA) f.push(RelatoriosRPA.cartao());
   if (pode("admin","rh") || temModulo("orcamento")) f.push(`<button class="ferr" id="ir-orc"><span class="ico">$</span><span>Orçamento do Projeto<small>Custo de pessoal realizado e projetado</small></span></button>`);
   f.push(`<button class="ferr" id="ir-cd"><span class="ico">↻</span><span>Ciclos de Desenvolvimento<small>Autoavaliação, feedback e PDI</small></span></button>`);
   f.push(`<button class="ferr" id="ir-car"><span class="ico">☺</span><span>Carômetro<small>Quem faz parte do time hoje</small></span></button>`);
@@ -672,6 +674,7 @@ async function abrirInicio(){
   if ($("ir-qg")) $("ir-qg").addEventListener("click", () => window.Quadro && Quadro.abrir());
   if ($("ir-pv")) $("ir-pv").addEventListener("click", () => window.PainelVagas && PainelVagas.abrir());
   if ($("ir-orc")) $("ir-orc").addEventListener("click", () => window.Orcamento && Orcamento.abrir());
+  if ($("ir-rpa")) $("ir-rpa").addEventListener("click", () => RelatoriosRPA.abrir());
   if ($("ir-car")) $("ir-car").addEventListener("click", () => window.Carometro && Carometro.abrir());
   if ($("ir-cd")) $("ir-cd").addEventListener("click", () => window.Ciclos && Ciclos.abrir());
   if ($("ir-gan")) $("ir-gan").addEventListener("click", () => window.GANews && GANews.abrir());
@@ -996,6 +999,7 @@ $("importar").addEventListener("click", async () => {
 <script src="ganews.js?v=1"></script>
 <script src="orcamento.js?v=1"></script>
 <script src="ciclos.js?v=1"></script>
+<script src="rpa.js?v=1"></script>
 <script src="seguranca.js?v=2"></script>
 <script src="notificacoes.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
