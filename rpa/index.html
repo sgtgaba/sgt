@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatório de Atividades · Projeto GA BA</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#e71181">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../icones/favicon-32.png">
+<link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SGT">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root{
+    --cor:#c40f6d; --cor-forte:#9c0b56; --cor-suave:#fde8f2;
+    --magenta:#e71181; --laranja:#ee7f08; --verde:#92c01f;
+    --texto:#1f2937; --texto-2:#6b7280; --borda:#e0d6dc; --fundo:#faf6f8;
+    --erro:#b42318; --erro-fundo:#fef3f2; --ok:#067647; --ok-fundo:#ecfdf3; --alerta:#b54708; --alerta-fundo:#fffaeb;
+    --raio:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--fundo);color:var(--texto);padding:32px 14px}
+  .cartao{position:relative;overflow:hidden;width:100%;max-width:720px;background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(231,17,129,.08);padding:34px 26px 30px}
+  .cartao::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--magenta) 0 34%,var(--laranja) 34% 67%,var(--verde) 67% 100%)}
+  .marca{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .selo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--magenta) 0 55%,var(--laranja) 55% 80%,var(--verde) 80%);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+  .marca b{display:block;font-size:18px}.marca span{font-size:13px;color:var(--texto-2)}
+  h1{font-size:21px;margin:0 0 6px}h2{font-size:16px;margin:24px 0 8px}
+  p.sub{margin:0 0 18px;color:var(--texto-2);font-size:14.5px;line-height:1.5}
+  label{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  input[type=text],input[type=email],input[type=tel],select,textarea{width:100%;padding:11px 13px;font-size:16px;border:1px solid var(--borda);border-radius:var(--raio);background:#fff;color:var(--texto);font-family:inherit}
+  textarea{min-height:120px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--cor);outline-offset:1px;border-color:var(--cor)}
+  .ajuda{font-size:12.5px;color:var(--texto-2);margin-top:5px;line-height:1.45}
+  .grade2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  @media(max-width:560px){.grade2{grid-template-columns:1fr}}
+  .check{display:flex;gap:10px;align-items:flex-start;margin:14px 0 4px;font-size:14px;line-height:1.5;font-weight:400}
+  .check input{margin-top:3px;width:18px;height:18px;accent-color:var(--cor);flex:none}
+  .opcoes{display:flex;gap:8px;flex-wrap:wrap}
+  .opcoes label{margin:0;font-weight:500;border:1px solid var(--borda);border-radius:999px;padding:8px 14px;cursor:pointer;display:flex;gap:8px;align-items:center;font-size:14.5px}
+  .opcoes label:has(input:checked){border-color:var(--cor);background:var(--cor-suave);color:var(--cor-forte)}
+  .opcoes input{accent-color:var(--cor)}
+  button{padding:13px 18px;font-size:16px;font-weight:600;border:0;border-radius:var(--raio);background:var(--cor);color:#fff;cursor:pointer;font-family:inherit}
+  button:hover{background:var(--cor-forte)}button:disabled{opacity:.55;cursor:default}
+  button.sec{background:#fff;color:var(--cor);border:1px solid var(--borda)}button.sec:hover{background:var(--cor-suave)}
+  .acoes{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}.acoes button{flex:1;min-width:160px}
+  .aviso{border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin-top:14px;display:none;white-space:pre-line}
+  .aviso.erro{display:block;background:var(--erro-fundo);color:var(--erro)}
+  .aviso.ok{display:block;background:var(--ok-fundo);color:var(--ok)}
+  .aviso.alerta{display:block;background:var(--alerta-fundo);color:var(--alerta)}
+  .oculto{display:none!important}
+  .escolha{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .escolha button{text-align:left;background:#fff;color:var(--texto);border:1px solid var(--borda);font-weight:400;font-size:14px;line-height:1.45;padding:18px}
+  .escolha button:hover{background:var(--cor-suave)}.escolha button b{display:block;font-size:16px;margin-bottom:4px;color:var(--cor-forte)}
+  @media(max-width:560px){.escolha{grid-template-columns:1fr}}
+  .caixa{background:var(--fundo);border:1px solid var(--borda);border-radius:var(--raio);padding:14px 16px;font-size:14px;line-height:1.55}
+  .caixa ul{margin:6px 0 0;padding-left:20px}
+  .protocolo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+  .protocolo div{border:2px dashed var(--cor);border-radius:var(--raio);padding:14px;text-align:center}
+  .protocolo small{display:block;color:var(--texto-2);font-size:12.5px;margin-bottom:4px}
+  .protocolo b{font-size:22px;letter-spacing:2px;font-variant-numeric:tabular-nums}
+  .bolha{border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.5;white-space:pre-wrap;background:#f4f4f6;margin-top:10px}
+  .bolha.ouv{background:var(--cor-suave)}
+  .bolha small{display:block;color:var(--texto-2);font-size:12px;margin-bottom:4px}
+  .etiqueta{display:inline-block;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--cor-suave);color:var(--cor-forte)}
+  .rodape{text-align:center;font-size:12px;color:var(--texto-2);margin-top:24px;line-height:1.5}
+  .rodape a{color:var(--texto-2)}
+  @media print{body{background:#fff;padding:0}.cartao{box-shadow:none}.acoes,.rodape{display:none}}
+
+  input[type=file]{width:100%;margin-top:6px;font-size:14px}
+  .botoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.botoes a,.botoes button{flex:1;min-width:200px;text-align:center;text-decoration:none;display:inline-block}
+  a.gov{padding:13px 18px;border-radius:var(--raio);background:#1351b4;color:#fff;font-weight:600}a.gov:hover{background:#0c326f}
+  .dados{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14.5px;margin:4px 0 6px}.dados span{color:var(--texto-2)}
+  ol.passos{padding-left:20px;font-size:14.5px;line-height:1.6;margin:6px 0}
+</style>
+</head>
+<body>
+<main class="cartao">
+  <div class="marca">
+    <div class="selo">GA</div>
+    <div><b>Relatório de Atividades</b><span>Projeto GA BA · envio do relatório assinado</span></div>
+  </div>
+  <section id="t-carregando"><p class="sub">Carregando…</p></section>
+
+  <section id="t-erro" class="oculto">
+    <h1>Não foi possível abrir</h1>
+    <p class="sub" id="erro-txt"></p>
+  </section>
+
+  <section id="t-envio" class="oculto">
+    <h1 id="titulo">Relatório de Atividades</h1>
+    <div class="dados"><span>Contratado(a)</span><b id="d-nome"></b><span>Mês de referência</span><b id="d-mes"></b><span id="d-prazo-r">Prazo</span><b id="d-prazo"></b></div>
+    <div class="aviso" id="d-erro"></div>
+    <div class="aviso" id="d-conf"></div>
+    <h2>1. Baixe e assine</h2>
+    <ol class="passos">
+      <li>Baixe o seu relatório e confira os dados.</li>
+      <li>Assine <b>pelo gov.br</b> (opção "Assinar documento" e escolha o PDF) <b>ou à mão</b>: imprima, assine e digitalize a página inteira em PDF.</li>
+      <li>Não altere o conteúdo. Se algum dado estiver errado, responda o e-mail que você recebeu antes de assinar.</li>
+    </ol>
+    <div class="botoes"><button class="sec" id="baixar">⬇ Baixar meu relatório (PDF)</button><a class="gov" id="gov" href="https://assinador.iti.br/" target="_blank" rel="noopener">Assinar pelo gov.br</a></div>
+    <h2>2. Envie o relatório assinado</h2>
+    <form id="f-envio" novalidate>
+      <label for="arq">Relatório assinado (PDF, até 10 MB) *</label>
+      <input type="file" id="arq" accept="application/pdf,.pdf">
+      <div id="bloco-entrega" class="oculto">
+        <label for="entrega">Entrega realizada no mês *</label>
+        <input type="file" id="entrega">
+        <div class="ajuda">Remuneração variável a partir de R$ 16.000,00: anexe a entrega que justifica o valor.</div>
+      </div>
+      <label class="check"><input type="checkbox" id="lgpd"><span>Declaro que este é o meu Relatório de Atividades, assinado por mim, e estou ciente de que os dados serão usados exclusivamente para a gestão da minha contratação no Projeto GA BA, conforme a LGPD.</span></label>
+      <div class="acoes"><button type="submit" id="enviar">Enviar relatório assinado</button></div>
+    </form>
+    <div class="aviso" id="a-envio"></div>
+  </section>
+
+  <section id="t-pronto" class="oculto">
+    <h1 id="p-tit">Relatório recebido</h1>
+    <p class="sub" id="p-txt"></p>
+  </section>
+</main>
+<script>
+const RPA_API = "https://bjlhmkwxlrvatnlwjcln.supabase.co/functions/v1/rpa";
+const $ = (id) => document.getElementById(id);
+const token = new URLSearchParams(location.search).get("t") || "";
+const dBR = (s) => s ? String(s).slice(0, 10).split("-").reverse().join("/") : "";
+function tela(id){ ["t-carregando","t-erro","t-envio","t-pronto"].forEach(t => $(t).classList.toggle("oculto", t !== id)); }
+function aviso(id, txt, tipo = "erro"){ const a = $(id); a.className = "aviso" + (txt ? " " + tipo : ""); a.textContent = txt; }
+async function chamar(acao, dados = {}) {
+  let r; try { r = await fetch(RPA_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...dados, acao, t: token }) }); }
+  catch { throw new Error("Sem conexão. Verifique sua internet e tente de novo."); }
+  const d = await r.json().catch(() => ({ ok: false, erro: "Resposta inválida do servidor. Tente de novo." }));
+  if (!d.ok) throw new Error(d.erro || "Não foi possível concluir.");
+  return d;
+}
+const paraBase64 = (f) => new Promise((ok, fa) => { const l = new FileReader(); l.onload = () => ok(String(l.result).split(",")[1]); l.onerror = () => fa(new Error("Não consegui ler o arquivo.")); l.readAsDataURL(f); });
+let info = null;
+function pronto(tit, txt){ $("p-tit").textContent = tit; $("p-txt").textContent = txt; tela("t-pronto"); }
+async function carregar() {
+  if (!token) { $("erro-txt").textContent = "Use o link do e-mail que você recebeu com o seu relatório."; return tela("t-erro"); }
+  try {
+    info = (await chamar("publico_info")).relatorio;
+    if (["validado","submetido","arquivado","concluido"].includes(info.status)) return pronto("Relatório já validado", `Seu relatório de ${info.mes} foi recebido e validado. Não é preciso enviar de novo. Obrigado!`);
+    if (["rascunho","na_fila"].includes(info.status)) return pronto("Ainda não liberado", "Este relatório ainda não foi liberado para assinatura. Aguarde o e-mail.");
+    $("d-nome").textContent = info.nome; $("d-mes").textContent = info.mes;
+    if (info.prazo) { $("d-prazo").textContent = dBR(info.prazo) + (new Date().toISOString().slice(0, 10) > info.prazo ? " (vencido)" : ""); }
+    else { $("d-prazo").remove(); $("d-prazo-r").remove(); }
+    if (info.link_govbr) $("gov").href = info.link_govbr;
+    if (info.status === "com_erro" && info.erro) aviso("d-erro", "Corrija antes de enviar de novo: " + info.erro);
+    if (info.status === "aguardando_confirmacao") aviso("d-conf", "Já recebemos um documento assinado à mão e ele está em conferência. Envie de novo só se quiser substituí-lo.", "alerta");
+    $("bloco-entrega").classList.toggle("oculto", !info.pede_entrega);
+    tela("t-envio");
+  } catch (e) { $("erro-txt").textContent = e.message; tela("t-erro"); }
+}
+$("baixar").addEventListener("click", async (e) => {
+  const b = e.target, t = b.textContent; b.disabled = true; b.textContent = "Baixando…";
+  try {
+    const d = await chamar("publico_pdf");
+    const s = atob(d.base64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([u], { type: "application/pdf" })); a.download = d.nome;
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch (err) { aviso("a-envio", err.message); }
+  finally { b.disabled = false; b.textContent = t; }
+});
+$("f-envio").addEventListener("submit", async (e) => {
+  e.preventDefault(); aviso("a-envio", "");
+  const f = $("arq").files[0], en = $("entrega").files[0];
+  if (!f) return aviso("a-envio", "Escolha o PDF do relatório assinado.");
+  if (f.type !== "application/pdf" && !/\.pdf$/i.test(f.name)) return aviso("a-envio", "O relatório precisa ser PDF. Se você escaneou, salve a digitalização em PDF.");
+  if (f.size > 10 * 1048576) return aviso("a-envio", "O PDF pode ter no máximo 10 MB.");
+  if (info.pede_entrega && !en) return aviso("a-envio", "Anexe também a entrega realizada no mês.");
+  if (en && en.size > 10 * 1048576) return aviso("a-envio", "A entrega pode ter no máximo 10 MB.");
+  if (!$("lgpd").checked) return aviso("a-envio", "Marque a caixa de declaração para enviar.");
+  const b = $("enviar"); b.disabled = true; b.textContent = "Enviando e conferindo…";
+  try {
+    const dados = { base64: await paraBase64(f), lgpd: true };
+    if (en) Object.assign(dados, { entrega_base64: await paraBase64(en), entrega_nome: en.name, entrega_tipo: en.type });
+    const d = await chamar("publico_enviar", dados);
+    if (d.status === "validado") pronto("Relatório recebido e validado", "Sua assinatura gov.br e os dados do relatório foram conferidos. Está tudo certo. Obrigado!");
+    else if (d.status === "aguardando_confirmacao") pronto("Relatório recebido", "Os dados do relatório foram conferidos. A assinatura à mão será verificada pela equipe; se houver algum problema, você recebe um e-mail.");
+    else { aviso("a-envio", "O documento não pôde ser aceito: " + (d.erro || "") + "\nCorrija e envie de novo."); $("arq").value = ""; }
+  } catch (err) { aviso("a-envio", err.message); }
+  finally { b.disabled = false; b.textContent = "Enviar relatório assinado"; }
+});
+carregar();
+</script>
+</body>
+</html>
