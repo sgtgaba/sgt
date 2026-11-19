@@ -442,7 +442,36 @@ const NOMES_PAPEIS = { superadmin: "Programador(a)", admin: "Administrador(a)", 
 const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas", ganews: "GANews (edição)", orcamento: "Orçamento", ciclos: "Ciclos (gestão)", relatorios_rpa: "Relatórios RPA" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
-function mostrar(id){
+// Histórico do navegador: a seta "voltar" do celular/navegador volta para a tela anterior do SGT, em vez de sair
+const NAV = { pilha: [], pos: 0, ignorar: 0, guarda: false };
+function navegar(id){
+  if (/^v-(entrar|pa\d|esqueci|2fa)/.test(id)) { NAV.guarda = false; NAV.pilha = [id]; NAV.pos = 0; try { history.replaceState({ v: id, i: 0 }, ""); } catch {} return; }
+  if (!NAV.guarda && id === "v-inicio") {
+    NAV.guarda = true; NAV.pilha = [id]; NAV.pos = 0;
+    try { history.replaceState({ guarda: true }, ""); history.pushState({ v: id, i: 0 }, ""); } catch {}
+    return;
+  }
+  const i = NAV.pilha.lastIndexOf(id, NAV.pos);
+  if (i === NAV.pos) return;
+  if (i >= 0 && i < NAV.pos) { NAV.ignorar++; history.go(i - NAV.pos); NAV.pos = i; return; }
+  NAV.pilha = NAV.pilha.slice(0, NAV.pos + 1).concat(id); NAV.pos++;
+  try { history.pushState({ v: id, i: NAV.pos }, ""); } catch {}
+}
+window.addEventListener("popstate", (e) => {
+  if (NAV.ignorar > 0) { NAV.ignorar--; return; }
+  const st = e.state || {};
+  if (document.querySelector(".seg-modal")) { document.querySelector(".seg-modal button.sec")?.click(); }
+  if (st.guarda || !st.v) {
+    // Chegou ao começo: fica na tela inicial em vez de sair do SGT
+    NAV.pos = 0; try { history.pushState({ v: NAV.pilha[0] || "v-inicio", i: 0 }, ""); } catch {}
+    if (lerSessao() && NAV.pilha[0]) mostrar(NAV.pilha[0], true);
+    return;
+  }
+  if (!lerSessao() && !/^v-(entrar|pa\d|esqueci)/.test(st.v)) return;
+  NAV.pos = st.i || 0; mostrar(st.v, true);
+});
+function mostrar(id, doHistorico){
+  if (!doHistorico) navegar(id);
   document.querySelectorAll("main > section").forEach(s => s.classList.toggle("oculto", s.id !== id));
   document.querySelectorAll(".aviso").forEach(a => { a.className = "aviso"; a.textContent = ""; });
   $("cartao").classList.toggle("largo", ["v-inicio","v-painel","v-editar","v-tecnica"].includes(id) || /^v-(fer|tal|enc|ouv|lnk|dad|app|qg|pv|car|gan|orc|cd|seg|not|rpa)/.test(id));
@@ -1000,7 +1029,7 @@ $("importar").addEventListener("click", async () => {
 <script src="orcamento.js?v=1"></script>
 <script src="ciclos.js?v=1"></script>
 <script src="rpa.js?v=1"></script>
-<script src="seguranca.js?v=2"></script>
+<script src="seguranca.js?v=3"></script>
 <script src="notificacoes.js?v=1"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {}));</script>
 </body>
