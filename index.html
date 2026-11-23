@@ -97,6 +97,24 @@
   .ferramentas .ferr:nth-child(5n+3) .ico{background:#90BF23}
   .ferramentas .ferr:nth-child(5n+4) .ico{background:#E00E1B}
   .ferramentas .ferr:nth-child(5n+5) .ico{background:#27B2B5}
+  /* Cor fixa de cada ferramenta (não muda com a ordem nem com o perfil) */
+  #ir-painel .ico{background:#E00D7E!important}
+  #ir-ferias .ico{background:#ED7F0C!important}
+  #ir-dados .ico{background:#90BF23!important}
+  #ir-enc .ico{background:#E00E1B!important}
+  #ir-cat .ico{background:#27B2B5!important}
+  #ir-ouv .ico{background:#E00D7E!important}
+  #ir-links .ico{background:#ED7F0C!important}
+  #ir-talentos .ico{background:#90BF23!important}
+  #ir-qg .ico{background:#E00E1B!important}
+  #ir-pv .ico{background:#27B2B5!important}
+  #ir-rpa .ico{background:#E00D7E!important}
+  #ir-orc .ico{background:#ED7F0C!important}
+  #ir-cd .ico{background:#90BF23!important}
+  #ir-car .ico{background:#E00E1B!important}
+  #ir-gan .ico{background:#27B2B5!important}
+  #ir-seg .ico{background:#E00D7E!important}
+  #ir-tecnica .ico{background:#ED7F0C!important}
   #v-inicio #sair{width:auto;padding:10px 22px;font-size:14px}
   @media (max-width:640px){.ferramentas{grid-template-columns:1fr 1fr}.ferr{min-height:110px;padding:12px}}
 
@@ -709,7 +727,7 @@ async function abrirInicio(){
   f.push(`<button class="ferr" id="ir-ferias"><span class="ico">✈</span><span>Gestão de Férias<small>Informar férias, enviar comprovante e aviso assinado</small></span></button>`);
   f.push(`<button class="ferr" id="ir-dados"><span class="ico">☎</span><span>Dados e Contatos<small>Conferir meus dados e atualizar contatos</small></span></button>`);
   f.push(`<button class="ferr" id="ir-enc"><span class="ico">⇄</span><span>Encaminhamentos<small>Solicitações à gestão do projeto, com acompanhamento</small></span></button>`);
-  if (temModulo("cat")) f.push(`<a class="ferr" href="cat.html"><span class="ico">✚</span><span>Formulário de Relatório · CAT<small>Escuta e relatório para subsidiar a CAT</small></span></a>`);
+  if (temModulo("cat")) f.push(`<a class="ferr" id="ir-cat" href="cat.html"><span class="ico">✚</span><span>Formulário de Relatório · CAT<small>Escuta e relatório para subsidiar a CAT</small></span></a>`);
   if (temModulo("ouvidoria")) f.push(`<button class="ferr" id="ir-ouv"><span class="ico">✉</span><span>Ouvidoria<small>Manifestações recebidas e respostas</small></span></button>`);
   f.push(`<button class="ferr" id="ir-links"><span class="ico">🔗</span><span>Links do Projeto<small>${pode("admin") || temModulo("linktree") ? "Ver e editar os links úteis" : "Links úteis do projeto"}</small></span></button>`);
   if (pode("admin","rh","gerencia") || temModulo("banco_talentos")) f.push(`<button class="ferr" id="ir-talentos"><span class="ico">★</span><span>Banco de Talentos<small>Inscrições, ranking, aderência às vagas e banco de questões</small></span></button>`);
