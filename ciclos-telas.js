@@ -15,6 +15,7 @@
   Object.assign(C.REAL, {
     perfil: (c) => api("/rest/v1/rpc/dc_perfil", { method: "POST", body: C.J({ p_colab: c }) }).then(r => r[0] || null),
     equipeNte: (n) => api("/rest/v1/rpc/dc_equipe_nte", { method: "POST", body: C.J({ p_nte: n }) }),
+    carteiraVisao: () => api("/rest/v1/rpc/dc_carteira_visao", { method: "POST", body: "{}" }),
   });
   const DB = DEMO;
   const perfilDemo = { "d-ana": ["Pleno 1", "2024-05-27", "2024-05-27"], "d-bruno": ["Sênior 1", "2023-05-22", "2025-01-06"], "d-carla": ["Pleno 1", "2025-04-16", "2025-04-16"],
@@ -24,7 +25,10 @@
       return p ? { colaborador_id: c, nome: p.nome, cargo: p.cargo, nivel: d[0], funcao: p.cargo, nte_id: p.nte_id, entrada_projeto: d[1], cargo_desde: d[2],
         fonte: "Exemplo (no SGT real: planilhas Planejamento 2026 e Marco Zero)", coordenador: DB.nomes[p.avaliador_id] } : null; },
     equipeNte: async (n) => { const vis = souLider() || DB.cart.some(k => k.nte_id === n && !k.fim && k.coordenador_id === meuId());
-      return vis ? DB.part.filter(p => p.ciclo_id === 2 && p.nte_id === n).map(p => ({ colaborador_id: p.colaborador_id, nome: p.nome, cargo: p.cargo })) : []; },
+      return vis ? DB.part.filter(p => p.ciclo_id === 2 && p.nte_id === n).map(p => ({ colaborador_id: p.colaborador_id, nome: p.nome, cargo: p.cargo, cadastrado: true }))
+        .concat(n === 14 ? [{ colaborador_id: null, nome: "Hugo Almeida (exemplo, ainda sem cadastro)", cargo: "Articulador(a) da Coordenação Pedagógica", cadastrado: false }] : []) : []; },
+    carteiraVisao: async () => (await C.FAKE.ntes()).map(n => { const k = DB.cart.find(c => c.nte_id === n.id && !c.fim);
+      return { nte_id: n.id, nte: n.nome, coordenador_id: k ? k.coordenador_id : null, coordenador: k ? DB.nomes[k.coordenador_id] : null, cadastrado: !!k }; }),
   });
 
   // ------------------------------------------------------------------ abrir e navegar
@@ -43,23 +47,24 @@
       S.carteira = await B.carteira().catch(() => []);
       S.meu = S.ciclo ? await B.meu(S.ciclo.id) : null;
       const souCoord = S.carteira.some(k => !k.fim && k.coordenador_id === meuId()) || S.lista.some(x => x.avaliador_id === meuId());
-      const abas = [];
-      if (S.meu || (!souCoord && !souLider())) abas.push(["meu", "Meu ciclo"]);
-      if (souCoord || souLider()) abas.push(["carteira", souLider() && !souCoord ? "NTE e pessoas" : "Minha carteira"]);
+      S.souCoord = souCoord;
+      const abas = [["inicio", "Início"]];
+      if (S.meu) abas.push(["meu", "Meu ciclo"]);
+      if (souCoord || souLider()) abas.push(["carteira", "Articuladores"]);
       if (souLider()) abas.push(["painel", "Painel e calibração"]);
       if (souCoord || souLider() || (!S.demo && pode("gerencia"))) abas.push(["condutas", "Condutas de atenção"]);
       if (souGestao()) abas.push(["gestao", "Gestão do ciclo"]);
       S.abas = abas;
       $("cd-abas").innerHTML = abas.map(([k, t]) => `<button data-a="${k}">${t}</button>`).join("");
       $("cd-abas").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { S.pessoa = null; S.nte = null; trocar(b.dataset.a); }));
-      trocar(abas.some(a => a[0] === S.aba) ? S.aba : abas[0][0]);
+      trocar(abas.some(a => a[0] === S.aba) ? S.aba : "inicio");
     } catch (e) { falhou(e); }
   }
   function trocar(a) {
     S.aba = a; aviso("a-cd", "");
     $("cd-abas").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.a === a));
     $("cd-sub").textContent = S.ciclo ? `${S.ciclo.titulo} · ${statusCiclo(S.ciclo)}` : "Nenhum ciclo aberto ainda";
-    const f = { meu: meuCiclo, carteira: () => S.pessoa ? ficha(S.pessoa) : S.nte ? nteLista(S.nte) : carteira(), painel, condutas: () => window.CicloCondutas.abrir(corpo()),
+    const f = { inicio, meu: meuCiclo, carteira: () => S.pessoa ? ficha(S.pessoa) : S.nte ? nteLista(S.nte) : carteira(), painel, condutas: () => window.CicloCondutas.abrir(corpo()),
       gestao: () => window.CicloCondutas.gestao(corpo()) }[a];
     f && f();
   }
@@ -86,6 +91,33 @@
     $("cd-como").addEventListener("input", () => { S.comoDemo = $("cd-como").value; S.pessoa = null; S.nte = null; S.aba = null; abrir(); });
   }
 
+  // ------------------------------------------------------------------ INÍCIO: página padrão do instrumento (por público)
+  function inicio() {
+    const el = corpo(), k = S.ciclo, x = S.meu ? (S.lista.find(y => y.id === S.meu.id) || S.meu) : null;
+    const cartao = (id, ico, t, d, ativo, extra = "") => `<button class="ferr dc-ini${ativo ? "" : " off"}" data-ir="${id}"${ativo ? "" : " disabled"}><span class="ico">${ico}</span><span>${t}<small>${d}</small>${extra}</span></button>`;
+    el.innerHTML = `<div class="dc-bloco"><h2>${k ? esc(k.titulo) : "Nenhum ciclo aberto"}</h2>
+        ${k ? `<div class="ajuda">Abertura ${dataBR(k.abertura)} · avaliação até ${dataBR(k.prazo_avaliacao)} · devolutiva até ${dataBR(k.prazo_devolutiva)} · conversa e PDI até ${dataBR(k.prazo_pdi)} · acompanhamento até ${dataBR(k.fim)}</div>`
+          : `<div class="ajuda">Quando a gestão abrir um ciclo, os prazos aparecem aqui.</div>`}
+        <div class="dc-guia">O ciclo acontece a cada 3 meses: <b>1.</b> avaliação às cegas (autoavaliação e coordenação) · <b>2.</b> devolutiva com conversa por competência · <b>3.</b> conversa individual e PDI · <b>4.</b> três encontros de acompanhamento.</div></div>
+      <div class="dc-bloco"><h2>Para você</h2><div class="ferramentas">
+        ${cartao("meu", "✎", "Meu ciclo", x ? `${nomeFase(fase(x))} · autoavaliação, devolutiva, PDI e acompanhamento` : "Você não participa do ciclo selecionado", !!x)}
+        ${cartao("portfolio", "▤", "Meu portfólio de entregas", "Registre entregas e evidências ao longo do trimestre", true)}
+      </div></div>
+      ${S.souCoord || souLider() ? `<div class="dc-bloco"><h2>Públicos do ciclo</h2><div class="ferramentas">
+        ${cartao("carteira", "◎", "Articuladores", "Coordenação pedagógica · NTE, pessoas, avaliações e PDI", true, ` <span class="dc-tag">${S.lista.length} no ciclo</span>`)}
+        ${cartao("consultores", "◇", "Consultores", "Em breve: mesmo fluxo, com a matriz e as lideranças de cada frente", false)}
+      </div></div>` : ""}
+      ${souLider() || S.souCoord || (!S.demo && pode("gerencia")) ? `<div class="dc-bloco"><h2>Acompanhamento</h2><div class="ferramentas">
+        ${souLider() ? cartao("painel", "▦", "Painel e calibração", "Andamento por etapa, médias por avaliador e por NTE", true) : ""}
+        ${cartao("condutas", "!", "Condutas de atenção", "Registros restritos e relatório de rescisão", true)}
+        ${souGestao() ? cartao("gestao", "⚙", "Gestão do ciclo", "Abrir ciclos, carteiras de NTE, trajetórias e exportação", true) : ""}
+      </div></div>` : ""}`;
+    el.querySelectorAll("[data-ir]:not([disabled])").forEach(b => b.addEventListener("click", () => {
+      const d = b.dataset.ir; S.pessoa = null; S.nte = null;
+      if (d === "portfolio") { $("cd-abas").querySelectorAll("button").forEach(z => z.classList.remove("on")); el.innerHTML = `<div id="cd-sc"></div>`; S.voltar = () => trocar("inicio"); return telaPortfolio($("cd-sc"), meuId(), true, x); }
+      trocar(d); }));
+  }
+
   // ------------------------------------------------------------------ linha do tempo do ciclo
   function passos(x) {
     const k = S.ciclo; if (!k) return "";
@@ -108,17 +140,16 @@
   async function carteira() {
     const el = corpo(); carregando(el);
     try {
-      const ntes = await B.ntes(), ativos = S.carteira.filter(k => !k.fim), meus = new Set(ativos.filter(k => k.coordenador_id === meuId()).map(k => k.nte_id));
-      const nomes = S.demo ? DEMO.nomes : Object.fromEntries((S.lista || []).map(x => [x.avaliador_id, x.avaliador]));
+      const ntes = await B.carteiraVisao(), meus = new Set(ntes.filter(k => k.coordenador_id && k.coordenador_id === meuId()).map(k => k.nte_id));
       const pend = S.lista.filter(x => x.avaliador_id === meuId() && !["acompanhamento", "concluido"].includes(fase(x)));
       el.innerHTML = `${pend.length ? `<div class="dc-bloco"><h2>Suas pendências neste ciclo (${pend.length})</h2><div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Pessoa</th><th>NTE</th><th>Etapa</th><th>Próxima ação</th></tr></thead><tbody>
         ${pend.map(x => `<tr data-c="${x.colaborador_id}"><td><b>${esc(x.nome)}</b><br><small>${esc(x.cargo || "")}</small></td><td>${esc(x.nte || "")}</td><td>${chipFase(x)}</td><td>${esc(proximaAcao(x, true))}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
         <div class="dc-bloco"><h2>Núcleos Territoriais de Educação</h2><div class="ajuda">${souLider() ? "Você acompanha todos os NTE." : "Você abre os NTE da sua carteira. Os demais aparecem só para referência."}</div>
-        <div class="dc-ntes">${ntes.map(n => { const k = ativos.find(a => a.nte_id === n.id), pode = souLider() || meus.has(n.id),
-          qtd = S.lista.filter(x => x.nte_id === n.id).length, feitos = S.lista.filter(x => x.nte_id === n.id && ["acompanhamento", "concluido"].includes(fase(x))).length;
-          return `<button class="dc-nte${pode ? "" : " off"}${meus.has(n.id) ? " meu" : ""}" data-n="${n.id}"${pode ? "" : " disabled"} title="${esc(n.nome)}">
-            <b>NTE ${String(n.id).padStart(2, "0")}</b><span>${esc(String(n.nome || "").replace(/^NTE\s*\d+\s*[-–]?\s*/i, ""))}</span>
-            <small>${k ? esc(nomes[k.coordenador_id] || (k.coordenador_id === meuId() ? "Você" : "Coordenação")) : "Sem coordenação"}${pode && qtd ? ` · ${feitos}/${qtd} com PDI` : ""}</small></button>`; }).join("")}</div></div>`;
+        <div class="dc-ntes">${ntes.map(n => { const pode = souLider() || meus.has(n.nte_id),
+          qtd = S.lista.filter(x => x.nte_id === n.nte_id).length, feitos = S.lista.filter(x => x.nte_id === n.nte_id && ["acompanhamento", "concluido"].includes(fase(x))).length;
+          return `<button class="dc-nte${pode ? "" : " off"}${meus.has(n.nte_id) ? " meu" : ""}" data-n="${n.nte_id}"${pode ? "" : " disabled"} title="${esc(n.nte)}">
+            <b>NTE ${String(n.nte_id).padStart(2, "0")}</b><span>${esc(String(n.nte || "").replace(/^NTE\s*\d+\s*[-–]?\s*/i, ""))}</span>
+            <small>${n.coordenador ? esc(n.coordenador_id === meuId() ? "Você" : n.coordenador) + (n.cadastrado ? "" : " (aguardando cadastro)") : "Sem coordenação"}${pode && qtd ? ` · ${feitos}/${qtd} com PDI` : ""}</small></button>`; }).join("")}</div></div>`;
       el.querySelectorAll("[data-n]").forEach(b => b.addEventListener("click", () => { S.nte = +b.dataset.n; nteLista(S.nte); }));
       el.querySelectorAll("tr[data-c]").forEach(tr => tr.addEventListener("click", () => { S.pessoa = tr.dataset.c; ficha(S.pessoa); }));
     } catch (e) { falhou(e); }
@@ -130,7 +161,8 @@
       $("cd-sub").textContent = `NTE ${String(n).padStart(2, "0")} · ${eq.length} pessoa(s)`;
       el.innerHTML = `<div class="dc-bloco"><h2>NTE ${String(n).padStart(2, "0")}</h2><div class="ajuda">Toque no nome para ver a ficha, a trajetória e a evolução no ciclo.</div>
         <div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Nome</th><th>Função</th></tr></thead><tbody>
-        ${eq.map(p => `<tr data-c="${p.colaborador_id}"><td><b>${esc(p.nome)}</b></td><td>${esc(p.cargo || "")}</td></tr>`).join("")
+        ${eq.map(p => p.cadastrado === false ? `<tr><td><b>${esc(p.nome)}</b><br><small>ainda sem cadastro no SGT (dados do Quadro Geral)</small></td><td>${esc(p.cargo || "")}</td></tr>`
+          : `<tr data-c="${p.colaborador_id}"><td><b>${esc(p.nome)}</b></td><td>${esc(p.cargo || "")}</td></tr>`).join("")
           || `<tr><td colspan="2">Nenhuma pessoa cadastrada neste NTE com os cargos do ciclo.</td></tr>`}</tbody></table></div></div>`;
       el.querySelectorAll("tr[data-c]").forEach(tr => tr.addEventListener("click", () => { S.pessoa = tr.dataset.c; ficha(S.pessoa); }));
     } catch (e) { falhou(e); }
@@ -159,7 +191,7 @@
         ${x ? `<h3>Ciclo atual · ${esc(S.ciclo.titulo)}</h3>${passos(x)}<div class="ajuda">Próxima ação: <b>${esc(proximaAcao(x, souAval))}</b></div>` : `<div class="resumo">Esta pessoa não participa do ciclo selecionado.</div>`}
         </div>
         <div class="abas" id="cd-sabas"></div><div id="cd-sc"></div>`;
-      const subs = x ? [["avaliar", souAval ? "Avaliação" : "Avaliações"], ["devolutiva", "Devolutiva"], ["pdi", "Conversa e PDI"], ["acomp", "Acompanhamento"], ["portfolio", "Portfólio"], ["relatorio", "Relatório"]]
+      const subs = x ? [["avaliar", souAval ? "Avaliação" : "Avaliação da coordenação"], ...(souAval ? [] : [["auto", "Autoavaliação"]]), ["devolutiva", "Devolutiva"], ["pdi", "Conversa e PDI"], ["acomp", "Acompanhamento"], ["portfolio", "Portfólio"], ["relatorio", "Relatório"]]
         : [["portfolio", "Portfólio"], ["historico", "Histórico"]];
       if (x && (souAval || souLider())) subs.push(["encaminhar", "Encaminhamento"]);
       $("cd-sabas").innerHTML = subs.map(([k, t]) => `<button data-s="${k}">${t}</button>`).join("");
@@ -171,7 +203,7 @@
   function abrirSub(s) {
     $("cd-sabas").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.s === s));
     const el = $("cd-sc"), x = S.part, colab = S.pessoa;
-    ({ avaliar: () => telaAvaliacaoCoord(el, x), devolutiva: () => telaDevolutiva(el, x, false), pdi: () => telaPdi(el, x, false), acomp: () => telaAcomp(el, x, false),
+    ({ avaliar: () => telaAvaliacaoCoord(el, x), auto: () => telaAutoLeitura(el, x), devolutiva: () => telaDevolutiva(el, x, false), pdi: () => telaPdi(el, x, false), acomp: () => telaAcomp(el, x, false),
        portfolio: () => telaPortfolio(el, colab, false, x), relatorio: () => telaRelatorio(el, x, colab), historico: () => telaRelatorio(el, null, colab),
        encaminhar: () => telaEncaminhamento(el, x) })[s]();
   }
@@ -251,6 +283,16 @@
       const [rs, port] = await Promise.all([B.respostas(x.id), B.portfolio(meuId())]);
       const r = rs.find(y => y.tipo === "auto"), editavel = !x.devolutiva_em && S.ciclo.status !== "encerrado";
       formAvaliacao(el, x, "auto", r, editavel, port.filter(f => !f.ciclo_id || f.ciclo_id === S.ciclo.id));
+    } catch (e) { falhou(e); }
+  }
+  // autoavaliação somente leitura (liderança, gestão, gerência, programador e quem coordena o NTE depois de enviar a própria avaliação)
+  async function telaAutoLeitura(el, x) {
+    carregando(el);
+    try {
+      const rs = await B.respostas(x.id), au = rs.find(y => y.tipo === "auto" && y.enviada_em);
+      if (!au) { el.innerHTML = `<div class="resumo">${x.auto_enviada ? "A autoavaliação ainda não está visível para você." : esc(x.nome) + " ainda não enviou a autoavaliação."}</div>`; return; }
+      formAvaliacao(el, x, "auto", au, false, null);
+      el.insertAdjacentHTML("afterbegin", `<div class="dc-guia">Somente leitura. Enviada em ${dataHora(au.enviada_em)}.</div>`);
     } catch (e) { falhou(e); }
   }
   async function telaAvaliacaoCoord(el, x) {
@@ -575,6 +617,7 @@
     .dc-nte b{font-size:14px;color:var(--cor)} .dc-nte span{font-size:12.5px} .dc-nte small{font-size:11.5px;color:var(--texto-2)}
     .dc-nte.meu{border-color:var(--cor);box-shadow:0 0 0 1px var(--cor) inset} .dc-nte:hover:not(.off){background:var(--cor-suave)}
     .dc-nte.off{opacity:.45;cursor:not-allowed;filter:grayscale(1)} .dc-nte.off b{color:var(--texto-2)}
+    .dc-ini.off{opacity:.5;cursor:not-allowed} .dc-ini small{display:block}
     .dc-ficha{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start}
     .dc-dados{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:6px}
     .dc-dados div{background:var(--fundo);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}

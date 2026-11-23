@@ -50,7 +50,7 @@
   const souGestao = () => S.demo ? S.comoDemo === "gestao" : (pode("admin", "rh") || temModulo("ciclos"));
   const souLider = () => S.demo ? ["gestao", "lider"].includes(S.comoDemo) : (souGestao() || temModulo("ciclos_lideranca"));
   const meuId = () => S.demo ? (S.comoDemo.startsWith("av:") ? S.comoDemo.slice(3) : DEMO.eu[S.comoDemo]) : eu.id;
-  const souAvaliadorDe = (x) => x && (x.avaliador_id === meuId() || souGestao());
+  const souAvaliadorDe = (x) => !!x && x.avaliador_id === meuId();   // gestão e liderança veem tudo, mas só quem avalia edita
 
   function falhou(e) { if (e && e.message === "sessao") return; aviso("a-cd", S.demo ? String(e.message || e) : traduzErro(e)); }
   function ok(msg) { aviso("a-cd", S.demo ? "Prévia: " + msg.replace(/\.$/, "") + " (nada foi gravado)." : msg, "ok"); }
