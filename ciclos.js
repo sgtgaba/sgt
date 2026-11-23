@@ -30,7 +30,7 @@
   // ------------------------------------------------------------------ estado
   const S = { demo: false, comoDemo: "coord", eu: null, ciclos: [], ciclo: null, lista: [], aba: null, part: null, sub: null, cache: {} };
   const instr = () => (S.ciclo && S.ciclo.instrumento && S.ciclo.instrumento.blocos) ? S.ciclo.instrumento : INSTR;
-  const blocos = () => instr().blocos.filter(b => !b.opcional || (S.ciclo && S.ciclo.lideranca));
+  const blocos = () => instr().blocos.filter(b => !b.opcional || (S.part && S.part.lideranca != null ? S.part.lideranca : (S.ciclo && S.ciclo.lideranca)));
   const itens = () => blocos().flatMap(b => b.itens.map(i => ({ ...i, bloco: b.id, btitulo: b.titulo, fonte: b.fonte })));
   const nomeItem = (k) => (itens().find(i => i.k === k) || { nome: k === "geral" ? "Comentário geral" : k }).nome;
   const media = (notas, keys) => { const v = keys.map(k => +((notas || {})[k])).filter(x => x >= 1 && x <= 5); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
@@ -44,7 +44,7 @@
   const hojeISO = () => new Date().toISOString().slice(0, 10);
   const dataBR = (d) => d ? new Date(String(d).slice(0, 10) + "T12:00:00").toLocaleDateString("pt-BR") : "—";
   const dataHora = (d) => d ? new Date(d).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "";
-  const fase = (x) => !x ? "avaliacao" : !x.devolutiva_em ? (x.coord_enviada && (x.auto_enviada || (S.ciclo && S.ciclo.prazo_avaliacao < hojeISO())) ? "devolutiva" : "avaliacao")
+  const fase = (x) => !x ? "avaliacao" : !x.devolutiva_em ? (x.coord_enviada && (x.auto_enviada || (S.ciclo && S.ciclo.publico !== "geral" && S.ciclo.prazo_avaliacao < hojeISO())) ? "devolutiva" : "avaliacao")
     : !x.pdi_publicado_em ? "pdi" : (x.encontros_feitos || 0) < 3 ? "acompanhamento" : "concluido";
   const nomeFase = (f) => (FASES.find(x => x[0] === f) || ["", ""])[1];
   const souGestao = () => S.demo ? S.comoDemo === "gestao" : (pode("admin", "rh") || temModulo("ciclos"));
