@@ -73,7 +73,11 @@
   .zap-flutuante svg{width:30px;height:30px}
   .zap-flutuante .zap-dica{position:absolute;right:66px;white-space:nowrap;background:#1f2937;color:#fff;font-size:12.5px;padding:6px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s}
   .zap-flutuante:hover .zap-dica{opacity:1}
-  @media print{.zap-flutuante{display:none}}
+  .taai-manut{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:18px}
+  .taai-caixa{background:var(--superficie,#fff);color:var(--texto);border-radius:16px;max-width:420px;width:100%;padding:24px;box-shadow:0 18px 50px rgba(0,0,0,.3);text-align:center}
+  .taai-caixa h2{margin:8px 0 6px} .taai-caixa p{font-size:14.5px;line-height:1.5;color:var(--texto-2);margin:6px 0}
+  .taai-caixa .btns{justify-content:center;margin-top:14px} .taai-ico{font-size:34px}
+  @media print{.zap-flutuante,.taai-manut{display:none}}
   .externos{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--borda)}
   .externos a{font-size:13px;color:var(--texto-2);text-decoration:none;padding:6px 10px;border-radius:999px;background:var(--fundo)}
   .externos a:hover{color:var(--cor);background:var(--cor-suave)}
@@ -1048,17 +1052,37 @@ $("importar").addEventListener("click", async () => {
 </script>
 <script src="dados.js?v=2"></script>
 <script src="app.js?v=2"></script>
-<a id="taai-zap" class="zap-flutuante oculto" target="_blank" rel="noopener" aria-label="Falar com a TAAI no WhatsApp">
+<a id="taai-zap" class="zap-flutuante" href="#" rel="noopener" aria-label="Falar com a TAAI no WhatsApp">
   <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3C8.8 3 3 8.6 3 15.5c0 2.6.8 5 2.3 7L4 29l6.8-2.1c1.6.7 3.4 1.1 5.2 1.1 7.2 0 13-5.6 13-12.5S23.2 3 16 3z"/><path fill="#25D366" d="M12.1 9.6c-.3-.7-.6-.7-.9-.7h-.8c-.3 0-.7.1-1.1.5-.4.4-1.4 1.4-1.4 3.4s1.5 3.9 1.7 4.2c.2.3 2.8 4.4 6.9 6 3.4 1.3 4.1 1.1 4.8 1 .7-.1 2.4-1 2.7-1.9.3-1 .3-1.8.2-1.9-.1-.2-.4-.3-.8-.5s-2.4-1.2-2.7-1.3c-.4-.1-.6-.2-.9.2-.3.4-1 1.3-1.3 1.5-.2.3-.5.3-.9.1-.4-.2-1.7-.6-3.2-2-1.2-1-2-2.3-2.2-2.7-.2-.4 0-.6.2-.8l.6-.7c.2-.2.3-.4.4-.7.1-.3 0-.5 0-.7l-1.3-3z"/></svg>
   <span class="zap-dica">Falar com a TAAI no WhatsApp</span>
 </a>
+<div id="taai-manut" class="taai-manut oculto" role="dialog" aria-modal="true" aria-labelledby="taai-tit">
+  <div class="taai-caixa">
+    <div class="taai-ico">🛠</div>
+    <h2 id="taai-tit">TAAI em manutenção</h2>
+    <p>A <b>TAAI</b>, assistente do time IA, ainda está sendo preparada. Em breve você poderá abrir e acompanhar seus encaminhamentos pelo WhatsApp.</p>
+    <p>Enquanto isso, use a ferramenta <b>Encaminhamentos</b> aqui no SGT.</p>
+    <div class="btns"><button type="button" id="taai-enc" style="width:auto">Abrir Encaminhamentos</button><button type="button" class="sec" id="taai-fechar" style="width:auto">Fechar</button></div>
+  </div>
+</div>
 <script>
-(async () => {
-  try {
-    const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/wa_publico", { method: "POST", headers: { apikey: CHAVE_PUBLICA, "Content-Type": "application/json" }, body: "{}" });
-    const n = String((await r.json())?.numero || "").replace(/\D/g, "");
-    if (n) { const a = document.getElementById("taai-zap"); a.href = "https://wa.me/" + n + "?text=" + encodeURIComponent("Oi, TAAI!"); a.classList.remove("oculto"); }
-  } catch (e) { /* canal desligado */ }
+(() => {
+  const a = document.getElementById("taai-zap"), m = document.getElementById("taai-manut");
+  const fechar = () => m.classList.add("oculto");
+  a.addEventListener("click", (e) => { if (a.dataset.ativo) return; e.preventDefault(); m.classList.remove("oculto"); });
+  m.addEventListener("click", (e) => { if (e.target === m) fechar(); });
+  document.getElementById("taai-fechar").addEventListener("click", fechar);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fechar(); });
+  document.getElementById("taai-enc").addEventListener("click", () => {
+    fechar();
+    if (lerSessao() && window.Encaminhamentos) Encaminhamentos.abrir(); else mostrar("v-entrar");
+  });
+  // quando o canal for ligado no painel (Encaminhamentos › WhatsApp), o ícone passa a abrir a conversa
+  fetch(SUPABASE_URL + "/rest/v1/rpc/wa_publico", { method: "POST", headers: { apikey: CHAVE_PUBLICA, "Content-Type": "application/json" }, body: "{}" })
+    .then(r => r.json()).then(w => {
+      const n = String(w?.numero || "").replace(/\D/g, "");
+      if (n) { a.href = "https://wa.me/" + n + "?text=" + encodeURIComponent("Oi, TAAI!"); a.target = "_blank"; a.dataset.ativo = "1"; }
+    }).catch(() => {});
 })();
 </script>
 <script src="quadro.js?v=1"></script>

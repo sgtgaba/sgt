@@ -1,7 +1,7 @@
 // SGT · service worker: permite instalar o app e abrir a tela mesmo com internet instável.
 // Sempre tenta a versão mais nova na rede; usa a cópia guardada só quando estiver sem conexão.
 // Dados do banco (Supabase) nunca são guardados aqui.
-const CACHE = "sgt-v19";
+const CACHE = "sgt-v20";
 const BASICO = ["./", "index.html", "ferias.js", "talentos.js", "encaminhamentos.js", "ouvidoria.js", "links.js", "dados.js", "app.js", "quadro.js", "carometro.js", "ganews.js", "orcamento.js", "ciclo-instrumento.js", "ciclos.js", "ciclos-telas.js", "ciclos-condutas.js", "rpa.js", "seguranca.js", "notificacoes.js", "cat.html",
   "manifest.webmanifest", "icones/sgt-192.png", "icones/sgt-512.png", "ouvidoria/", "links/"];
 
