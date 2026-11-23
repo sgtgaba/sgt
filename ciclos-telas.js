@@ -16,6 +16,10 @@
     perfil: (c) => api("/rest/v1/rpc/dc_perfil", { method: "POST", body: C.J({ p_colab: c }) }).then(r => r[0] || null),
     equipeNte: (n) => api("/rest/v1/rpc/dc_equipe_nte", { method: "POST", body: C.J({ p_nte: n }) }),
     carteiraVisao: () => api("/rest/v1/rpc/dc_carteira_visao", { method: "POST", body: "{}" }),
+    preFicha: (o) => api("/rest/v1/rpc/dc_pre_ficha", { method: "POST", body: C.J({ p_ocup: Number(o) }) }),
+    histPessoa: (c) => api("/rest/v1/rpc/dc_hist_pessoa", { method: "POST", body: C.J({ p_colab: c }) }),
+    iniciarPrevia: (p) => api("/rest/v1/rpc/dc_iniciar_previa", { method: "POST", body: C.J({ p_publico: p }) }),
+    iniciar: (p) => api("/rest/v1/rpc/dc_iniciar", { method: "POST", body: C.J({ p_publico: p, p_instrumento: window.CicloInstrumento }) }),
   });
   const DB = DEMO;
   const perfilDemo = { "d-ana": ["Pleno 1", "2024-05-27", "2024-05-27"], "d-bruno": ["Sênior 1", "2023-05-22", "2025-01-06"], "d-carla": ["Pleno 1", "2025-04-16", "2025-04-16"],
@@ -26,9 +30,20 @@
         fonte: "Exemplo (no SGT real: planilhas Planejamento 2026 e Marco Zero)", coordenador: DB.nomes[p.avaliador_id] } : null; },
     equipeNte: async (n) => { const vis = souLider() || DB.cart.some(k => k.nte_id === n && !k.fim && k.coordenador_id === meuId());
       return vis ? DB.part.filter(p => p.ciclo_id === 2 && p.nte_id === n).map(p => ({ colaborador_id: p.colaborador_id, nome: p.nome, cargo: p.cargo, cadastrado: true }))
-        .concat(n === 14 ? [{ colaborador_id: null, nome: "Hugo Almeida (exemplo, ainda sem cadastro)", cargo: "Articulador(a) da Coordenação Pedagógica", cadastrado: false }] : []) : []; },
+        .concat(n === 14 ? [{ colaborador_id: null, nome: "Hugo Almeida (exemplo)", cargo: "Articulador(a) da Coordenação Pedagógica", cadastrado: false, ocupacao_id: 9001 }] : []) : []; },
     carteiraVisao: async () => (await C.FAKE.ntes()).map(n => { const k = DB.cart.find(c => c.nte_id === n.id && !c.fim);
       return { nte_id: n.id, nte: n.nome, coordenador_id: k ? k.coordenador_id : null, coordenador: k ? DB.nomes[k.coordenador_id] : null, cadastrado: !!k }; }),
+    preFicha: async () => ({ nome: "Hugo Almeida (exemplo)", funcao: "Articulador(a) da Coordenação Pedagógica", nivel: "Pleno 1", nte_id: 14, nte: "NTE 14",
+      vaga_codigo: "AP - 140", entrada_projeto: "2025-02-10", cargo_desde: "2025-02-10", fonte: "Exemplo (no SGT real: Quadro Geral e planilhas Planejamento/Marco Zero)",
+      coordenador: DB.nomes["d-camila"] || "Camila Ichii", historico: [{ vaga: "AP - 140", funcao: "Articulador(a) da Coordenação Pedagógica", nivel: "Pleno 1", nte_id: 14, situacao: "Alocado(a)", inicio: "2025-02-10", fim: null }] }),
+    histPessoa: async (c) => { const p = DB.part.find(x => x.colaborador_id === c), d = perfilDemo[c];
+      if (!p || !d) return [];
+      const h = [{ vaga: "AP - " + p.nte_id + "0", funcao: p.cargo, nivel: "Pleno 1", nte_id: p.nte_id, situacao: d[0] === "Sênior 1" ? "Promovido(a)" : "Alocado(a)", inicio: d[1], fim: d[0] === "Sênior 1" ? d[2] : null }];
+      if (d[0] === "Sênior 1") h.push({ vaga: "AS - " + p.nte_id + "0", funcao: p.cargo, nivel: "Sênior 1", nte_id: p.nte_id, situacao: "Alocado(a)", inicio: d[2], fim: null });
+      return h; },
+    iniciarPrevia: async (p) => ({ publico: p, ano: 2026, ordem: 2, cadastrados: p === "coordenadores" ? 3 : 18, sem_cadastro: p === "coordenadores" ? 0 : 74,
+      abertura: hojeISO(), prazo_avaliacao: hojeISO(), prazo_pdi: hojeISO(), aberto: false, sem_coordenacao: p === "coordenadores" ? [] : [5, 6, 7, 8, 9, 19, 20, 22, 27] }),
+    iniciar: async () => { throw new Error("Prévia: nada foi gravado. No SGT real, o ciclo seria aberto agora e todos seriam avisados."); },
   });
 
   // ------------------------------------------------------------------ abrir e navegar
@@ -50,7 +65,7 @@
       S.souCoord = souCoord;
       const abas = [["inicio", "Início"]];
       if (S.meu) abas.push(["meu", "Meu ciclo"]);
-      if (souCoord || souLider()) abas.push(["carteira", "Articuladores"]);
+      if (souCoord || souLider()) abas.push(["carteira", ehCoordCiclo() ? "Coordenadores" : "Articuladores"]);
       if (souLider()) abas.push(["painel", "Painel e calibração"]);
       if (souCoord || souLider() || (!S.demo && pode("gerencia"))) abas.push(["condutas", "Condutas de atenção"]);
       if (souGestao()) abas.push(["gestao", "Gestão do ciclo"]);
@@ -64,9 +79,28 @@
     S.aba = a; aviso("a-cd", "");
     $("cd-abas").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.a === a));
     $("cd-sub").textContent = S.ciclo ? `${S.ciclo.titulo} · ${statusCiclo(S.ciclo)}` : "Nenhum ciclo aberto ainda";
-    const f = { inicio, meu: meuCiclo, carteira: () => S.pessoa ? ficha(S.pessoa) : S.nte ? nteLista(S.nte) : carteira(), painel, condutas: () => window.CicloCondutas.abrir(corpo()),
+    const f = { inicio, meu: meuCiclo, carteira: () => S.pessoa ? (String(S.pessoa).startsWith("pre:") ? preFicha(S.pessoa.slice(4)) : ficha(S.pessoa)) : ehCoordCiclo() ? listaCoord() : S.nte ? nteLista(S.nte) : carteira(), painel, condutas: () => window.CicloCondutas.abrir(corpo()),
       gestao: () => window.CicloCondutas.gestao(corpo()) }[a];
     f && f();
+  }
+  const ehCoordCiclo = () => !!S.ciclo && S.ciclo.publico === "coordenadores";
+  // troca para o ciclo mais recente do público escolhido (articuladores ou coordenadores)
+  function irPublico(p) {
+    const doPublico = S.ciclos.filter(c => (c.publico || "articuladores") === p);
+    const alvo = doPublico.find(c => c.status !== "encerrado") || doPublico[0];
+    if (!alvo) return aviso("a-cd", p === "coordenadores" ? "Ainda não há ciclo de avaliação dos coordenadores." : "Ainda não há ciclo de avaliação dos articuladores.", "alerta");
+    S.pessoa = null; S.nte = null; S.aba = "carteira";
+    if (!S.ciclo || alvo.id !== S.ciclo.id) { S.ciclo = alvo; return abrir(); }
+    trocar("carteira");
+  }
+  // lista do ciclo dos coordenadores (avaliados pela liderança)
+  function listaCoord() {
+    const el = corpo();
+    el.innerHTML = `<div class="dc-bloco"><h2>Coordenação pedagógica</h2><div class="ajuda">Avaliação da coordenação pela liderança. Toque no nome para abrir a ficha.</div>
+      <div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Nome</th><th>Função</th><th>Quem avalia</th><th>Etapa</th></tr></thead><tbody>
+      ${S.lista.map(x => `<tr data-c="${x.colaborador_id}"><td><b>${esc(x.nome)}</b></td><td>${esc(x.cargo || "")}</td><td>${esc(x.avaliador || "—")}</td><td>${esc(nomeFase(fase(x)))}</td></tr>`).join("")
+        || `<tr><td colspan="4">Ninguém neste ciclo ainda. Coordenadores entram sozinhos ao se cadastrar no SGT, enquanto a avaliação estiver aberta.</td></tr>`}</tbody></table></div></div>`;
+    el.querySelectorAll("tr[data-c]").forEach(tr => tr.addEventListener("click", () => { S.pessoa = tr.dataset.c; ficha(S.pessoa); }));
   }
   const statusCiclo = (k) => k.status === "encerrado" ? "encerrado" : hojeISO() <= k.prazo_pdi ? `rodadas até ${dataBR(k.prazo_pdi)}` : `acompanhamento até ${dataBR(k.fim)}`;
   $("cd-ciclo").addEventListener("input", async () => { S.ciclo = S.ciclos.find(c => c.id === +$("cd-ciclo").value) || null; S.pessoa = null; S.nte = null; await abrir(); });
@@ -82,7 +116,7 @@
   function barraPrevia() {
     $("cd-previa").textContent = S.demo ? "✕ Sair da prévia" : "👁 Prévia";
     if (!S.demo) { $("cd-pbar").innerHTML = ""; return; }
-    const op = [["coord", "Coordenação (Camila Icchi)"], ["lider", "Liderança (Paulo André)"], ["gestao", "Gestão / gerência"],
+    const op = [["coord", "Coordenação (Camila Ichii)"], ["lider", "Liderança (Paulo André)"], ["gestao", "Gestão / gerência"],
       ["av:d-ana", "Avaliada · Ana (autoavaliação em rascunho)"], ["av:d-bruno", "Avaliado · Bruno (aguardando devolutiva)"],
       ["av:d-carla", "Avaliada · Carla (devolutiva publicada, PDI em construção)"], ["av:d-diego", "Avaliado · Diego (PDI publicado, acompanhamento)"]];
     $("cd-pbar").innerHTML = `<div class="dc-previa"><b>Prévia</b> · dados de exemplo, nada é gravado. Ver como:
@@ -104,9 +138,16 @@
         ${cartao("portfolio", "▤", "Meu portfólio de entregas", "Registre entregas e evidências ao longo do trimestre", true)}
       </div></div>
       ${S.souCoord || souLider() ? `<div class="dc-bloco"><h2>Públicos do ciclo</h2><div class="ferramentas">
-        ${cartao("carteira", "◎", "Articuladores", "Coordenação pedagógica · NTE, pessoas, avaliações e PDI", true, ` <span class="dc-tag">${S.lista.length} no ciclo</span>`)}
+        ${cartao("pub:articuladores", "◎", "Articuladores", "Avaliados pela coordenação pedagógica · NTE, pessoas, avaliações e PDI", true, !ehCoordCiclo() && k ? ` <span class="dc-tag">${S.lista.length} no ciclo</span>` : "")}
+        ${souLider() ? cartao("pub:coordenadores", "◈", "Coordenadores", "Avaliados pela liderança · mesma matriz, com o bloco de liderança", true, ehCoordCiclo() ? ` <span class="dc-tag">${S.lista.length} no ciclo</span>` : "") : ""}
         ${cartao("consultores", "◇", "Consultores", "Em breve: mesmo fluxo, com a matriz e as lideranças de cada frente", false)}
       </div></div>` : ""}
+      ${souLider() ? `<div class="dc-bloco"><h2>Iniciar avaliações</h2>
+        <div class="ajuda">Abre o ciclo na hora: cada pessoa e quem avalia recebem o aviso, e os prazos contam a partir de hoje (5, 10 e 15 dias úteis).</div>
+        <div class="ferramentas">
+          ${cartao("ini:articuladores", "▶", "Iniciar avaliação dos articuladores", "A coordenação de cada NTE avalia seus articuladores", true)}
+          ${cartao("ini:coordenadores", "▶", "Iniciar avaliação dos coordenadores", "A liderança avalia a coordenação pedagógica", true)}
+        </div><div id="dc-ini-conf"></div></div>` : ""}
       ${souLider() || S.souCoord || (!S.demo && pode("gerencia")) ? `<div class="dc-bloco"><h2>Acompanhamento</h2><div class="ferramentas">
         ${souLider() ? cartao("painel", "▦", "Painel e calibração", "Andamento por etapa, médias por avaliador e por NTE", true) : ""}
         ${cartao("condutas", "!", "Condutas de atenção", "Registros restritos e relatório de rescisão", true)}
@@ -114,8 +155,33 @@
       </div></div>` : ""}`;
     el.querySelectorAll("[data-ir]:not([disabled])").forEach(b => b.addEventListener("click", () => {
       const d = b.dataset.ir; S.pessoa = null; S.nte = null;
+      if (d.startsWith("pub:")) return irPublico(d.slice(4));
+      if (d.startsWith("ini:")) return confirmarInicio(d.slice(4));
       if (d === "portfolio") { $("cd-abas").querySelectorAll("button").forEach(z => z.classList.remove("on")); el.innerHTML = `<div id="cd-sc"></div>`; S.voltar = () => trocar("inicio"); return telaPortfolio($("cd-sc"), meuId(), true, x); }
       trocar(d); }));
+  }
+
+  // confirmação do botão "Iniciar" (liderança)
+  async function confirmarInicio(p) {
+    const box = $("dc-ini-conf"); box.innerHTML = `<div class="resumo">Calculando…</div>`;
+    try {
+      const v = await B.iniciarPrevia(p), nome = p === "coordenadores" ? "dos coordenadores" : "dos articuladores";
+      const semC = v.sem_coordenacao || [];
+      box.innerHTML = `<div class="dc-guia" style="margin-top:12px">
+        <b>Iniciar a avaliação ${nome} · ${v.ordem}º ciclo de ${v.ano}</b><br>
+        Abertura hoje (${dataBR(v.abertura)}) · avaliação até ${dataBR(v.prazo_avaliacao)} · conversa e PDI até ${dataBR(v.prazo_pdi)}.<br>
+        <b>${v.cadastrados}</b> pessoa(s) com cadastro entram agora${v.sem_cadastro ? `; outras <b>${v.sem_cadastro}</b> do Quadro Geral entram sozinhas quando se cadastrarem, até o fim do prazo de avaliação` : ""}.
+        ${p === "coordenadores" ? `<br>Quem avalia: <b>você</b>. A coordenação transitória (quem coordenou só neste ciclo e foi promovido à liderança) não é avaliada como coordenação.` : ""}
+        ${semC.length ? `<br><span style="color:#b54708">⚠ NTE sem coordenação para este ciclo: ${semC.map(n => String(n).padStart(2, "0")).join(", ")}. As pessoas desses NTE entram sem avaliador até a gestão definir a carteira (Gestão do ciclo › Carteiras).</span>` : ""}
+        ${v.aberto ? `<br><b>Já há um ciclo ${nome} em andamento.</b> Encerre-o antes de iniciar outro.` : ""}
+        <div class="btns" style="margin-top:10px">${v.aberto ? "" : `<button id="dc-ini-ok" style="width:auto">Confirmar e iniciar</button>`}<button class="sec" id="dc-ini-no" style="width:auto">Cancelar</button></div></div>`;
+      $("dc-ini-no").addEventListener("click", () => { box.innerHTML = ""; });
+      if ($("dc-ini-ok")) $("dc-ini-ok").addEventListener("click", async () => {
+        $("dc-ini-ok").disabled = true;
+        try { await B.iniciar(p); S.ciclo = null; S.aba = "inicio"; await abrir(); aviso("a-cd", `Avaliação ${nome} iniciada. Todos foram avisados.`, "ok"); }
+        catch (e) { $("dc-ini-ok").disabled = false; aviso("a-cd", traduzErro(e), S.demo ? "alerta" : "erro"); }
+      });
+    } catch (e) { box.innerHTML = ""; falhou(e); }
   }
 
   // ------------------------------------------------------------------ linha do tempo do ciclo
@@ -152,6 +218,38 @@
             <small>${n.coordenador ? esc(n.coordenador_id === meuId() ? "Você" : n.coordenador) + (n.cadastrado ? "" : " (aguardando cadastro)") : "Sem coordenação"}${pode && qtd ? ` · ${feitos}/${qtd} com PDI` : ""}</small></button>`; }).join("")}</div></div>`;
       el.querySelectorAll("[data-n]").forEach(b => b.addEventListener("click", () => { S.nte = +b.dataset.n; nteLista(S.nte); }));
       el.querySelectorAll("tr[data-c]").forEach(tr => tr.addEventListener("click", () => { S.pessoa = tr.dataset.c; ficha(S.pessoa); }));
+      el.querySelectorAll("tr[data-o]").forEach(tr => tr.addEventListener("click", () => { S.pessoa = "pre:" + tr.dataset.o; preFicha(tr.dataset.o); }));
+    } catch (e) { falhou(e); }
+  }
+
+  // trajetória funcional (Quadro Geral): vagas, situações e datas, sem valores
+  function tabelaTrajetoria(h) {
+    if (!h || !h.length) return `<div class="ajuda">Sem registros no Quadro Geral.</div>`;
+    return `<div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Período</th><th>Função e nível</th><th>NTE</th><th>Vaga</th><th>Situação</th></tr></thead><tbody>
+      ${h.map(r => `<tr><td>${dataBR(r.inicio)} a ${r.fim ? dataBR(r.fim) : "hoje"}</td><td>${esc(r.funcao || "—")}${r.nivel ? `<br><small>${esc(r.nivel)}</small>` : ""}</td>
+        <td>${r.nte_id ? "NTE " + String(r.nte_id).padStart(2, "0") : "—"}</td><td>${esc(r.vaga || "—")}</td><td>${esc(r.situacao || "—")}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+
+  // ficha de pré-cadastro: só dados funcionais; o restante depende do cadastro e do aceite da própria pessoa (LGPD)
+  async function preFicha(ocup) {
+    const el = corpo(); carregando(el);
+    try {
+      const pf = await B.preFicha(ocup);
+      $("cd-sub").textContent = pf.nome + " · pré-cadastro";
+      el.innerHTML = `<div class="dc-bloco"><div class="dc-ficha"><div>
+          <h2 style="margin-top:6px">${esc(pf.nome)} <span class="dc-tag">pré-cadastro</span></h2>
+          <div class="dc-dados">
+            <div><small>Cargo</small><b>${esc(pf.funcao || "—")}</b></div>
+            <div><small>Nível</small><b>${esc(pf.nivel || "—")}</b></div>
+            <div><small>NTE</small><b>${pf.nte_id ? "NTE " + String(pf.nte_id).padStart(2, "0") : "—"}</b></div>
+            <div><small>Entrou no projeto em</small><b>${dataBR(pf.entrada_projeto)}</b><small>${pf.entrada_projeto ? "há " + tempo(pf.entrada_projeto) : ""}</small></div>
+            <div><small>No cargo atual desde</small><b>${dataBR(pf.cargo_desde)}</b><small>${pf.cargo_desde ? "há " + tempo(pf.cargo_desde) : ""}</small></div>
+            <div><small>Coordenação</small><b>${esc(pf.coordenador || "—")}</b></div></div>
+          ${pf.fonte ? `<div class="ajuda">Fonte das datas: ${esc(pf.fonte)}.</div>` : ""}</div></div>
+        <h3>Trajetória no projeto</h3>${tabelaTrajetoria(pf.historico)}
+        <div class="dc-guia" style="margin-top:12px">🔒 <b>Dados pessoais e avaliações aguardam a própria pessoa.</b> Aqui aparecem só dados funcionais do Quadro Geral (nome, função, NTE e trajetória).
+          Contatos, endereço e demais dados pessoais só ficam disponíveis depois que ${esc(String(pf.nome).split(" ")[0])} se cadastrar no SGT, preencher <b>Dados e Contatos</b> e concordar com o termo de uso dos dados (LGPD).
+          Ao se cadastrar, a pessoa entra sozinha no ciclo que estiver em período de avaliação.</div></div>`;
     } catch (e) { falhou(e); }
   }
   async function nteLista(n) {
@@ -161,10 +259,42 @@
       $("cd-sub").textContent = `NTE ${String(n).padStart(2, "0")} · ${eq.length} pessoa(s)`;
       el.innerHTML = `<div class="dc-bloco"><h2>NTE ${String(n).padStart(2, "0")}</h2><div class="ajuda">Toque no nome para ver a ficha, a trajetória e a evolução no ciclo.</div>
         <div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Nome</th><th>Função</th></tr></thead><tbody>
-        ${eq.map(p => p.cadastrado === false ? `<tr><td><b>${esc(p.nome)}</b><br><small>ainda sem cadastro no SGT (dados do Quadro Geral)</small></td><td>${esc(p.cargo || "")}</td></tr>`
+        ${eq.map(p => p.cadastrado === false ? `<tr data-o="${p.ocupacao_id}"><td><b>${esc(p.nome)}</b> <span class="dc-tag">pré-cadastro</span><br><small>ainda sem cadastro no SGT · dados do Quadro Geral</small></td><td>${esc(p.cargo || "")}</td></tr>`
           : `<tr data-c="${p.colaborador_id}"><td><b>${esc(p.nome)}</b></td><td>${esc(p.cargo || "")}</td></tr>`).join("")
           || `<tr><td colspan="2">Nenhuma pessoa cadastrada neste NTE com os cargos do ciclo.</td></tr>`}</tbody></table></div></div>`;
       el.querySelectorAll("tr[data-c]").forEach(tr => tr.addEventListener("click", () => { S.pessoa = tr.dataset.c; ficha(S.pessoa); }));
+      el.querySelectorAll("tr[data-o]").forEach(tr => tr.addEventListener("click", () => { S.pessoa = "pre:" + tr.dataset.o; preFicha(tr.dataset.o); }));
+    } catch (e) { falhou(e); }
+  }
+
+  // trajetória funcional (Quadro Geral): vagas, situações e datas, sem valores
+  function tabelaTrajetoria(h) {
+    if (!h || !h.length) return `<div class="ajuda">Sem registros no Quadro Geral.</div>`;
+    return `<div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Período</th><th>Função e nível</th><th>NTE</th><th>Vaga</th><th>Situação</th></tr></thead><tbody>
+      ${h.map(r => `<tr><td>${dataBR(r.inicio)} a ${r.fim ? dataBR(r.fim) : "hoje"}</td><td>${esc(r.funcao || "—")}${r.nivel ? `<br><small>${esc(r.nivel)}</small>` : ""}</td>
+        <td>${r.nte_id ? "NTE " + String(r.nte_id).padStart(2, "0") : "—"}</td><td>${esc(r.vaga || "—")}</td><td>${esc(r.situacao || "—")}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+
+  // ficha de pré-cadastro: só dados funcionais; o restante depende do cadastro e do aceite da própria pessoa (LGPD)
+  async function preFicha(ocup) {
+    const el = corpo(); carregando(el);
+    try {
+      const pf = await B.preFicha(ocup);
+      $("cd-sub").textContent = pf.nome + " · pré-cadastro";
+      el.innerHTML = `<div class="dc-bloco"><div class="dc-ficha"><div>
+          <h2 style="margin-top:6px">${esc(pf.nome)} <span class="dc-tag">pré-cadastro</span></h2>
+          <div class="dc-dados">
+            <div><small>Cargo</small><b>${esc(pf.funcao || "—")}</b></div>
+            <div><small>Nível</small><b>${esc(pf.nivel || "—")}</b></div>
+            <div><small>NTE</small><b>${pf.nte_id ? "NTE " + String(pf.nte_id).padStart(2, "0") : "—"}</b></div>
+            <div><small>Entrou no projeto em</small><b>${dataBR(pf.entrada_projeto)}</b><small>${pf.entrada_projeto ? "há " + tempo(pf.entrada_projeto) : ""}</small></div>
+            <div><small>No cargo atual desde</small><b>${dataBR(pf.cargo_desde)}</b><small>${pf.cargo_desde ? "há " + tempo(pf.cargo_desde) : ""}</small></div>
+            <div><small>Coordenação</small><b>${esc(pf.coordenador || "—")}</b></div></div>
+          ${pf.fonte ? `<div class="ajuda">Fonte das datas: ${esc(pf.fonte)}.</div>` : ""}</div></div>
+        <h3>Trajetória no projeto</h3>${tabelaTrajetoria(pf.historico)}
+        <div class="dc-guia" style="margin-top:12px">🔒 <b>Dados pessoais e avaliações aguardam a própria pessoa.</b> Aqui aparecem só dados funcionais do Quadro Geral (nome, função, NTE e trajetória).
+          Contatos, endereço e demais dados pessoais só ficam disponíveis depois que ${esc(String(pf.nome).split(" ")[0])} se cadastrar no SGT, preencher <b>Dados e Contatos</b> e concordar com o termo de uso dos dados (LGPD).
+          Ao se cadastrar, a pessoa entra sozinha no ciclo que estiver em período de avaliação.</div></div>`;
     } catch (e) { falhou(e); }
   }
 
@@ -172,7 +302,7 @@
   async function ficha(colab, sub) {
     const el = corpo(); carregando(el);
     try {
-      const [pf, hist] = await Promise.all([B.perfil(colab), B.historico(colab)]);
+      const [pf, hist, traj] = await Promise.all([B.perfil(colab), B.historico(colab), B.histPessoa(colab).catch(() => [])]);
       const x = S.lista.find(y => y.colaborador_id === colab) || null;
       S.part = x; S.perfil = pf;
       $("cd-sub").textContent = pf ? pf.nome : "Ficha";
@@ -188,6 +318,7 @@
               <div><small>Coordenação</small><b>${esc((pf && pf.coordenador) || (x && x.avaliador) || "—")}</b></div></div>
             ${pf && pf.fonte ? `<div class="ajuda">Fonte das datas: ${esc(pf.fonte)}.</div>` : ""}</div>
           <div class="dc-evo">${graficoEvolucao(hist)}</div></div>
+        ${(traj || []).length ? `<details class="dc-traj"><summary>Trajetória no projeto (${traj.length} registro${traj.length > 1 ? "s" : ""})</summary>${tabelaTrajetoria(traj)}</details>` : ""}
         ${x ? `<h3>Ciclo atual · ${esc(S.ciclo.titulo)}</h3>${passos(x)}<div class="ajuda">Próxima ação: <b>${esc(proximaAcao(x, souAval))}</b></div>` : `<div class="resumo">Esta pessoa não participa do ciclo selecionado.</div>`}
         </div>
         <div class="abas" id="cd-sabas"></div><div id="cd-sc"></div>`;
@@ -618,6 +749,8 @@
     .dc-nte.meu{border-color:var(--cor);box-shadow:0 0 0 1px var(--cor) inset} .dc-nte:hover:not(.off){background:var(--cor-suave)}
     .dc-nte.off{opacity:.45;cursor:not-allowed;filter:grayscale(1)} .dc-nte.off b{color:var(--texto-2)}
     .dc-ini.off{opacity:.5;cursor:not-allowed} .dc-ini small{display:block}
+    .dc-traj{margin:10px 0} .dc-traj summary{cursor:pointer;font-weight:600;color:var(--cor);font-size:14px}
+    .dc-tab tr[data-c],.dc-tab tr[data-o]{cursor:pointer} .dc-tab tr[data-c]:hover,.dc-tab tr[data-o]:hover{background:var(--cor-suave)}
     .dc-ficha{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start}
     .dc-dados{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:6px}
     .dc-dados div{background:var(--fundo);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}

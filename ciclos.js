@@ -228,7 +228,7 @@
       { id: 2, colaborador_id: "d-diego", ciclo_id: 2, titulo: "Devolutiva na escola Z com 2 compromissos", data: add(h, -8), descricao: "Compromissos retomados na visita seguinte: 1 concluído.", link: "", competencias: ["ga3"], meta_id: null, nota_coord: null },
       { id: 3, colaborador_id: "d-ana", ciclo_id: 2, titulo: "Apoio ao agrupamento por nível na escola Y", data: add(h, -5), descricao: "Planilha de agrupamento construída com a coordenação pedagógica.", link: "", competencias: ["ga2", "v1c1"], meta_id: null, nota_coord: null }];
     B.gest = [{ participante_id: 14, encaminhamento: "Ampliação de responsabilidades", observacao: "Potencial para apoiar a formação de novos articuladores." }];
-    B.nomes = { "d-gestao": "Tailson (você, como gestão)", "d-paulo": "Paulo André", "d-camila": "Camila Icchi", "d-danilo": "Danilo Rodrigues", "d-flavia": "Flavia Kelly",
+    B.nomes = { "d-gestao": "Tailson (você, como gestão)", "d-paulo": "Paulo André", "d-camila": "Camila Ichii", "d-danilo": "Danilo Rodrigues", "d-flavia": "Flavia Kelly",
       "d-ana": "Ana Beatriz Lima (exemplo)", "d-bruno": "Bruno Santos (exemplo)", "d-carla": "Carla Menezes (exemplo)", "d-diego": "Diego Rocha (exemplo)", "d-eva": "Eva Nascimento (exemplo)", "d-fabio": "Fábio Costa (exemplo)" };
     const cart = { "d-paulo": [5, 6, 7, 8, 9, 19, 20, 22, 27], "d-camila": [10, 13, 14, 15, 16, 17, 18, 21, 24], "d-danilo": [1, 2, 3, 4, 11, 12, 23, 25], "d-flavia": [26] };
     B.cart = Object.entries(cart).flatMap(([c, ns]) => ns.map(n => ({ id: n, nte_id: n, coordenador_id: c, inicio: "2026-02-02", fim: null })));
