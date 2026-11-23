@@ -65,6 +65,15 @@
   .passos i.on + i.on{background:var(--laranja)}
   .oculto{display:none!important}
   .rodape{text-align:center;font-size:12px;color:var(--texto-2);margin-top:22px}
+  .rodape-ferr{display:flex;justify-content:center;margin-top:18px}
+  .baixe-app{width:auto;margin:0;padding:9px 18px;background:#fff;color:var(--cor);border:1px solid var(--borda);border-radius:var(--raio);font-size:14px;font-weight:600}
+  .baixe-app:hover{border-color:var(--cor);background:var(--cor-suave)}
+  .zap-flutuante{position:fixed;right:18px;bottom:18px;z-index:50;width:56px;height:56px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.22);transition:transform .15s}
+  .zap-flutuante:hover{transform:scale(1.07)}
+  .zap-flutuante svg{width:30px;height:30px}
+  .zap-flutuante .zap-dica{position:absolute;right:66px;white-space:nowrap;background:#1f2937;color:#fff;font-size:12.5px;padding:6px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s}
+  .zap-flutuante:hover .zap-dica{opacity:1}
+  @media print{.zap-flutuante{display:none}}
   .externos{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--borda)}
   .externos a{font-size:13px;color:var(--texto-2);text-decoration:none;padding:6px 10px;border-radius:999px;background:var(--fundo)}
   .externos a:hover{color:var(--cor);background:var(--cor-suave)}
@@ -260,6 +269,7 @@
     <h1 id="ola">Olá!</h1>
     <p class="sub" id="perfil-txt">Escolha uma ferramenta.</p>
     <div class="ferramentas" id="ferramentas"></div>
+    <div class="rodape-ferr"><button type="button" class="baixe-app" id="ir-app">Baixe o APP</button></div>
     <button class="sec" id="sair">Sair</button>
   </section>
 
@@ -692,7 +702,6 @@ async function abrirInicio(){
   if (pode("admin","rh")) f.push(`<button class="ferr" id="ir-painel"><span class="ico">⚙</span><span>Painel dos ADM<small>Cadastro do quadro e níveis de acesso</small></span></button>`);
   f.push(`<button class="ferr" id="ir-ferias"><span class="ico">✈</span><span>Gestão de Férias<small>Informar férias, enviar comprovante e aviso assinado</small></span></button>`);
   f.push(`<button class="ferr" id="ir-dados"><span class="ico">☎</span><span>Dados e Contatos<small>Conferir meus dados e atualizar contatos</small></span></button>`);
-  if (window.App) f.push(App.cartao());
   f.push(`<button class="ferr" id="ir-enc"><span class="ico">⇄</span><span>Encaminhamentos<small>Solicitações à gestão do projeto, com acompanhamento</small></span></button>`);
   if (temModulo("cat")) f.push(`<a class="ferr" href="cat.html"><span class="ico">✚</span><span>Formulário de Relatório · CAT<small>Escuta e relatório para subsidiar a CAT</small></span></a>`);
   if (temModulo("ouvidoria")) f.push(`<button class="ferr" id="ir-ouv"><span class="ico">✉</span><span>Ouvidoria<small>Manifestações recebidas e respostas</small></span></button>`);
@@ -1027,7 +1036,7 @@ $("importar").addEventListener("click", async () => {
 </script>
 <script src="ferias.js?v=1"></script>
 <script src="talentos.js?v=1"></script>
-<script src="encaminhamentos.js?v=2"></script>
+<script src="encaminhamentos.js?v=3"></script>
 <script src="ouvidoria.js?v=1"></script>
 <script src="links.js?v=1"></script>
 <script>
@@ -1039,6 +1048,19 @@ $("importar").addEventListener("click", async () => {
 </script>
 <script src="dados.js?v=2"></script>
 <script src="app.js?v=2"></script>
+<a id="taai-zap" class="zap-flutuante oculto" target="_blank" rel="noopener" aria-label="Falar com a TAAI no WhatsApp">
+  <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3C8.8 3 3 8.6 3 15.5c0 2.6.8 5 2.3 7L4 29l6.8-2.1c1.6.7 3.4 1.1 5.2 1.1 7.2 0 13-5.6 13-12.5S23.2 3 16 3z"/><path fill="#25D366" d="M12.1 9.6c-.3-.7-.6-.7-.9-.7h-.8c-.3 0-.7.1-1.1.5-.4.4-1.4 1.4-1.4 3.4s1.5 3.9 1.7 4.2c.2.3 2.8 4.4 6.9 6 3.4 1.3 4.1 1.1 4.8 1 .7-.1 2.4-1 2.7-1.9.3-1 .3-1.8.2-1.9-.1-.2-.4-.3-.8-.5s-2.4-1.2-2.7-1.3c-.4-.1-.6-.2-.9.2-.3.4-1 1.3-1.3 1.5-.2.3-.5.3-.9.1-.4-.2-1.7-.6-3.2-2-1.2-1-2-2.3-2.2-2.7-.2-.4 0-.6.2-.8l.6-.7c.2-.2.3-.4.4-.7.1-.3 0-.5 0-.7l-1.3-3z"/></svg>
+  <span class="zap-dica">Falar com a TAAI no WhatsApp</span>
+</a>
+<script>
+(async () => {
+  try {
+    const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/wa_publico", { method: "POST", headers: { apikey: CHAVE_PUBLICA, "Content-Type": "application/json" }, body: "{}" });
+    const n = String((await r.json())?.numero || "").replace(/\D/g, "");
+    if (n) { const a = document.getElementById("taai-zap"); a.href = "https://wa.me/" + n + "?text=" + encodeURIComponent("Oi, TAAI!"); a.classList.remove("oculto"); }
+  } catch (e) { /* canal desligado */ }
+})();
+</script>
 <script src="quadro.js?v=1"></script>
 <script src="carometro.js?v=1"></script>
 <script src="ganews.js?v=1"></script>

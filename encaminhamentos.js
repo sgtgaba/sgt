@@ -50,7 +50,7 @@
         ${Object.entries(STATUS_EQUIPE).map(([k, n]) => `<option value="${k}">${n}</option>`).join("")}<option value="atrasadas">Com prazo vencido</option></select>
       <select id="enc-fcat"><option value="">Todos os tipos</option></select>
     </div>
-    <div class="btns" id="enc-btn-nova"><button id="enc-nova" style="width:auto">+ Nova solicitação</button><a id="enc-zap" class="botao-zap oculto" target="_blank" rel="noopener">💬 Falar com a TAAI no WhatsApp</a></div>
+    <div class="btns" id="enc-btn-nova"><button id="enc-nova" style="width:auto">+ Nova solicitação</button></div>
     <div class="resumo" id="enc-resumo"></div>
     <div class="lista" id="enc-lista"></div>
     <div id="enc-conf" class="oculto"></div>
@@ -128,11 +128,6 @@
         (souEquipe ? `<button data-a="fila">Para atender</button>` : "") + (souConfig ? `<button data-a="conf">Tipos e equipes</button><button data-a="wa">WhatsApp (TAAI)</button>` : "");
       $("enc-abas").querySelectorAll("button").forEach(b => b.addEventListener("click", () => trocar(b.dataset.a)));
       if (aba !== "minhas" && !souEquipe) aba = "minhas";
-      api("/rest/v1/rpc/wa_publico", { method: "POST", body: "{}" }).then(w => {
-        const n = String(w?.numero || "").replace(/\D/g, "");
-        $("enc-zap").classList.toggle("oculto", !n);
-        if (n) $("enc-zap").href = `https://wa.me/${n}?text=${encodeURIComponent("Oi, TAAI!")}`;
-      }).catch(() => {});
       await trocar(aba);
     } catch (e) { if (e.message !== "sessao") aviso("a-enc", traduzErro(e)); }
   }
