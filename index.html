@@ -112,6 +112,8 @@
   #ir-orc .ico{background:#ED7F0C!important}
   #ir-cd .ico{background:#90BF23!important}
   #ir-car .ico{background:#E00E1B!important}
+  #ir-port .ico{background:#27B2B5!important}
+  #ir-cond .ico{background:#E00E1B!important}
   #ir-gan .ico{background:#27B2B5!important}
   #ir-seg .ico{background:#E00D7E!important}
   #ir-tecnica .ico{background:#ED7F0C!important}
@@ -735,7 +737,9 @@ async function abrirInicio(){
   if (pode("admin","rh") || temModulo("painel_vagas") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-pv"><span class="ico">◷</span><span>Painel de Vagas<small>Vagas abertas e tempo de vacância</small></span></button>`);
   if ((pode("admin","rh") || temModulo("relatorios_rpa")) && window.RelatoriosRPA) f.push(RelatoriosRPA.cartao());
   if (pode("admin","rh") || temModulo("orcamento")) f.push(`<button class="ferr" id="ir-orc"><span class="ico">$</span><span>Orçamento do Projeto<small>Custo de pessoal realizado e projetado</small></span></button>`);
-  f.push(`<button class="ferr" id="ir-cd"><span class="ico">↻</span><span>Ciclos de Desenvolvimento<small>Avaliação trimestral, devolutiva, PDI e acompanhamento</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-cd"><span class="ico">↻</span><span>Ciclos de Desenvolvimento<small>Avaliação trimestral, feedback, PDI e acompanhamento</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-port"><span class="ico">▤</span><span>Meu portfólio<small>Minhas entregas e evidências, para baixar quando quiser</small></span></button>`);
+  f.push(`<button class="ferr oculto" id="ir-cond"><span class="ico">!</span><span>Condutas de atenção<small>Histórico individual de quem você acompanha</small></span></button>`);
   f.push(`<button class="ferr" id="ir-car"><span class="ico">☺</span><span>Carômetro<small>Quem faz parte do time hoje</small></span></button>`);
   f.push(`<button class="ferr" id="ir-gan"><span class="ico">✎</span><span>GANews<small>A revista do Projeto GA BA</small></span></button>`);
   if (window.Seguranca) f.push(Seguranca.cartao());
@@ -755,6 +759,9 @@ async function abrirInicio(){
   if ($("ir-rpa")) $("ir-rpa").addEventListener("click", () => RelatoriosRPA.abrir());
   if ($("ir-car")) $("ir-car").addEventListener("click", () => window.Carometro && Carometro.abrir());
   if ($("ir-cd")) $("ir-cd").addEventListener("click", () => window.Ciclos && Ciclos.abrir());
+  if ($("ir-port")) $("ir-port").addEventListener("click", () => window.Ciclos && Ciclos.ferramenta("portfolio"));
+  if ($("ir-cond")) { $("ir-cond").addEventListener("click", () => window.Ciclos && Ciclos.ferramenta("condutas"));
+    api("/rest/v1/rpc/dc_monitorados", { method: "POST", body: "{}" }).then(r => { if (r && r.length && $("ir-cond")) $("ir-cond").classList.remove("oculto"); }).catch(() => {}); }
   if ($("ir-gan")) $("ir-gan").addEventListener("click", () => window.GANews && GANews.abrir());
   if ($("ir-dados")) $("ir-dados").addEventListener("click", () => window.Dados && Dados.abrir());
   if ($("ir-seg")) $("ir-seg").addEventListener("click", () => Seguranca.abrir());
@@ -1110,9 +1117,9 @@ $("importar").addEventListener("click", async () => {
 <script src="ganews.js?v=1"></script>
 <script src="orcamento.js?v=1"></script>
 <script src="ciclo-instrumento.js?v=1"></script>
-<script src="ciclos.js?v=5"></script>
-<script src="ciclos-telas.js?v=5"></script>
-<script src="ciclos-condutas.js?v=1"></script>
+<script src="ciclos.js?v=6"></script>
+<script src="ciclos-telas.js?v=6"></script>
+<script src="ciclos-condutas.js?v=2"></script>
 <script src="rpa.js?v=1"></script>
 <script src="seguranca.js?v=3"></script>
 <script src="notificacoes.js?v=1"></script>

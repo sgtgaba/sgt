@@ -5,7 +5,7 @@
   const { itens, indices, fase, n1, nomeItem, souGestao, souLider, meuId, falhou, ok, dataBR, dataHora, hojeISO, MODAL, STATUS_META } = C;
   const T = () => window.CicloTelas;
   const CATEG = ["Assiduidade e pontualidade", "Prazos e entregas", "Registros no SGA", "Postura e relacionamento", "Descumprimento de orientação", "Conduta ética", "Outro"];
-  const GRAV = ["Leve", "Moderada", "Grave"], PROV = ["Orientação verbal", "Feedback formal registrado", "Inclusão no PDI", "Advertência", "Encaminhado à gestão"];
+  const GRAV = ["Leve", "Moderada", "Grave"], PROV = ["Orientação verbal", "Feedback formal registrado", "Advertência verbal", "Advertência escrita", "Encaminhado à gestão"];
   const STC = ["Em acompanhamento", "Superada", "Encaminhada para rescisão"], DECISOES = ["Rescisão aprovada", "Manter com PDI intensivo", "Arquivar"];
   const MAX_MB = 20;
   const nomeSeguro = (n) => n.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w.\-]+/g, "_").slice(-80);
@@ -16,6 +16,8 @@
     funcoes: () => api("/rest/v1/rpc/dc_funcoes", { method: "POST", body: "{}" }),
     previa: (f) => api("/rest/v1/rpc/dc_previa", { method: "POST", body: C.J({ p_funcoes: f }) }),
     condutasResumo: () => api("/rest/v1/rpc/dc_condutas_resumo", { method: "POST", body: "{}" }),
+    monitorados: () => api("/rest/v1/rpc/dc_monitorados", { method: "POST", body: "{}" }),
+    sinais: (c) => api(`/rest/v1/dc_portfolio_sinal?select=*,dc_portfolio(titulo,data)&colaborador_id=eq.${c}&order=criado_em.desc`),
     condutas: (c) => api(`/rest/v1/dc_conduta?select=*,dc_conduta_anexo(*),dc_conduta_comentario(*)&colaborador_id=eq.${c}&order=data_fato.desc,id.desc`),
     salvarConduta: (d) => d.id ? api(`/rest/v1/dc_conduta?id=eq.${d.id}`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: C.J(C.semId(d)) }).then(r => r[0])
       : api("/rest/v1/dc_conduta", { method: "POST", headers: { Prefer: "return=representation" }, body: C.J({ ...d, registrado_por: eu.id }) }).then(r => r[0]),
@@ -55,6 +57,8 @@
       g[c.colaborador_id].total++; if (c.gravidade === "Grave") g[c.colaborador_id].graves++; if (c.status === "Em acompanhamento") g[c.colaborador_id].em_aberto++; });
       return Object.values(g).filter(x => souLider() || DB.cart.some(k => !k.fim && k.coordenador_id === meuId() && k.nte_id === x.nte_id)); },
     condutas: async (c) => JSON.parse(JSON.stringify(DB.cond.filter(x => x.colaborador_id === c))),
+    monitorados: async () => DB.part.filter(x => souLider() || DB.cart.some(k => !k.fim && k.coordenador_id === meuId() && k.nte_id === x.nte_id)).map(x => ({ colaborador_id: x.colaborador_id, nome: x.nome, nte_id: x.nte_id, funcao: x.cargo })),
+    sinais: async () => [],
     salvarConduta: async (d) => { if (d.id) { Object.assign(DB.cond.find(x => x.id === d.id), d); return d; } const n = { ...d, id: ++seq, registrado_por: meuId(), criado_em: new Date().toISOString(), dc_conduta_anexo: [], dc_conduta_comentario: [] }; DB.cond.push(n); return n; },
     apagarConduta: async (id) => { DB.cond = DB.cond.filter(x => x.id !== id); },
     comentarConduta: async (id, texto) => { DB.cond.find(x => x.id === id).dc_conduta_comentario.push({ id: ++seq, autor_id: meuId(), texto, criado_em: new Date().toISOString() }); },
@@ -76,8 +80,10 @@
   async function abrir(el) {
     T().carregando(el);
     try {
-      const res = await B.condutasResumo(), pp = pessoasPossiveis();
-      el.innerHTML = `<div class="dc-guia"><b>Repositório restrito.</b> Visível para a coordenação do NTE, a liderança do Acompanhamento Pedagógico e a gerência. A pessoa registrada não vê. Registre só fatos (data, o que aconteceu, impacto, evidência) e a providência tomada. Boa prática: sempre dar ciência à pessoa e vincular ao PDI quando for algo a desenvolver.</div>
+      const [res, mon] = await Promise.all([B.condutasResumo(), B.monitorados().catch(() => [])]);
+      const pp = mon.map(m => ({ colaborador_id: m.colaborador_id, nome: m.nome, nte: m.nte_id ? "NTE " + String(m.nte_id).padStart(2, "0") : (m.funcao || "") }));
+      el.innerHTML = `<div class="dc-guia"><b>Histórico individual, fora do Ciclo de Desenvolvimento.</b> Este instrumento <b>não é pauta do ciclo</b>: não entra na avaliação, no feedback nem no PDI. Serve só para reunir fatos relevantes e graves que embasem conversas de advertência, geridos por quem acompanha a pessoa (coordenação do NTE, liderança da frente, gerência).
+        <br><b>Regras (LGPD e CLT):</b> registre só fatos verificáveis (data, o que aconteceu, impacto, evidência), nunca opiniões sobre a pessoa; toda advertência exige ciência da pessoa e direito de apresentar sua versão; a pessoa pode pedir acesso aos próprios registros (art. 18 da LGPD) pela gestão do projeto; registros de quem foi desligado seguem a política de guarda do projeto.</div>
         <div class="dc-bloco"><h2>Novo registro</h2><div class="dc-barra"><select id="cn-p"><option value="">Escolha a pessoa…</option>${pp.map(x => `<option value="${x.colaborador_id}">${esc(x.nome)} · ${esc(x.nte || "")}</option>`).join("")}</select>
           <button id="cn-ir" style="width:auto;margin:0">Abrir</button></div></div>
         <div class="dc-bloco"><h2>Pessoas com registros (${res.length})</h2><div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Pessoa</th><th>NTE</th><th class="num">Registros</th><th class="num">Graves</th><th class="num">Em acompanhamento</th><th>Último</th><th>Relatório de rescisão</th></tr></thead><tbody>
@@ -91,7 +97,7 @@
     T().carregando(el); S.voltar = () => abrir(el);
     try {
       const x = S.lista.find(y => y.colaborador_id === colab) || null;
-      const [lst, metas, dos, pf] = await Promise.all([B.condutas(colab), x ? B.metas(x.id) : [], B.dossies(colab), B.perfil(colab)]);
+      const [lst, sinais, dos, pf] = await Promise.all([B.condutas(colab), B.sinais(colab).catch(() => []), B.dossies(colab), B.perfil(colab)]);
       $("cd-sub").textContent = `Condutas de atenção · ${pf ? pf.nome : ""}`;
       const decide = souLider() || (!S.demo && pode("gerencia"));
       const form = (c) => `<div class="dc-meta" data-c="${c.id || "novo"}">
@@ -103,19 +109,21 @@
           <div><label>Situação</label><select data-f="status">${STC.map(t => `<option${(c.status || STC[0]) === t ? " selected" : ""}>${t}</option>`).join("")}</select></div></div>
         <label>O que aconteceu (fato, contexto, impacto)</label><textarea data-f="descricao" maxlength="4000">${esc(c.descricao || "")}</textarea>
         <label>Links de evidência (um por linha)</label><textarea data-f="links" placeholder="https://">${esc((c.links || []).join("\n"))}</textarea>
-        ${metas.length ? `<label>Vincular a uma meta do PDI</label><select data-f="meta_id"><option value="">—</option>${metas.map(m => `<option value="${m.id}"${c.meta_id === m.id ? " selected" : ""}>${esc(m.objetivo)}</option>`).join("")}</select>` : ""}
+        <label>Versão da pessoa (o que ela disse ao ser informada)</label><textarea data-f="versao" maxlength="2000" placeholder="Registre a manifestação da pessoa, se houver">${esc(c.versao || "")}</textarea>
         <label>Arquivos (PDF, imagem, documento; até ${MAX_MB} MB cada)</label><input type="file" data-arq multiple>
         <div class="dc-btns"><button data-sv>${c.id ? "Salvar alterações" : "Registrar"}</button>${c.id ? `<button class="sec" data-cancel>Cancelar</button>` : ""}</div></div>`;
       const card = (c) => `<div class="dc-port" data-v="${c.id}"><div class="dc-linha"><b>${dataBR(c.data_fato)} · ${esc(c.categoria)}</b><span>${T().sit(c.gravidade, c.gravidade === "Grave" ? "erro" : c.gravidade === "Moderada" ? "alerta" : "neutro")} ${T().sit(c.status, c.status === "Superada" ? "ok" : "neutro")}</span></div>
         <div style="white-space:pre-wrap;margin:4px 0">${esc(c.descricao)}</div>
         <div class="ajuda">Providência: ${esc(c.providencia || "—")} · Pessoa informada: ${c.ciencia_em ? dataBR(c.ciencia_em) : "<b>não registrado</b>"} · Registrado por ${esc(autorNome(c.registrado_por))} em ${dataHora(c.criado_em)}
-          ${c.meta_id ? ` · Meta do PDI: ${esc((metas.find(m => m.id === c.meta_id) || {}).objetivo || "vinculada")}` : ""}</div>
+</div>${c.versao ? `<div class="dc-guia"><b>Versão da pessoa:</b> ${esc(c.versao)}</div>` : ""}
         ${(c.links || []).length ? `<div>${c.links.map(l => `<a href="${esc(l)}" target="_blank" rel="noopener">${esc(l.replace(/^https?:\/\//, "").slice(0, 50))}</a>`).join(" · ")}</div>` : ""}
         ${(c.dc_conduta_anexo || []).length ? `<div class="dc-chips">${c.dc_conduta_anexo.map(a => `<button class="sec dc-mini" data-baixar="${esc(a.path)}">📎 ${esc(a.nome)}</button>`).join("")}</div>` : ""}
         <div class="dc-fio">${(c.dc_conduta_comentario || []).sort((a, b) => a.criado_em.localeCompare(b.criado_em)).map(m => `<div class="dc-msg"><b>${esc(autorNome(m.autor_id))}</b><small>${dataHora(m.criado_em)}</small><div style="white-space:pre-wrap">${esc(m.texto)}</div></div>`).join("")}
           <div class="dc-env"><textarea placeholder="Comentário (acompanhamento, orientação da liderança…)"></textarea><button class="sec" data-com>Enviar</button></div></div>
         <div class="dc-btns"><button class="sec dc-mini" data-ed>Editar</button><label class="check" style="margin:0"><input type="checkbox" data-sel${c.status !== "Superada" ? " checked" : ""}><span>Incluir no relatório</span></label></div></div>`;
       el.innerHTML = `<div class="dc-bloco"><div class="dc-linha"><h2>${esc(pf ? pf.nome : "")}</h2><span class="ajuda">${esc((pf && (pf.funcao || pf.cargo)) || "")} ${pf && pf.nivel ? "· " + esc(pf.nivel) : ""} · no projeto desde ${dataBR(pf && pf.entrada_projeto)}</span></div></div>
+        ${sinais.length ? `<div class="dc-bloco"><h2>Sinalizações do portfólio (${sinais.length})</h2><div class="ajuda">Inconsistências apontadas por quem avalia nas entregas publicadas. Verifique os fatos antes de qualquer medida.</div>
+          ${sinais.map(z => `<div class="dc-port"><div class="dc-linha"><b>${esc((z.dc_portfolio && z.dc_portfolio.titulo) || "Entrega")}</b><small>${dataHora(z.criado_em)}</small></div><div style="white-space:pre-wrap">${esc(z.motivo)}</div><div class="ajuda">Por ${esc(autorNome(z.autor_id))}</div></div>`).join("")}</div>` : ""}
         <div class="dc-bloco"><h2>Novo registro</h2>${form({})}</div>
         <div class="dc-bloco"><h2>Registros (${lst.length})</h2><div id="cn-lista">${lst.map(card).join("") || `<div class="resumo">Nenhum registro ainda.</div>`}</div></div>
         <div class="dc-bloco"><h2>Relatório de rescisão</h2><div class="ajuda">Reúne os registros marcados, o histórico do Ciclo de Desenvolvimento (avaliações, PDI, encontros e efetividade) e o seu parecer. Ao enviar, a liderança do Acompanhamento Pedagógico e a gerência recebem um aviso e o relatório fica guardado aqui.</div>
@@ -129,7 +137,7 @@
         const d = {}; box.querySelectorAll("[data-f]").forEach(i => d[i.dataset.f] = i.value.trim() || null);
         d.links = (d.links || "").split(/\s+/).filter(Boolean); if (d.links.some(l => !/^https?:\/\//i.test(l))) return aviso("a-cd", "Os links devem começar com https://");
         if (!d.descricao || d.descricao.length < 5) return aviso("a-cd", "Descreva o fato.");
-        d.meta_id = d.meta_id ? +d.meta_id : null; d.colaborador_id = colab; d.participante_id = x ? x.id : null; if (id) d.id = id;
+        d.colaborador_id = colab; d.participante_id = x ? x.id : null; if (id) d.id = id;
         try { const r = await B.salvarConduta(d); for (const f of box.querySelector("[data-arq]").files) await B.anexar(colab, r.id || id, f); ok("Registro salvo."); pessoa(el, colab); } catch (e) { falhou(e); }
       };
       el.querySelector('[data-c="novo"] [data-sv]').addEventListener("click", (e) => salvarForm(e.target.closest(".dc-meta"), null));

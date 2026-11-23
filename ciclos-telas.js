@@ -26,6 +26,9 @@
     planoAvaliadores: () => api("/rest/v1/rpc/dc_plano_avaliadores", { method: "POST", body: "{}" }),
     planoAjustar: (id, inc, av, obs) => api("/rest/v1/rpc/dc_plano_ajustar", { method: "POST", body: C.J({ p_item: id, p_incluido: inc, p_avaliador: av, p_obs: obs }) }),
     planoRecalcular: (id) => api("/rest/v1/rpc/dc_plano_recalcular", { method: "POST", body: C.J({ p_plano: id }) }),
+    sinalizarPort: (id, m) => api("/rest/v1/rpc/dc_sinalizar_portfolio", { method: "POST", body: C.J({ p_port: id, p_motivo: m }) }),
+    calibrar: (c, a, obs) => api("/rest/v1/rpc/dc_calibrar", { method: "POST", body: C.J({ p_ciclo: c, p_avaliador: a, p_obs: obs }) }),
+    alinhar: (p, d, com, obs) => api("/rest/v1/rpc/dc_registrar_alinhamento", { method: "POST", body: C.J({ p, p_data: d, p_com: com, p_obs: obs }) }),
     agenda: () => api("/rest/v1/dc_encontro?select=id,ordem,previsto_em,agendado_para,realizado_em,participante_id,dc_participante!inner(nome,colaborador_id,avaliador_id,ciclo_id)&realizado_em=is.null&order=previsto_em"),
     portArquivos: (ids) => ids.length ? api(`/rest/v1/dc_portfolio_arquivo?select=*&portfolio_id=in.(${ids.join(",")})`) : Promise.resolve([]),
     planoPublicar: (id) => api("/rest/v1/rpc/dc_plano_publicar", { method: "POST", body: C.J({ p_plano: id, p_instrumento: window.CicloInstrumento }) }),
@@ -78,6 +81,9 @@
     agenda: async () => DB.enc.filter(e => !e.realizado_em).map(e => { const p = DB.part.find(x => x.id === e.participante_id);
       return { ...e, dc_participante: { nome: p.nome, colaborador_id: p.colaborador_id, avaliador_id: p.avaliador_id, ciclo_id: p.ciclo_id } }; }),
     portArquivos: async () => [],
+    sinalizarPort: async () => { throw new Error("Prévia: nada foi gravado. No SGT real, a liderança seria avisada."); },
+    calibrar: async (c, a) => { DB.part.filter(y => y.ciclo_id === c && y.avaliador_id === a && !y.devolutiva_em).forEach(y => y.calibrado_em = new Date().toISOString()); },
+    alinhar: async (p, d, com, obs) => { Object.assign(DB.part.find(y => y.id === p), { alinhamento_em: d, alinhamento_com: com, alinhamento_obs: obs }); },
     plano: async () => ({ id: 1, ano: 2026, ordem: 1, referencia: hojeISO(), status: "rascunho", grupos: ["articuladores"] }),
     planoItens: async () => ordenarPlano(PLANO_DEMO.map(i => ({ ...i }))),
     planoAvaliadores: async () => ["Camila Ichii Costa", "Paulo André Santos Leite", "André Luis Gomes Santos", "Tamires Matos de Paula Gonçalves", "Gabriel Guedes Gama de Lima"].map(nome => ({ nome, cadastrado: true })),
@@ -88,7 +94,8 @@
 
   // ------------------------------------------------------------------ abrir e navegar
   async function abrir() {
-    mostrar("v-cd");
+    mostrar("v-cd"); S.ferr = null;
+    $("cd-titulo").textContent = "Ciclos de Desenvolvimento"; $("cd-ciclo").classList.remove("oculto");
     $("cd-previa").classList.toggle("oculto", !ehSuper());
     barraPrevia();
     try {
@@ -107,7 +114,6 @@
       if (S.meu) abas.push(["meu", "Meu ciclo"]);
       if (souCoord || souLider()) abas.push(["carteira", ehGeral() ? "Pessoas" : ehCoordCiclo() ? "Coordenadores" : "Articuladores"]);
       if (souLider()) abas.push(["painel", "Painel e calibração"]);
-      if (souCoord || souLider() || (!S.demo && pode("gerencia"))) abas.push(["condutas", "Condutas de atenção"]);
       if (souGestao()) abas.push(["gestao", "Gestão do ciclo"]);
       S.abas = abas;
       $("cd-abas").innerHTML = abas.map(([k, t]) => `<button data-a="${k}">${t}</button>`).join("");
@@ -192,16 +198,16 @@
           : k ? `<div class="ajuda">Abertura ${dataBR(k.abertura)} · avaliação até ${dataBR(k.prazo_avaliacao)} · devolutiva até ${dataBR(k.prazo_devolutiva)} · conversa e PDI até ${dataBR(k.prazo_pdi)} · acompanhamento até ${dataBR(k.fim)}</div>`
           : `<div class="ajuda">Quando a gestão abrir um ciclo, os prazos aparecem aqui.</div>`}
         <div class="dc-guia">${k && k.publico !== "geral" ? "O ciclo acontece a cada 3 meses: <b>1.</b> avaliação às cegas (autoavaliação e coordenação) · <b>2.</b> devolutiva com conversa por competência · <b>3.</b> conversa individual e PDI · <b>4.</b> três encontros de acompanhamento."
-          : "O Ciclo de Desenvolvimento acontece a cada 3 meses, em sequência: <b>1.</b> quem avalia registra a avaliação · <b>2.</b> a pessoa é avisada e faz a autoavaliação (5 dias úteis) · <b>3.</b> quem avalia envia o feedback, que abre a conversa · <b>4.</b> PDI em até 5 dias úteis · <b>5.</b> três encontros de acompanhamento (o 2º, de preferência por vídeo no Teams, transcrito e com consentimento)."}</div></div>
+          : "O Ciclo de Desenvolvimento acontece a cada 3 meses, depois do momento formativo com quem avalia, em sequência: <b>1.</b> quem avalia registra a avaliação · <b>2.</b> a pessoa é avisada e faz a autoavaliação (5 dias úteis) · <b>3.</b> quem avalia envia o feedback, que abre a conversa · <b>4.</b> alinhamento de quem avalia com a liderança da frente · <b>5.</b> PDI em até 5 dias úteis depois do feedback · <b>6.</b> três encontros de acompanhamento por vídeo no Teams (ou presenciais, quando possível), com a conversa reaberta a cada encontro."}</div></div>
+      ${manual()}
       <div class="dc-bloco" id="dc-agenda" style="display:none"></div>
       <div class="dc-bloco"><h2>Para você</h2><div class="ferramentas">
         ${cartao("meu", "✎", "Meu ciclo", x ? `${nomeFase(fase(x))} · autoavaliação, devolutiva, PDI e acompanhamento` : "Você não participa do ciclo selecionado", !!x)}
-        ${cartao("portfolio", "▤", "Meu portfólio de entregas", "Registre entregas e evidências ao longo do trimestre", true)}
       </div></div>
       ${k && k.publico === "geral" && (S.souCoord || souLider()) ? `<div class="dc-bloco"><h2>Pessoas do ciclo</h2><div class="ferramentas">
         ${avaliaAlguem() ? cartao("pub:meus", "✔", "Quem eu avalio", "Suas avaliações, feedbacks e PDI", true, ` <span class="dc-tag">${S.lista.filter(y => y.avaliador_id === meuId()).length}</span>`) : ""}
         ${souLider() ? Object.entries(GRUPOS).map(([g, t]) => cartao("pub:" + g, g === "articuladores" ? "◎" : g === "coordenadores" ? "◈" : g === "lideres" ? "★" : "◇", t,
-          ({ articuladores: "Avaliados pela coordenação do NTE", coordenadores: "Avaliados pela liderança do Acompanhamento Pedagógico", lideres: "Avaliadas pela gerência da frente", consultores: "Avaliados pela liderança de cada frente" })[g],
+          ({ articuladores: "Avaliados pela coordenação do NTE", coordenadores: "Avaliação ainda não definida neste ciclo", lideres: "Avaliadas pela gerência da frente", consultores: "Avaliados pela liderança de cada frente" })[g],
           true, ` <span class="dc-tag">${S.lista.filter(y => y.grupo === g).length}</span>`)).join("") : ""}
       </div></div>` : S.souCoord || souLider() ? `<div class="dc-bloco"><h2>Públicos do ciclo</h2><div class="ferramentas">
         ${cartao("pub:articuladores", "◎", "Articuladores", "Avaliados pela coordenação pedagógica · NTE, pessoas, avaliações e PDI", true, !ehCoordCiclo() && k ? ` <span class="dc-tag">${S.lista.length} no ciclo</span>` : "")}
@@ -215,7 +221,6 @@
           andamento ? "O próximo pode ser preparado quando este terminar" : "Quem avalia quem, retirar pessoas do processo e publicar", !andamento)}</div></div>`; })() : ""}
       ${souLider() || S.souCoord || (!S.demo && pode("gerencia")) ? `<div class="dc-bloco"><h2>Acompanhamento</h2><div class="ferramentas">
         ${souLider() ? cartao("painel", "▦", "Painel e calibração", "Andamento por etapa, médias por avaliador e por NTE", true) : ""}
-        ${cartao("condutas", "!", "Condutas de atenção", "Registros restritos e relatório de rescisão", true)}
         ${souGestao() ? cartao("gestao", "⚙", "Gestão do ciclo", "Abrir ciclos, carteiras de NTE, trajetórias e exportação", true) : ""}
       </div></div>` : ""}`;
     el.querySelectorAll("[data-ir]:not([disabled])").forEach(b => b.addEventListener("click", () => {
@@ -223,7 +228,6 @@
       if (d.startsWith("pub:")) return irPublico(d.slice(4));
       if (d.startsWith("ini:")) return confirmarInicio(d.slice(4));
       if (d === "plano") return telaPlano();
-      if (d === "portfolio") { $("cd-abas").querySelectorAll("button").forEach(z => z.classList.remove("on")); el.innerHTML = `<div id="cd-sc"></div>`; S.voltar = () => trocar("inicio"); return telaPortfolio($("cd-sc"), meuId(), true, x); }
       trocar(d); }));
     agendaInicio();
   }
@@ -272,9 +276,9 @@
     const chip = (k, t, n) => `<button class="sec dc-mini${f === k ? " on" : ""}" data-fl="${k}">${t} (${n})</button>`;
     el.innerHTML = `<div class="dc-bloco"><h2>Ciclo de Desenvolvimento · ${pl.ordem}º/${pl.ano} <span class="dc-tag">rascunho</span></h2>
         <div class="ajuda">Mapa calculado em ${dataBR(pl.referencia)} com o Quadro Geral (planilha do Planejamento), as carteiras de NTE e as frentes. Nada foi enviado ainda: retire quem não deve ser avaliado, defina quem avalia nos casos em aberto e publique.</div>
-        <details class="dc-traj"><summary>Regras aplicadas</summary><div class="dc-guia">• Só CLT. Com menos de <b>6 meses</b> na função, a pessoa não é avaliada, salvo se a função anterior durou mais de 6 meses: nesse caso, avalia a liderança imediata da função anterior.<br>
-          • Articulador(a) e assistente: a coordenação do NTE. Se a coordenação acompanha o NTE há menos de 6 meses, avalia a coordenação anterior.<br>
-          • Coordenação pedagógica: a liderança do Acompanhamento Pedagógico.<br>• Consultores: a liderança da frente.<br>
+        <details class="dc-traj"><summary>Regras aplicadas</summary><div class="dc-guia">• Só CLT. Com menos de <b>4 meses</b> (um ciclo) na função, a pessoa não é avaliada, salvo se a função anterior durou mais de 4 meses: nesse caso, avalia a liderança imediata da função anterior.<br>
+          • Articulador(a) e assistente: a coordenação do NTE. Se a coordenação acompanha o NTE há menos de 4 meses, avalia a coordenação anterior.<br>
+          • Coordenação pedagógica: ainda não definida (neste ciclo a liderança do Acompanhamento Pedagógico avalia só articuladores).<br>• Consultores: a liderança da frente.<br>
           • Lideranças: a gerência da frente (Tamires de Paula: Projetos Pedagógicos, Acompanhamento Pedagógico e Fluxo Escolar; Gabriel Guedes: Apoio à Gestão, Mobilização e Engajamento, Dados e Sistemas e Gestão de Formações).<br>
           • Escritório de Projetos e Planejamento Estratégico estão sem liderança e gerência definidas: escolha quem avalia aqui.</div></details>
         <div class="dc-guia"><b>Nesta publicação: só articuladores.</b> A matriz atual é exclusiva dos articuladores; coordenação, lideranças e consultores das frentes aparecem no mapa para conferência de quem avalia quem e entram quando a matriz de cada um estiver ajustada.</div>
@@ -347,6 +351,7 @@
   function proximaAcao(x, souAval) {
     const f = fase(x);
     if (S.ciclo && S.ciclo.publico === "geral") {
+      if (x.coord_enviada && x.auto_enviada && !x.calibrado_em && !x.devolutiva_em) return souAval ? "Aguardando a calibração das notas" : "Aguardando feedback";
       if (f === "avaliacao") return souAval ? (x.coord_enviada ? "Aguardando a autoavaliação" : "Avaliar") : (x.coord_enviada ? (x.auto_enviada ? "Aguardando feedback" : "Fazer a autoavaliação" + (x.auto_prazo ? " até " + dataBR(x.auto_prazo) : "")) : "Aguardando a avaliação da liderança");
       if (f === "devolutiva") return souAval ? "Enviar o feedback" : "Aguardando feedback";
       if (f === "pdi") return souAval ? (x.conversa_em ? "Publicar o PDI" : "Registrar a conversa e o PDI") + (x.pdi_prazo ? " até " + dataBR(x.pdi_prazo) : "") : "Conversa e PDI com quem avalia";
@@ -357,7 +362,52 @@
     if (f === "acompanhamento") return `Encontro ${Math.min(3, (x.encontros_feitos || 0) + 1)} de 3${x.proximo_encontro ? " · " + dataBR(x.proximo_encontro) : ""}`;
     return "Ciclo concluído";
   }
-  const chipFase = (x) => { const f = fase(x); return sit(nomeFase(f), f === "concluido" ? "ok" : f === "acompanhamento" ? "info" : "alerta"); };
+  // manual do instrumento e da metodologia (página inicial)
+  function manual() {
+    const avalia = S.souCoord || souLider();
+    const sec = (t, h, aberto) => `<details class="dc-traj"${aberto ? " open" : ""}><summary><b>${t}</b></summary><div class="dc-guia" style="line-height:1.55">${h}</div></details>`;
+    return `<div class="dc-bloco"><h2>📘 Manual do Ciclo de Desenvolvimento</h2><div class="ajuda">Leia a parte do seu papel antes de começar. Dúvidas: abra um Encaminhamento para a gestão do projeto.</div>
+      ${sec("Como funciona, em 1 minuto", `A cada trimestre: <b>1.</b> momento formativo de quem avalia → <b>2.</b> quem avalia registra a avaliação → <b>3.</b> você faz a autoavaliação (5 dias úteis) → <b>4.</b> calibração das notas entre avaliadores → <b>5.</b> feedback, que abre a conversa → <b>6.</b> alinhamento com a liderança da frente → <b>7.</b> PDI em até 5 dias úteis → <b>8.</b> três encontros de acompanhamento, agendados aqui, com aviso 48 h antes e no dia.<br>
+        Entra quem tem ao menos <b>4 meses</b> na função (um ciclo). Neste ciclo, a matriz é a dos articuladores.`, !avalia)}
+      ${sec("Para quem é avaliado(a)", `• <b>Autoavaliação:</b> use fatos dos últimos 3 meses e toda a escala; nota 1 ou 5 pede exemplo. Ela não muda a nota de quem avalia: serve para comparar as visões e orientar a conversa.<br>
+        • <b>Feedback:</b> leia as duas avaliações e comente item por item. Discordar com fatos é bem-vindo.<br>
+        • <b>PDI:</b> você constrói junto com quem avalia. Proponha o que quer desenvolver para chegar ao próximo nível.<br>
+        • <b>Encontros:</b> agende pelo SGT, atualize o progresso das metas antes e responda o formulário rápido depois.<br>
+        • <b>Meu portfólio:</b> instrumento próprio, na página inicial do SGT. Registre suas entregas com evidências; é a sua vitrine para o próximo nível, e você pode baixá-lo quando quiser.<br>
+        • <b>Seus direitos:</b> ver o feedback e o PDI, registrar discordância na ciência do PDI e pedir revisão à liderança por Encaminhamento.`, !avalia)}
+      ${avalia ? sec("Para quem avalia", `• <b>Evite os vieses mais comuns:</b> efeito halo (uma qualidade contamina tudo), leniência ou rigor excessivo, tendência central (tudo 3), recência (só o último mês) e semelhança (gostar de quem é parecido com você).<br>
+        • <b>Avalie com evidência:</b> cada nota deve se apoiar em fatos observáveis (SGA, visitas, entregas, portfólio). Use o modelo Situação → Comportamento → Impacto.<br>
+        • <b>Calibração:</b> suas notas são comparadas com as dos demais avaliadores antes do feedback. Se a liderança pedir, ajuste com base em evidências.<br>
+        • <b>Feedback:</b> comece ouvindo, reconheça com fatos, foque em 1 ou 2 prioridades e combine próximos passos.<br>
+        • <b>PDI:</b> de 1 a 3 metas SMART, aprendizagem 70-20-10, compromissos dos dois lados e conversa GROW. Alinhe com a liderança da frente antes de publicar.<br>
+        • <b>Encontros:</b> por vídeo no Teams (presencial quando possível), com transcrição só com consentimento; se a pessoa não quiser, registre sem transcrição, sem prejuízo para ela.<br>
+        • <b>Portfólio:</b> você visualiza as entregas publicadas; se houver inconsistência, sinalize à liderança.<br>
+        • <b>Condutas de atenção</b> é um instrumento separado, fora do ciclo: não use no feedback nem no PDI.`, true) : ""}
+      ${sec("Avaliação × desenvolvimento: por que separamos", `A <b>avaliação</b> (nota do ciclo) é fechada na calibração e registra o desempenho do trimestre. O <b>desenvolvimento</b> (PDI, encontros, conversa, portfólio) existe para a pessoa crescer, e nada do que acontece ali muda a nota do ciclo ou vira medida disciplinar. Pesquisas mostram que, quando a conversa de desenvolvimento tem consequência administrativa, as pessoas se defendem em vez de aprender.`)}
+      ${sec("Rumo ao próximo nível", `O avanço de nível considera a <b>evolução entre ciclos</b> (notas calibradas), as <b>metas do PDI concluídas</b> com evidência e o <b>portfólio</b>. Nenhum ciclo isolado decide uma promoção: a decisão é da gestão, com base no histórico, que fica disponível para quem vier a avaliar a pessoa no futuro.`)}
+      ${sec("Privacidade e LGPD", `• <b>Finalidade:</b> desenvolvimento profissional e gestão do contrato de trabalho. Bases legais: execução do contrato e legítimo interesse (Lei 13.709/2018, art. 7º, V e IX).<br>
+        • <b>Quem vê:</b> você, quem avalia você (agora ou no futuro), a liderança da frente e a gestão do ciclo. Colegas não veem.<br>
+        • <b>Transcrição de encontros:</b> só com o seu consentimento, confirmado no início da gravação. Você pode recusar sem nenhum prejuízo; o encontro é registrado sem transcrição.<br>
+        • <b>Portfólio:</b> é seu e fica sempre disponível para você baixar.<br>
+        • <b>Guarda:</b> em caso de desligamento, o PDI (metas, encontros e conversa) é apagado 12 meses depois.<br>
+        • <b>Seus direitos (art. 18):</b> acesso, correção e informação sobre o uso dos seus dados, por Encaminhamento à gestão do projeto.<br>
+        <small>Texto orientativo; deve ser validado pelo Jurídico e pelo Encarregado de Dados (DPO) da FGV.</small>`)}
+      ${sec("Fundamentos", `Fixação de metas (Locke & Latham, 2002) · feedback centrado na tarefa (Kluger & DeNisi, 1996) · separar desenvolvimento de julgamento (Meyer, Kay & French, 1965) · efeito de quem avalia e calibração (Scullen, Mount & Goff, 2000) · treino de avaliadores por referência comum (Woehr & Huffcutt, 1994) · autoavaliação × avaliação da chefia (Harris & Schaubroeck, 1988) · conversas frequentes em vez de avaliação anual (Buckingham & Goodall, 2015) · aprendizagem 70-20-10 (McCall, Lombardo & Eichinger) · modelo GROW (Whitmore) · justiça procedimental (Folger & Greenberg).`)}
+    </div>`;
+  }
+  // trilha de conquistas do ciclo (motivação, sem competir com ninguém)
+  function trilha(x) {
+    const marcos = [["✍", "Autoavaliação", !!x.auto_enviada], ["💬", "Feedback", !!x.devolutiva_em], ["🧭", "PDI publicado", !!x.pdi_publicado_em],
+      ["🤝", `Encontros ${x.encontros_feitos || 0}/3`, (x.encontros_feitos || 0) >= 3], ["🏁", `Metas ${x.metas_concluidas || 0}/${x.metas || 0}`, x.metas > 0 && x.metas_concluidas >= x.metas],
+      ["⭐", `Portfólio (${x.portfolio || 0})`, (x.portfolio || 0) >= 3]];
+    const feitos = marcos.filter(m => m[2]).length, pct = Math.round(feitos / marcos.length * 100);
+    const frase = pct === 100 ? "Ciclo completo! Leve as conquistas para a conversa do próximo ciclo." : pct >= 50 ? "Você já passou da metade da trilha. Siga com as metas do PDI." : "Cada etapa concluída aproxima você do próximo nível.";
+    return `<div class="dc-bloco dc-trilha"><div class="dc-linha"><h2>Minha trilha de desenvolvimento</h2><b>${pct}%</b></div>
+      <div style="height:10px;border-radius:6px;background:var(--borda,#e5e7eb);overflow:hidden;margin:6px 0"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#E00D7E,#ED7F0C,#90BF23)"></div></div>
+      <div class="dc-chips">${marcos.map(([i, t, ok]) => `<span class="dc-tag" style="${ok ? "background:#dff3e6;color:#14532d;font-weight:600" : "opacity:.55"}">${i} ${esc(t)}${ok ? " ✓" : ""}</span>`).join("")}</div>
+      <div class="ajuda">${frase}</div></div>`;
+  }
+  const chipFase = (x) => { if (x.desligado_em) return sit("Desligado(a) em " + dataBR(x.desligado_em), "neutro"); const f = fase(x); return sit(nomeFase(f), f === "concluido" ? "ok" : f === "acompanhamento" ? "info" : "alerta"); };
 
   // ------------------------------------------------------------------ CARTEIRA: 27 NTE → pessoas → ficha
   async function carteira() {
@@ -480,8 +530,8 @@
         ${x ? `<h3>Ciclo atual · ${esc(S.ciclo.titulo)}</h3>${passos(x)}<div class="ajuda">Próxima ação: <b>${esc(proximaAcao(x, souAval))}</b></div>` : `<div class="resumo">Esta pessoa não participa do ciclo selecionado.</div>`}
         </div>
         <div class="abas" id="cd-sabas"></div><div id="cd-sc"></div>`;
-      const subs = x ? [["avaliar", souAval ? "Avaliação" : "Avaliação da coordenação"], ...(souAval ? [] : [["auto", "Autoavaliação"]]), ["devolutiva", "Devolutiva"], ["pdi", "Conversa e PDI"], ["acomp", "Acompanhamento"], ["portfolio", "Portfólio"], ["relatorio", "Relatório"]]
-        : [["portfolio", "Portfólio"], ["historico", "Histórico"]];
+      const subs = x ? [["avaliar", souAval ? "Avaliação" : "Avaliação da coordenação"], ...(souAval ? [] : [["auto", "Autoavaliação"]]), ["devolutiva", "Devolutiva"], ["pdi", "Conversa e PDI"], ["acomp", "Acompanhamento"], ["portfolio", "Portfólio (visualizar)"], ["relatorio", "Relatório"]]
+        : [["portfolio", "Portfólio (visualizar)"], ["historico", "Histórico"]];
       if (x && (souAval || souLider())) subs.push(["encaminhar", "Encaminhamento"]);
       $("cd-sabas").innerHTML = subs.map(([k, t]) => `<button data-s="${k}">${t}</button>`).join("");
       $("cd-sabas").querySelectorAll("button").forEach(b => b.addEventListener("click", () => abrirSub(b.dataset.s)));
@@ -503,10 +553,10 @@
     S.part = x;
     if (!x) { el.innerHTML = `<div class="resumo">Você não participa do ciclo selecionado.${S.ciclo ? "" : " Ainda não há ciclo aberto."}</div><div id="cd-sc"></div>`;
       return telaPortfolio($("cd-sc"), meuId(), true, null); }
-    el.innerHTML = `<div class="dc-bloco"><h2>Meu Ciclo de Desenvolvimento</h2>${passos(x)}
+    el.innerHTML = `${trilha(x)}<div class="dc-bloco"><h2>Meu Ciclo de Desenvolvimento</h2>${passos(x)}
       <div class="dc-guia">Este ciclo é sobre o seu desenvolvimento. ${S.ciclo && S.ciclo.publico === "geral" ? "Primeiro, quem avalia você registra a avaliação; em seguida, você é avisado(a) por e-mail e faz a sua autoavaliação (5 dias úteis). Depois, recebe o feedback, conversa e constrói o PDI, disponibilizado em até 5 dias úteis." : "Você e a coordenação avaliam ao mesmo tempo, sem ver a avaliação um do outro. Depois, comparam as duas visões, conversam e constroem juntos o seu PDI."}</div></div>
       <div class="abas" id="cd-sabas"></div><div id="cd-sc"></div>`;
-    const subs = [["auto", "Autoavaliação"], ["devolutiva", "Devolutiva"], ["pdi", "Meu PDI"], ["acomp", "Acompanhamento"], ["portfolio", "Meu portfólio"], ["relatorio", "Minha evolução"]];
+    const subs = [["auto", "Autoavaliação"], ["devolutiva", "Devolutiva"], ["pdi", "Meu PDI"], ["acomp", "Acompanhamento"], ["relatorio", "Minha evolução"]];
     $("cd-sabas").innerHTML = subs.map(([k, t]) => `<button data-s="${k}">${t}</button>`).join("");
     const ir = (s) => { $("cd-sabas").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.s === s)); const c = $("cd-sc");
       ({ auto: () => telaAuto(c, x), devolutiva: () => telaDevolutiva(c, x, true), pdi: () => telaPdi(c, x, true), acomp: () => telaAcomp(c, x, true),
@@ -615,7 +665,7 @@
       const gaps = its.filter(i => au && co && Math.abs((au.notas[i.k] || 0) - (co.notas[i.k] || 0)) >= 2);
       const porItem = (k) => cs.filter(c => c.item === k);
       const autor = (id) => id === x.colaborador_id ? (souDono ? "Você" : x.nome.split(" ")[0]) : id === meuId() ? "Você" : (S.demo ? DEMO.nomes[id] : x.avaliador) || "Coordenação";
-      const chatAberto = !g || !x.devolutiva_em || !x.chat_ate || hojeISO() <= x.chat_ate;
+      const chatAberto = !g || !x.devolutiva_em || (!!x.chat_ate && !x.desligado_em);
       const fio = (k) => { const l = porItem(k); const podeEscrever = S.ciclo.status !== "encerrado" && chatAberto && (souAval || (souDono && x.devolutiva_em));
         return `<div class="dc-fio" data-fio="${k}">${l.map(c => `<div class="dc-msg${c.autor_id === meuId() ? " meu" : ""}"><b>${esc(autor(c.autor_id))}</b><small>${dataHora(c.criado_em)}</small><div style="white-space:pre-wrap">${esc(c.texto)}</div></div>`).join("")}
           ${podeEscrever ? `<div class="dc-env"><textarea placeholder="${souDono ? "Responder: concordo, discordo, contexto…" : "Comentário com fato: situação → comportamento → impacto"}" maxlength="2000"></textarea><button class="sec" data-env="${k}">Enviar</button></div>` : ""}</div>`; };
@@ -625,8 +675,8 @@
           <div><b>${n1(ic.ga)} <small style="font-size:13px;color:var(--texto-2)">/ auto ${n1(ia.ga)}</small></b>Atuação GA 2.0</div>
           <div><b>${n1(ic.res)} <small style="font-size:13px;color:var(--texto-2)">/ auto ${n1(ia.res)}</small></b>Resultados</div>
           <div><b>${gaps.length}</b>Itens com diferença de 2+ pontos</div></div>
-        ${g && x.devolutiva_em ? `<div class="dc-bloco"><h2>Conversa sobre o PDI</h2><div class="dc-guia">${chatAberto ? `Conversa aberta até <b>${dataBR(x.chat_ate)}</b> (5 dias úteis depois do feedback).` : `Conversa encerrada em ${dataBR(x.chat_ate)}.`}
-          Foco exclusivo no PDI: prestação de contas, diagnóstico e registro do progresso de adesão ao PDI e dúvidas.</div>${fio("pdi")}</div>` : ""}
+        ${g && x.devolutiva_em ? `<div class="dc-bloco"><h2>Conversa sobre o PDI</h2><div class="dc-guia">${chatAberto ? `Conversa aberta até <b>${dataBR(x.chat_ate)}</b>.` : `Conversa fechada no momento.`} Ela fica aberta por 5 dias úteis depois do feedback e reabre a cada encontro de acompanhamento (de 3 dias antes a 5 dias úteis depois), até o fim do ciclo.
+          Foco exclusivo no PDI: prestação de contas, diagnóstico e registro do progresso de adesão ao PDI e dúvidas. O que for registrado aqui entra no PDI e no relatório.</div>${fio("pdi")}</div>` : ""}
         <div class="dc-bloco"><h2>Comentário geral</h2>${fio("geral")}</div>
         <div class="dc-bloco"><h2>Item a item</h2><div class="ajuda">Toque em 💬 para comentar. Comece pelos itens com diferença de 2 pontos ou mais.</div>
         <div class="dc-rolar"><table class="dc-tab dc-cmp"><thead><tr><th>Competência</th><th class="num">Auto</th><th class="num">Coord.</th><th class="num">Dif.</th><th class="num">💬</th></tr></thead><tbody>
@@ -638,7 +688,8 @@
             <tr class="oculto" data-linha="${i.k}"><td colspan="5">${fio(i.k)}</td></tr>`; }).join("")}</tbody></table></div></div>
         <div class="dc-duas"><div class="dc-bloco"><h2>Síntese da autoavaliação</h2>${au ? SINTESE.auto.map(([k, t]) => au.sintese[k] ? `<h3>${esc(t.split(" (")[0])}</h3><p style="white-space:pre-wrap;margin:0">${esc(au.sintese[k])}</p>` : "").join("") : `<div class="resumo">Não enviada.</div>`}</div>
           <div class="dc-bloco"><h2>Síntese da coordenação</h2>${co ? SINTESE.coord.map(([k, t]) => co.sintese[k] ? `<h3>${esc(t.split(":")[0])}</h3><p style="white-space:pre-wrap;margin:0">${esc(co.sintese[k])}</p>` : "").join("") : ""}</div></div>
-        ${souAval && !x.devolutiva_em && g && au ? `<div class="dc-bloco"><h2>Enviar o feedback</h2><div class="ajuda">Ao enviar, ${esc(x.nome)} passa a ver a sua avaliação e os comentários, e a conversa fica aberta para os dois. A partir daí, o PDI deve ser disponibilizado em até 5 dias úteis. Depois disso, as notas não mudam mais.</div>
+        ${souAval && !x.devolutiva_em && g && au && !x.calibrado_em ? `<div class="dc-bloco"><h2>Aguardando a calibração</h2><div class="ajuda">As notas de quem avalia passam por calibração com a liderança antes do feedback, para que critérios iguais gerem notas iguais em todos os NTEs. Você é avisado(a) quando o feedback for liberado. Se a liderança pedir ajuste, altere a sua avaliação na aba Avaliação.</div></div>`
+          : souAval && !x.devolutiva_em && g && au ? `<div class="dc-bloco"><h2>Enviar o feedback</h2><div class="ajuda">Ao enviar, ${esc(x.nome)} passa a ver a sua avaliação e os comentários, e a conversa fica aberta para os dois. A partir daí, o PDI deve ser disponibilizado em até 5 dias úteis. Depois disso, as notas não mudam mais.</div>
           <div class="dc-btns"><button id="dc-pub">Enviar feedback</button></div></div>`
           : x.devolutiva_em && g ? `<div class="ajuda">Feedback enviado em ${dataHora(x.devolutiva_em)}${x.pdi_prazo ? ` · PDI até ${dataBR(x.pdi_prazo)}` : ""}.</div>`
           : souAval && !x.devolutiva_em && !g ? `<div class="dc-bloco"><h2>Publicar a devolutiva</h2><div class="ajuda">Ao publicar, ${esc(x.nome)} passa a ver a sua avaliação e os comentários, e pode responder antes da conversa individual. Depois disso, as notas não mudam mais.</div>
@@ -662,7 +713,7 @@
 
   // ------------------------------------------------------------------ CONVERSA E PDI
   const DEVERES = `<div class="dc-duas" style="margin-top:8px"><div class="dc-guia"><b>Deveres do(a) avaliado(a)</b><br>• Executar as ações combinadas no prazo<br>• Registrar entregas no portfólio<br>• Atualizar o progresso das metas antes de cada encontro<br>• Responder o formulário de efetividade após cada encontro</div>
-    <div class="dc-guia"><b>Deveres da coordenação</b><br>• Oferecer o apoio combinado em cada meta<br>• Realizar os 3 encontros (ao menos 1 presencial ou por vídeo; o 2º, de preferência por vídeo no Teams, transcrito e com consentimento)<br>• Registrar o progresso e dar feedback com fatos<br>• Reconhecer avanços e replanejar quando preciso</div></div>`;
+    <div class="dc-guia"><b>Deveres da coordenação</b><br>• Oferecer o apoio combinado em cada meta<br>• Alinhar o PDI com a liderança da frente antes de publicar<br>• Realizar os 3 encontros, por vídeo no Teams (presencial quando possível), transcritos e com consentimento<br>• Registrar o progresso e dar feedback com fatos<br>• Reconhecer avanços e replanejar quando preciso</div></div>`;
   async function telaPdi(el, x, souDono) {
     carregando(el);
     try {
@@ -697,9 +748,23 @@
           ${x.pdi_prazo && !x.pdi_publicado_em ? `<div class="ajuda">Prazo para disponibilizar o PDI: <b>${dataBR(x.pdi_prazo)}</b> (5 dias úteis depois do feedback).</div>` : ""}
           ${editavel && sugest.length ? `<div class="dc-guia">Sugestões a partir da avaliação (menor nota da coordenação e maior diferença): ${sugest.map(s => `<b>${esc(s.i.nome)}</b> (${s.c})`).join(" · ")}. ${au && au.sintese.desenvolver ? `A pessoa quer desenvolver: “${esc(au.sintese.desenvolver)}”.` : ""} Recomendado: de 1 a 3 metas.</div>` : ""}
           ${DEVERES}
+          ${editavel && !x.pdi_publicado_em ? `<details class="dc-traj" open><summary>Como construir um PDI que funciona</summary><div class="dc-guia">
+            <b>1. Foco:</b> de 1 a 3 metas, ligadas às maiores lacunas da avaliação e ao que a pessoa quer desenvolver para o próximo nível.<br>
+            <b>2. Meta SMART:</b> objetivo observável (o que a pessoa fará diferente), com evidência de sucesso e prazo dentro do ciclo.<br>
+            <b>3. Aprendizagem 70-20-10:</b> a maior parte na prática do território, parte na troca com pares e coordenação, e uma parte menor em formação e estudo.<br>
+            <b>4. Compromissos dos dois lados:</b> o que a pessoa fará e o apoio concreto de quem avalia.<br>
+            <b>5. Conversa GROW:</b> Objetivo (onde quer chegar) → Realidade (onde está, com fatos) → Opções (caminhos possíveis) → Vontade (o que fará, quando).<br>
+            O SGT só publica o PDI com as metas completas e o alinhamento com a liderança registrado.</div></details>` : ""}
+          <div class="dc-guia" style="margin-top:6px"><b>O PDI é de desenvolvimento.</b> O que acontece no PDI, nos encontros e na conversa não altera a nota deste ciclo e não é usado para medidas disciplinares.</div>
           <div id="dc-metas">${metas.map(cartao).join("") || (editavel ? "" : `<div class="resumo">Nenhuma meta registrada ainda.</div>`)}</div>
           ${editavel && metas.length < 3 ? cartao({ status: "Não iniciada" }, metas.length) : ""}
-          ${editavel && !x.pdi_publicado_em ? `<div class="dc-btns"><button id="dc-pubpdi">Publicar PDI e agendar os 3 encontros</button></div>` : ""}
+          ${S.ciclo.publico === "geral" ? `<div class="dc-bloco" style="margin-top:10px"><h3>Alinhamento com a liderança da frente</h3>
+            ${x.alinhamento_em ? `<div class="ajuda">${sit("Alinhamento feito", "ok")} em ${dataBR(x.alinhamento_em)} com ${esc(x.alinhamento_com || "")}${x.alinhamento_obs && !souDono ? ` · ${esc(x.alinhamento_obs)}` : ""}</div>`
+              : editavel ? `<div class="ajuda">Antes de publicar o PDI, alinhe as metas com a liderança da frente${x.lideranca_frente ? ` (${esc(x.lideranca_frente)})` : ""} e registre aqui.</div>
+              <div class="grade2"><div><label>Data do alinhamento</label><input type="date" id="dc-ald" value="${hojeISO()}"></div><div><label>Com quem</label><input id="dc-alc" value="${esc(x.lideranca_frente || "")}"></div></div>
+              <label>Pontos combinados (visível só para quem avalia e para a liderança)</label><textarea id="dc-alo" maxlength="2000"></textarea>
+              <div class="dc-btns"><button class="sec" id="dc-als">Registrar alinhamento</button></div>` : `<div class="ajuda">Aguardando o alinhamento de quem avalia com a liderança da frente.</div>`}</div>` : ""}
+          ${editavel && !x.pdi_publicado_em ? `<div class="dc-btns"><button id="dc-pubpdi"${S.ciclo.publico === "geral" && !x.alinhamento_em ? " disabled title=\"Registre o alinhamento antes\"" : ""}>Publicar PDI e agendar os 3 encontros</button></div>` : ""}
           ${x.pdi_publicado_em ? `<div class="ajuda">PDI publicado em ${dataHora(x.pdi_publicado_em)}.</div>` : ""}
           ${trans.length ? `<h3>Transcrições dos encontros por vídeo</h3><ul>${trans.map(e => `<li>Encontro ${e.ordem} de 3${e.realizado_em ? " · " + dataBR(e.realizado_em) : ""}: <a href="${esc(e.transcricao_link)}" target="_blank" rel="noopener">abrir a transcrição no Teams</a>${e.consentimento ? " · consentimento confirmado no início" : ""}</li>`).join("")}</ul>` : ""}</div>
         ${x.pdi_publicado_em ? `<div class="dc-bloco"><h2>Ciência do(a) avaliado(a)</h2>${x.pdi_ciencia_em
@@ -724,6 +789,9 @@
           try { await B.salvarMeta(d); ok("Meta salva."); telaPdi(el, x, souDono); } catch (e) { falhou(e); } });
         if (del) del.addEventListener("click", async () => { if (!confirm("Excluir esta meta?")) return; try { await B.apagarMeta(id); telaPdi(el, x, souDono); } catch (e) { falhou(e); } });
       });
+      if ($("dc-als")) $("dc-als").addEventListener("click", async () => {
+        const d = $("dc-ald").value, c = $("dc-alc").value.trim(); if (!d || !c) return aviso("a-cd", "Informe a data e com quem foi o alinhamento.");
+        try { await B.alinhar(x.id, d, c, $("dc-alo").value.trim() || null); await recarregarLista(); ok("Alinhamento registrado. O PDI já pode ser publicado."); ficha(S.pessoa, "pdi"); } catch (e) { falhou(e); } });
       if ($("dc-pubpdi")) $("dc-pubpdi").addEventListener("click", async () => {
         if (!$("dc-cv").value) return aviso("a-cd", "Registre a data da conversa individual e salve antes de publicar.");
         if (!metas.length) return aviso("a-cd", "Adicione ao menos uma meta.");
@@ -746,16 +814,16 @@
       const prog = metas.length ? metas.reduce((s, m) => s + (m.progresso || 0), 0) / metas.length : null;
       el.innerHTML = `<div class="dc-kpis"><div><b>${encs.filter(e => e.realizado_em).length} de 3</b>Encontros realizados</div><div><b>${sincrono ? "Sim" : "Ainda não"}</b>Encontro presencial ou por vídeo</div>
           <div><b>${prog == null ? "—" : Math.round(prog) + "%"}</b>Progresso médio das metas</div><div><b>${n1(efet)}</b>Efetividade percebida (1 a 5)</div></div>
-        ${encs.map(e => { const precisaSinc = e.ordem === 3 && !sincrono && !e.realizado_em, podeReg = souAval && aberto, podePulso = souDono && e.realizado_em && !e.pulso && aberto;
+        ${encs.map(e => { const precisaSinc = false, podeReg = souAval && aberto, podePulso = souDono && e.realizado_em && !e.pulso && aberto;
           return `<div class="dc-enc" data-e="${e.id}"><div class="dc-linha"><b>Encontro ${e.ordem} de 3 · previsto para ${dataBR(e.previsto_em)}</b>
             ${e.realizado_em ? sit(`Realizado em ${dataBR(e.realizado_em)} · ${MODAL[e.modalidade] || ""}`, "ok") : e.agendado_para ? sit(`Agendado · ${dataHoraBR(e.agendado_para)}`, "neutro") : e.previsto_em < hojeISO() ? sit("Atrasado e sem data", "erro") : sit("A agendar", "alerta")}</div>
             ${!e.realizado_em && aberto && (souAval || souDono) ? `<div class="dc-agendar"><div class="grade2"><div><label>${e.agendado_para ? "Reagendar para" : "Agendar para"} (data e hora)</label><input type="datetime-local" data-ag value="${esc(paraLocal(e.agendado_para))}"></div>
                 <div style="align-self:end"><div class="dc-btns" style="margin:0"><button class="sec" data-agsv>${e.agendado_para ? "Reagendar" : "Agendar"}</button>${e.agendado_para ? `<a class="dc-mini" href="${icsLink(e.agendado_para, "Encontro de acompanhamento do PDI · " + x.nome)}" download="encontro-pdi.ics" style="align-self:center">Adicionar ao meu calendário</a>` : ""}</div></div></div>
                 <div class="ajuda">Combinem a data juntos. Os dois recebem aviso 48 h antes e no dia${e.reagendamentos ? ` · reagendado ${e.reagendamentos} vez(es)` : ""}.</div></div>` : ""}
             ${podeReg ? `<div class="grade2"><div><label>Realizado em</label><input type="date" data-f="realizado_em" value="${esc(e.realizado_em || "")}"></div>
-                <div><label>Modalidade</label><select data-f="modalidade"><option value="">—</option>${Object.entries(MODAL).filter(([k]) => !precisaSinc || ["presencial", "video"].includes(k)).map(([k, t]) => `<option value="${k}"${(e.modalidade || (e.ordem === 2 && !e.realizado_em ? "video" : "")) === k ? " selected" : ""}>${t}</option>`).join("")}</select></div></div>
-                ${e.ordem === 2 ? `<div class="dc-guia">Recomendado: faça este encontro por <b>videochamada no Teams</b>, com transcrição. No início da transcrição, peça e confirme em voz alta o consentimento de ${esc(x.nome)}.</div>` : ""}
-                <div data-vid class="${(e.modalidade || (e.ordem === 2 && !e.realizado_em ? "video" : "")) === "video" ? "" : "oculto"}"><label>Link da transcrição no Teams *</label><input type="text" inputmode="url" data-f="transcricao_link" value="${esc(e.transcricao_link || "")}" placeholder="https://teams.microsoft.com/…">
+                <div><label>Modalidade</label><select data-f="modalidade"><option value="">—</option>${Object.entries(MODAL).filter(([k]) => !precisaSinc || ["presencial", "video"].includes(k)).map(([k, t]) => `<option value="${k}"${(e.modalidade || (!e.realizado_em ? "video" : "")) === k ? " selected" : ""}>${t}</option>`).join("")}</select></div></div>
+                <div class="dc-guia">Como muitos atuam em home office, o padrão é <b>videochamada no Teams</b>, com transcrição. No início, peça e confirme em voz alta o consentimento de ${esc(x.nome)}. Se a pessoa preferir não ter transcrição, registre o encontro como presencial ou por telefone. A conversa do PDI reabre neste encontro.</div>
+                <div data-vid class="${(e.modalidade || (!e.realizado_em ? "video" : "")) === "video" ? "" : "oculto"}"><label>Link da transcrição no Teams *</label><input type="text" inputmode="url" data-f="transcricao_link" value="${esc(e.transcricao_link || "")}" placeholder="https://teams.microsoft.com/…">
                   <label class="check"><input type="checkbox" data-cons${e.consentimento ? " checked" : ""}><span>Confirmei, no início da transcrição, o consentimento de ${esc(x.nome)} para a transcrição do encontro.</span></label>
                   <div class="ajuda">O link fica disponível no PDI para quem avalia e para a pessoa avaliada.</div></div>
                 ${precisaSinc ? `<div class="dc-guia">Este é o último encontro e nenhum foi presencial ou por vídeo. Ele precisa ser presencial ou por vídeo.</div>` : ""}
@@ -795,53 +863,64 @@
   }
 
   // ------------------------------------------------------------------ PORTFÓLIO DE ENTREGAS
+  // Portfólio: a própria pessoa registra (instrumento "Meu portfólio", fora do ciclo);
+  // no ciclo, quem avalia só visualiza e pode sinalizar inconsistência à liderança.
   async function telaPortfolio(el, colab, souDono, x) {
     carregando(el);
     try {
-      const [lista, metas] = await Promise.all([B.portfolio(colab), x ? B.metas(x.id) : Promise.resolve([])]);
-      const podeNota = !souDono && (souLider() || (x && souAvaliadorDe(x)));
-      const arqs = podeNota ? await B.portArquivos(lista.filter(f => f.considerado === false).map(f => f.id)).catch(() => []) : [];
-      const linkDe = (f) => f.link || ((arqs.find(a => a.portfolio_id === f.id) || {}).link) || null;
-      const parecer = (f) => f.considerado == null ? sit("Aguardando seu parecer", "alerta") : f.considerado ? sit("Considerado na avaliação" + (f.avanco_pdi ? " · avanço no PDI" : ""), "ok") : sit("Não considerado", "neutro");
-      const pend = podeNota ? lista.filter(f => f.considerado == null).length : 0;
-      const chips = (sel, dis) => `<div class="dc-chips">${itens().filter(i => i.k !== "res").map(i => `<label><input type="checkbox" value="${i.k}"${(sel || []).includes(i.k) ? " checked" : ""}${dis ? " disabled" : ""}><span>${esc(i.nome)}</span></label>`).join("")}</div>`;
-      el.innerHTML = `${souDono ? `<div class="dc-bloco"><h2>Registrar uma entrega</h2><div class="ajuda">Registre entregas e evidências ao longo do trimestre (visitas, devolutivas, análises, formações). Elas aparecem para a coordenação na hora de avaliar e nos encontros.</div>
+      const [lista, metas] = await Promise.all([B.portfolio(colab), x && souDono ? B.metas(x.id).catch(() => []) : Promise.resolve([])]);
+      const chips = (sel) => `<div class="dc-chips">${itens().filter(i => i.k !== "res").map(i => `<label><input type="checkbox" value="${i.k}"${(sel || []).includes(i.k) ? " checked" : ""}><span>${esc(i.nome)}</span></label>`).join("")}</div>`;
+      el.innerHTML = `${souDono ? `<div class="dc-bloco"><h2>Registrar uma entrega</h2><div class="ajuda">Registre suas entregas e evidências (visitas, devolutivas, análises, formações). Quem acompanha você visualiza o que for publicado aqui.</div>
           <div class="grade2"><div><label>Título *</label><input id="pf-t" maxlength="200"></div><div><label>Data</label><input type="date" id="pf-d" value="${hojeISO()}"></div></div>
           <label>O que foi feito e qual o resultado</label><textarea id="pf-ds" maxlength="2000"></textarea>
           <label>Link da evidência (Drive, SGA, fotos)</label><input id="pf-l" placeholder="https://">
           ${metas.length ? `<label>Ligada a uma meta do PDI</label><select id="pf-m"><option value="">—</option>${metas.map(m => `<option value="${m.id}">${esc(m.objetivo)}</option>`).join("")}</select>` : ""}
           <label>Competências relacionadas</label><div id="pf-c">${chips([])}</div><div class="dc-btns"><button id="pf-s">Adicionar ao portfólio</button></div></div>` : ""}
-        <div class="dc-bloco"><h2>${souDono ? "Meu portfólio" : "Portfólio de entregas"} (${lista.length})</h2>
+        <div class="dc-bloco"><h2>${souDono ? "Meu portfólio" : "Portfólio publicado"} (${lista.length})</h2>
         ${souDono && lista.length ? `<div class="dc-btns" style="justify-content:flex-start;margin-top:0"><button class="sec dc-mini" id="pf-baixar">Baixar meu portfólio</button></div>` : ""}
-        ${podeNota ? `<div class="dc-guia">Para cada entrega, indique se ela será considerada na avaliação de desempenho e se é avanço no PDI. A pessoa não é avisada do seu parecer. O que não for considerado deixa de ficar disponível para ela baixar; o que for considerado vai para o relatório.${pend ? ` <b>${pend} aguardando parecer.</b>` : ""}</div>` : ""}
+        ${!souDono ? `<div class="dc-guia">Somente visualização. Se encontrar alguma inconsistência numa entrega, sinalize à liderança, que define as medidas de alinhamento e correção. A pessoa não é avisada da sinalização.</div>` : ""}
         ${lista.map(f => `<div class="dc-port" data-f="${f.id}"><div class="dc-linha"><b>${esc(f.titulo)}</b><small>${dataBR(f.data)}</small></div>
           ${f.descricao ? `<div style="white-space:pre-wrap;margin-top:4px">${esc(f.descricao)}</div>` : ""}
-          ${linkDe(f) ? `<div><a href="${esc(linkDe(f))}" target="_blank" rel="noopener">Abrir evidência</a></div>` : souDono && f.considerado === false ? `<div class="ajuda">Evidência indisponível para download.</div>` : ""}
-          ${podeNota ? `<div class="dc-linha" style="grid-template-columns:auto 1fr;gap:8px;margin-top:6px">${parecer(f)}<span></span></div>
-            <div class="dc-btns" style="justify-content:flex-start;flex-wrap:wrap"><button class="sec dc-mini${f.considerado === true ? " on" : ""}" data-cons="1">Considerar na avaliação</button><button class="sec dc-mini${f.considerado === false ? " on" : ""}" data-cons="0">Não considerar</button>
-              <label class="check" style="margin:0"><input type="checkbox" data-avpdi${f.avanco_pdi ? " checked" : ""}><span>É avanço no PDI</span></label></div>` : ""}
+          ${f.link ? `<div><a href="${esc(f.link)}" target="_blank" rel="noopener">Abrir evidência</a></div>` : ""}
           ${(f.competencias || []).length ? `<div class="dc-chips">${f.competencias.map(k => `<span class="dc-tag">${esc(nomeItem(k))}</span>`).join("")}</div>` : ""}
-          ${f.nota_coord ? `<div class="dc-guia"><b>Coordenação:</b> ${esc(f.nota_coord)}</div>` : ""}
-          ${podeNota ? `<div class="dc-env"><textarea placeholder="Nota da coordenação (reconhecimento, sugestão)">${esc(f.nota_coord || "")}</textarea><button class="sec" data-nota>Salvar nota</button></div>` : ""}
-          ${souDono && f.considerado == null ? `<div class="dc-btns"><button class="perigo dc-mini" data-del>Excluir</button></div>` : ""}</div>`).join("") || `<div class="resumo">Nenhuma entrega registrada ainda.</div>`}</div>`;
+          ${!souDono ? `<div class="dc-btns" style="justify-content:flex-start"><button class="sec dc-mini" data-sin>Sinalizar inconsistência à liderança</button></div>
+            <div class="oculto" data-sinbox><textarea maxlength="2000" placeholder="Descreva a inconsistência (o que foi registrado × o que se observou)"></textarea><div class="dc-btns"><button class="sec dc-mini" data-sinenv>Enviar à liderança</button></div></div>` : ""}
+          ${souDono ? `<div class="dc-btns"><button class="perigo dc-mini" data-del>Excluir</button></div>` : ""}</div>`).join("") || `<div class="resumo">Nenhuma entrega registrada ainda.</div>`}</div>`;
       if ($("pf-baixar")) $("pf-baixar").addEventListener("click", () => {
-        const L = lista.filter(f => f.considerado !== false), q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-        const csv = [["Data", "Título", "Descrição", "Evidência", "Competências"], ...L.map(f => [dataBR(f.data), f.titulo, f.descricao || "", f.link || "", (f.competencias || []).map(nomeItem).join("; ")])].map(r => r.map(q).join(";")).join("\r\n");
-        const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" })); a.download = "meu-portfolio.csv"; a.click(); });
+        const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+        const csv = [["Data", "Título", "Descrição", "Evidência", "Competências"], ...lista.map(f => [dataBR(f.data), f.titulo, f.descricao || "", f.link || "", (f.competencias || []).map(nomeItem).join("; ")])].map(r => r.map(q).join(";")).join("\r\n");
+        const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })); a.download = "meu-portfolio.csv"; a.click(); });
       if ($("pf-s")) $("pf-s").addEventListener("click", async () => {
         const t = $("pf-t").value.trim(); if (!t) return aviso("a-cd", "Dê um título à entrega.");
         const l = $("pf-l").value.trim(); if (l && !/^https?:\/\//i.test(l)) return aviso("a-cd", "O link deve começar com https://");
-        const f = { colaborador_id: colab, ciclo_id: S.ciclo ? S.ciclo.id : null, titulo: t, data: $("pf-d").value || hojeISO(), descricao: $("pf-ds").value.trim() || null, link: l || null,
+        const f = { colaborador_id: colab, ciclo_id: x ? x.ciclo_id : null, titulo: t, data: $("pf-d").value || hojeISO(), descricao: $("pf-ds").value.trim() || null, link: l || null,
           competencias: [...$("pf-c").querySelectorAll("input:checked")].map(i => i.value), meta_id: $("pf-m") && $("pf-m").value ? +$("pf-m").value : null };
         try { await B.salvarPort(f); ok("Entrega registrada."); telaPortfolio(el, colab, souDono, x); } catch (e) { falhou(e); } });
       el.querySelectorAll(".dc-port").forEach(card => { const id = +card.dataset.f;
-        const n = card.querySelector("[data-nota]"), d = card.querySelector("[data-del]"), f0 = lista.find(z => z.id === id);
-        const salvarParecer = async (cons) => { const av = card.querySelector("[data-avpdi]").checked;
-          try { await B.salvarPort({ id, considerado: cons, avanco_pdi: av }); ok(cons === false ? "Entrega não considerada. Ela deixa de ficar disponível para a pessoa baixar." : "Parecer registrado."); telaPortfolio(el, colab, souDono, x); } catch (e) { falhou(e); } };
-        card.querySelectorAll("[data-cons]").forEach(b => b.addEventListener("click", () => salvarParecer(b.dataset.cons === "1")));
-        const cav = card.querySelector("[data-avpdi]"); if (cav) cav.addEventListener("change", () => salvarParecer(f0.considerado == null ? true : f0.considerado));
-        if (n) n.addEventListener("click", async () => { try { await B.salvarPort({ id, nota_coord: card.querySelector("textarea").value.trim() || null }); ok("Nota salva."); telaPortfolio(el, colab, souDono, x); } catch (e) { falhou(e); } });
+        const d = card.querySelector("[data-del]"), sb = card.querySelector("[data-sin]");
+        if (sb) sb.addEventListener("click", () => card.querySelector("[data-sinbox]").classList.toggle("oculto"));
+        const se = card.querySelector("[data-sinenv]");
+        if (se) se.addEventListener("click", async () => { const m = card.querySelector("[data-sinbox] textarea").value.trim();
+          if (m.length < 5) return aviso("a-cd", "Descreva a inconsistência.");
+          try { await B.sinalizarPort(id, m); ok("Sinalização enviada à liderança."); card.querySelector("[data-sinbox]").classList.add("oculto"); card.querySelector("[data-sinbox] textarea").value = ""; } catch (e) { falhou(e); } });
         if (d) d.addEventListener("click", async () => { if (!confirm("Excluir esta entrega?")) return; try { await B.apagarPort(id); telaPortfolio(el, colab, souDono, x); } catch (e) { falhou(e); } }); });
+    } catch (e) { falhou(e); }
+  }
+
+  // ------------------------------------------------------------------ instrumentos fora do ciclo: "Meu portfólio" e "Condutas de atenção"
+  async function ferramenta(tipo) {
+    mostrar("v-cd"); S.ferr = tipo; S.voltar = null; aviso("a-cd", "");
+    $("cd-titulo").textContent = tipo === "portfolio" ? "Meu portfólio" : "Condutas de atenção";
+    $("cd-sub").textContent = tipo === "portfolio" ? "Suas entregas e evidências, para baixar quando quiser" : "Histórico individual de quem você acompanha · fora do Ciclo de Desenvolvimento";
+    $("cd-ciclo").classList.add("oculto"); $("cd-previa").classList.add("oculto"); $("cd-pbar").innerHTML = ""; $("cd-abas").innerHTML = "";
+    try {
+      if (!S.ciclos.length) S.ciclos = await B.ciclos().catch(() => []);
+      if (tipo === "portfolio") {
+        const k = S.ciclos.find(c => c.status !== "encerrado");
+        const x = k ? await B.meu(k.id).catch(() => null) : null;
+        $("cd-corpo").innerHTML = `<div id="cd-sc"></div>`; return telaPortfolio($("cd-sc"), meuId(), true, x);
+      }
+      return window.CicloCondutas.abrir(corpo());
     } catch (e) { falhou(e); }
   }
 
@@ -885,7 +964,8 @@
   async function telaRelatorio(el, x, colab) {
     carregando(el);
     try {
-      const [hist, pf, rs, metas, encs, port] = await Promise.all([B.historico(colab), B.perfil(colab), x ? B.respostas(x.id) : [], x ? B.metas(x.id) : [], x ? B.encontros(x.id) : [], B.portfolio(colab)]);
+      const [hist, pf, rs, metas, encs, port, coms] = await Promise.all([B.historico(colab), B.perfil(colab), x ? B.respostas(x.id) : [], x ? B.metas(x.id) : [], x ? B.encontros(x.id) : [], B.portfolio(colab), x ? B.comentarios(x.id).catch(() => []) : []]);
+      const conversa = coms.filter(c => c.item === "pdi");
       const au = rs.find(y => y.tipo === "auto" && y.enviada_em), co = rs.find(y => y.tipo === "coord" && y.enviada_em), ic = indices(co && co.notas), ia = indices(au && au.notas);
       const pul = encs.filter(e => e.pulso), efet = pul.length ? pul.map(e => PULSO.reduce((s, [k]) => s + (+e.pulso[k] || 0), 0) / 4).reduce((a, b) => a + b, 0) / pul.length : null;
       el.innerHTML = `<div class="dc-btns dc-noprint"><button class="sec" id="dc-imprimir">Imprimir ou salvar em PDF</button></div>
@@ -895,17 +975,19 @@
         ${x ? `<div class="dc-kpis"><div><b>${n1(ic.dgpe)}</b>Competências DGPE (coord.) · auto ${n1(ia.dgpe)}<br>${esc(faixa(ic.dgpe))}</div><div><b>${n1(ic.ga)}</b>Atuação GA 2.0 (coord.) · auto ${n1(ia.ga)}<br>${esc(faixa(ic.ga))}</div>
           <div><b>${n1(ic.res)}</b>Resultados (coord.) · auto ${n1(ia.res)}</div><div><b>${metas.length ? Math.round(metas.reduce((s, m) => s + (m.progresso || 0), 0) / metas.length) + "%" : "—"}</b>Progresso do PDI</div>
           <div><b>${n1(efet)}</b>Efetividade do PDI (1 a 5)</div><div><b>${encs.filter(e => e.realizado_em).length}/3</b>Encontros</div></div>
+          <h3 style="margin-top:14px">Parte 1 · Avaliação de desempenho do ciclo</h3><div class="ajuda">Notas de quem avalia, calibradas com a liderança, comparadas à autoavaliação.</div>
           ${co || au ? `<h3>Notas por competência</h3>${barras(au, co)}` : `<div class="resumo">As notas aparecem depois da devolutiva.</div>`}` : ""}
         <h3>Evolução entre ciclos</h3><div style="max-width:520px">${graficoEvolucao(hist)}</div>
         <div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Ciclo</th><th class="num">DGPE</th><th class="num">GA 2.0</th><th class="num">Resultados</th><th class="num">Auto (geral)</th><th class="num">Metas concluídas</th><th class="num">Efetividade</th></tr></thead><tbody>
           ${hist.map(h => { const c = indices(h.coord), a = indices(h.auto); return `<tr><td>${esc(h.titulo)}</td><td class="num">${n1(c.dgpe)}</td><td class="num">${n1(c.ga)}</td><td class="num">${n1(c.res)}</td><td class="num">${n1(a.geral)}</td><td class="num">${h.metas_concluidas}/${h.metas}</td><td class="num">${n1(h.pulso_medio)}</td></tr>`; }).join("") || `<tr><td colspan="7">Sem ciclos ainda.</td></tr>`}</tbody></table></div>
+        <h3 style="margin-top:14px">Parte 2 · Desenvolvimento (PDI)</h3><div class="ajuda">Metas, encontros e conversa. Esta parte orienta o crescimento e não altera a nota do ciclo.</div>
         ${metas.length ? `<h3>PDI</h3>${metas.map((m, i) => `<div class="dc-meta"><b>Meta ${i + 1}: ${esc(m.objetivo)}</b> ${sit(m.status + " · " + (m.progresso || 0) + "%", m.status === "Concluída" ? "ok" : "neutro")}
           <div class="ajuda">${esc(nomeItem(m.competencia || ""))} · prazo ${dataBR(m.prazo)} · ${esc(m.formato || "")}</div>
           <div class="dc-duas"><div class="lado"><h4>Avaliado(a)</h4>${esc(m.acao_avaliado || "")}</div><div class="lado"><h4>Coordenação</h4>${esc(m.apoio_avaliador || "")}</div></div>
           <div class="ajuda">Evidência de sucesso: ${esc(m.evidencia || "—")}</div></div>`).join("")}` : ""}
         ${encs.length ? `<h3>Encontros</h3><ul>${encs.map(e => `<li>Encontro ${e.ordem}: ${e.realizado_em ? `${dataBR(e.realizado_em)} (${MODAL[e.modalidade] || ""})${e.registro ? " — " + esc(e.registro) : ""}` : `previsto para ${dataBR(e.previsto_em)}`}</li>`).join("")}</ul>` : ""}
-        ${(() => { const pc = port.filter(f => f.considerado === true || (f.considerado == null && !(S.ciclo && S.ciclo.publico === "geral")));
-          return `<h3>Portfólio considerado na avaliação (${pc.length} entrega(s))</h3><ul>${pc.slice(0, 20).map(f => `<li>${dataBR(f.data)} · ${esc(f.titulo)}${f.avanco_pdi ? " · <b>avanço no PDI</b>" : ""}</li>`).join("") || "<li>Nenhuma.</li>"}</ul>`; })()}
+        ${conversa.length ? `<h3>Conversa sobre o PDI (${conversa.length} mensagem(ns))</h3><ul>${conversa.map(c => `<li>${dataBR(c.criado_em)} · <b>${c.autor_id === x.colaborador_id ? "Avaliado(a)" : "Quem avalia"}:</b> ${esc(c.texto)}</li>`).join("")}</ul>` : ""}
+        <h3>Portfólio publicado (${port.length} entrega(s))</h3><ul>${port.slice(0, 20).map(f => `<li>${dataBR(f.data)} · ${esc(f.titulo)}</li>`).join("") || "<li>Nenhuma.</li>"}</ul>
         <div class="ajuda">Gerado pelo SGT em ${new Date().toLocaleString("pt-BR")}.</div></div>`;
       $("dc-imprimir").addEventListener("click", () => window.print());
     } catch (e) { falhou(e); }
@@ -923,7 +1005,9 @@
         const ms = ps.map(x => coord(x.id)).filter(Boolean).map(r => indices(r.notas).geral).filter(v => v != null);
         const gs = ps.map(x => [coord(x.id), auto(x.id)]).filter(([c, a]) => c && a).map(([c, a]) => indices(c.notas).geral - indices(a.notas).geral);
         const m = ms.length ? ms.reduce((a, b) => a + b, 0) / ms.length : null, dp = ms.length > 1 ? Math.sqrt(ms.reduce((s, v) => s + (v - m) ** 2, 0) / (ms.length - 1)) : null;
-        return { nome: (ps[0] && ps[0].avaliador) || "Sem avaliador(a)", n: ps.length, enviadas: ps.filter(x => x.coord_enviada).length, devol: ps.filter(x => x.devolutiva_em).length, pdi: ps.filter(x => x.pdi_publicado_em).length,
+        const ext = ps.map(x => coord(x.id)).filter(Boolean).flatMap(r => Object.entries(r.notas || {}).filter(([k, v]) => !/^res/.test(k) && v >= 1 && v <= 5).map(([, v]) => +v));
+        return { id, pend: ps.filter(x => x.coord_enviada && !x.calibrado_em && !x.devolutiva_em).length, cal: ps.filter(x => x.calibrado_em).length,
+          ext: ext.length ? ext.filter(v => v === 1 || v === 5).length / ext.length : null, nome: (ps[0] && ps[0].avaliador) || "Sem avaliador(a)", n: ps.length, enviadas: ps.filter(x => x.coord_enviada).length, devol: ps.filter(x => x.devolutiva_em).length, pdi: ps.filter(x => x.pdi_publicado_em).length,
           m, dp, gap: gs.length ? gs.reduce((a, b) => a + b, 0) / gs.length : null, sinc: ps.filter(x => x.encontro_sincrono).length }; });
       const todas = rs.filter(r => r.tipo === "coord").map(r => indices(r.notas).geral).filter(v => v != null), mg = todas.length ? todas.reduce((a, b) => a + b, 0) / todas.length : null;
       const bls = blocos().filter(b => b.id !== "res"), ntes = [...new Set(L.map(x => x.nte_id))].filter(Boolean).sort((a, b) => a - b);
@@ -934,13 +1018,22 @@
           <div><b>${n1(mg)}</b>Média geral (coord.)</div><div><b>${n1(pul.length ? pul.reduce((a, b) => a + b, 0) / pul.length : null)}</b>Efetividade do PDI (1 a 5)</div></div>
         <div class="dc-passos">${FASES.map(([f, t]) => `<div><b>${porFase[f]}</b>${t}</div>`).join("")}</div>
         <div class="dc-bloco"><h2>Calibração entre avaliadores</h2><div class="ajuda">Mais da metade da variação das notas costuma vir do estilo de quem avalia, e não de quem é avaliado. Compare médias e diferenças antes de fechar as devolutivas. Uma média muito acima ou abaixo das demais, ou uma dispersão muito baixa, pede uma conversa de calibração.</div>
-          <div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Avaliador(a)</th><th class="num">Pessoas</th><th class="num">Avaliações</th><th class="num">Devolutivas</th><th class="num">PDIs</th><th class="num">Média dada</th><th class="num">Dispersão</th><th class="num">Coord. − auto</th><th class="num">Com encontro síncrono</th></tr></thead><tbody>
-          ${avals.map(a => `<tr><td><b>${esc(a.nome)}</b></td><td class="num">${a.n}</td><td class="num">${a.enviadas}</td><td class="num">${a.devol}</td><td class="num">${a.pdi}</td><td class="num">${n1(a.m)}</td><td class="num">${n1(a.dp)}</td><td class="num">${a.gap == null ? "—" : (a.gap > 0 ? "+" : "") + n1(a.gap)}</td><td class="num">${a.sinc}</td></tr>`).join("")}</tbody></table></div></div>
+          <div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Avaliador(a)</th><th class="num">Pessoas</th><th class="num">Avaliações</th><th class="num">Devolutivas</th><th class="num">PDIs</th><th class="num">Média dada</th><th class="num">Dispersão</th><th class="num">Coord. − auto</th><th class="num">Notas 1 ou 5</th><th>Alerta</th><th>Calibração</th></tr></thead><tbody>
+          ${avals.map(a => `<tr><td><b>${esc(a.nome)}</b></td><td class="num">${a.n}</td><td class="num">${a.enviadas}</td><td class="num">${a.devol}</td><td class="num">${a.pdi}</td><td class="num">${n1(a.m)}</td><td class="num">${n1(a.dp)}</td><td class="num">${a.gap == null ? "—" : (a.gap > 0 ? "+" : "") + n1(a.gap)}</td><td class="num">${a.ext == null ? "—" : Math.round(a.ext * 100) + "%"}</td>
+            <td>${(() => { const al = []; if (a.m != null && mg != null && Math.abs(a.m - mg) >= 0.5) al.push(a.m > mg ? "média alta" : "média baixa"); if (a.dp != null && a.dp < 0.25 && a.enviadas >= 3) al.push("notas muito iguais"); if (a.ext != null && a.ext > 0.3) al.push("muitos extremos"); if (a.gap != null && Math.abs(a.gap) >= 1) al.push("distante da auto"); return al.length ? sit(al.join(" · "), "alerta") : sit("ok", "ok"); })()}</td>
+            <td>${a.pend ? `<button class="sec dc-mini" data-cal="${a.id}">Calibrar ${a.pend}</button>` : a.cal ? sit(a.cal + " calibrada(s)", "ok") : "—"}</td></tr>`).join("")}</tbody></table></div>
+          <div id="dc-calbox"></div>
+          <div class="ajuda">Como calibrar: reúna quem avalia, compare as médias e os casos extremos com as evidências (registros no SGA, portfólio, observações) e combine os ajustes. Quem avalia ajusta as próprias notas; depois, registre a calibração. Nota alterada depois disso exige nova calibração.</div></div>
         <div class="dc-bloco"><h2>Mapa por NTE e valor (média da coordenação)</h2><div class="dc-rolar"><table class="dc-tab dc-calor"><thead><tr><th>NTE</th>${bls.map(b => `<th>${esc(b.titulo)}</th>`).join("")}</tr></thead><tbody>
           ${ntes.map(n => `<tr><td style="text-align:left">NTE ${String(n).padStart(2, "0")}</td>${bls.map(b => { const v = L.filter(x => x.nte_id === n).map(x => coord(x.id)).filter(Boolean).map(r => media(r.notas, b.itens.map(i => i.k))).filter(v => v != null);
             return celula(v.length ? v.reduce((a, c) => a + c, 0) / v.length : null); }).join("")}</tr>`).join("") || `<tr><td colspan="${bls.length + 1}">Sem avaliações enviadas.</td></tr>`}</tbody></table></div></div>
         <div class="dc-bloco"><h2>Pessoas</h2><div class="dc-barra"><input type="search" id="dc-busca" placeholder="Buscar"><select id="dc-ff"><option value="">Todas as etapas</option>${FASES.map(([f, t]) => `<option value="${f}">${t}</option>`).join("")}</select></div>
           <div class="dc-rolar"><table class="dc-tab"><thead><tr><th>Pessoa</th><th>NTE</th><th>Avaliador(a)</th><th>Etapa</th><th class="num">DGPE</th><th class="num">GA</th><th class="num">Auto</th></tr></thead><tbody id="dc-pl"></tbody></table></div></div>`;
+      el.querySelectorAll("[data-cal]").forEach(b => b.addEventListener("click", () => { const a = avals.find(z => z.id === b.dataset.cal);
+        $("dc-calbox").innerHTML = `<div class="dc-meta"><b>Calibração · ${esc(a.nome)}</b> (${a.pend} avaliação(ões))<label>O que foi discutido e decidido</label><textarea id="dc-calobs" maxlength="2000" placeholder="Ex.: médias comparadas com os demais NTEs; notas 5 em registros no SGA confirmadas pelo painel; ajuste de 5 para 4 em 2 itens."></textarea>
+          <div class="dc-btns"><button id="dc-calok">Registrar calibração e liberar o feedback</button></div></div>`;
+        $("dc-calok").addEventListener("click", async () => { const o = $("dc-calobs").value.trim(); if (o.length < 10) return aviso("a-cd", "Registre o que foi discutido na calibração.");
+          try { await B.calibrar(S.ciclo.id, a.id, o); await recarregarLista(); ok("Calibração registrada. Quem avalia foi avisado(a)."); painel(); } catch (e) { falhou(e); } }); }));
       const desenhar = () => { const q = $("dc-busca").value.toLowerCase(), ff = $("dc-ff").value;
         $("dc-pl").innerHTML = L.filter(x => (!q || x.nome.toLowerCase().includes(q)) && (!ff || fase(x) === ff)).map(x => { const c = coord(x.id), a = auto(x.id), ic = indices(c && c.notas), ia = indices(a && a.notas);
           return `<tr data-c="${x.colaborador_id}"><td><b>${esc(x.nome)}</b><br><small>${esc(x.cargo || "")}</small></td><td>${esc(x.nte || "")}</td><td>${esc(x.avaliador || "")}</td><td>${chipFase(x)}</td>
@@ -967,6 +1060,6 @@
     @media (max-width:760px){.dc-ficha{grid-template-columns:1fr}}
   </style>`);
 
-  window.Ciclos = { abrir };
+  window.Ciclos = { abrir, ferramenta };
   window.CicloTelas = { abrir, trocar, ficha, telaRelatorio, carregando, sit, tempo, graficoEvolucao, recarregarLista };
 })();

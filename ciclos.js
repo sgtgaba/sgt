@@ -119,7 +119,7 @@
 
   $("cartao").querySelector(".rodape").insertAdjacentHTML("beforebegin", `
   <section id="v-cd" class="oculto">
-    <div class="topo"><div><h1>Ciclos de Desenvolvimento</h1><div class="ajuda" style="margin:0" id="cd-sub">Avaliação, devolutiva, PDI e acompanhamento a cada trimestre</div></div>
+    <div class="topo"><div><h1 id="cd-titulo">Ciclos de Desenvolvimento</h1><div class="ajuda" style="margin:0" id="cd-sub">Avaliação, devolutiva, PDI e acompanhamento a cada trimestre</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="cd-ciclo" style="width:auto;margin:0;padding:9px 10px;font-size:14px"></select>
       <button class="sec oculto" id="cd-previa" style="width:auto">👁 Prévia</button><button class="sec" id="cd-voltar" style="width:auto">← Voltar</button></div></div>
     <div id="cd-pbar"></div>
