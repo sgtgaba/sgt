@@ -699,7 +699,9 @@ async function abrirInicio(){
     api(`/rest/v1/acesso_modulo?select=modulo&colaborador_id=eq.${c.id}`)]);
   eu = { id: c.id, nome: c.nome, papeis: ps.map(p => p.papel), modulos: ms.map(m => m.modulo) };
   $("ola").textContent = "Olá, " + c.nome.split(" ")[0] + "!";
-  const nomes = ["superadmin","admin","gerencia","rh","lideranca","colaborador"].filter(p => eu.papeis.includes(p)).map(p => NOMES_PAPEIS[p]);
+  // o programador tem acesso total: mostra só esse perfil
+  const nomes = eu.papeis.includes("superadmin") ? [NOMES_PAPEIS.superadmin]
+    : ["admin","gerencia","rh","lideranca","colaborador"].filter(p => eu.papeis.includes(p)).map(p => NOMES_PAPEIS[p]);
   $("perfil-txt").textContent = "Seu perfil: " + (nomes.join(" · ") || "Consultor(a)");
 
   const f = [];
