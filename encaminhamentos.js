@@ -29,6 +29,13 @@
     .chips-p{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
     .chips-p span{font-size:12.5px;background:var(--cor-suave);color:var(--cor);padding:4px 8px;border-radius:999px}
     .chips-p button{width:auto;margin:0 0 0 4px;padding:0 4px;background:none;color:var(--cor);font-size:13px}
+    .botao-zap{display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding:10px 16px;border-radius:var(--raio);background:#e9f8ef;color:#137a3d;font-weight:700;text-decoration:none;font-size:14.5px}
+    .wa-est{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+    .wa-est div{border:1px solid var(--borda);border-radius:var(--raio);padding:10px 12px;background:#fff} .wa-est b{display:block;font-size:20px} .wa-est small{color:var(--texto-2)}
+    .wa-copia{display:flex;gap:8px;align-items:center} .wa-copia code{flex:1;background:var(--fundo);border:1px solid var(--borda);border-radius:8px;padding:8px 10px;font-size:13px;word-break:break-all}
+    .wa-copia button{width:auto;margin:0;padding:8px 12px}
+    .wa-passos{margin:8px 0 0 18px;font-size:14px;line-height:1.6} .wa-passos code{background:var(--fundo);padding:1px 5px;border-radius:5px}
+    @media (max-width:640px){.wa-est{grid-template-columns:1fr 1fr}.botao-zap{margin:8px 0 0}}
     @media (max-width:640px){.painel-eq .grade4,.cat-card .linha{grid-template-columns:1fr 1fr}.enc-item{grid-template-columns:1fr}}
   </style>`);
 
@@ -43,10 +50,11 @@
         ${Object.entries(STATUS_EQUIPE).map(([k, n]) => `<option value="${k}">${n}</option>`).join("")}<option value="atrasadas">Com prazo vencido</option></select>
       <select id="enc-fcat"><option value="">Todos os tipos</option></select>
     </div>
-    <div class="btns" id="enc-btn-nova"><button id="enc-nova" style="width:auto">+ Nova solicitação</button></div>
+    <div class="btns" id="enc-btn-nova"><button id="enc-nova" style="width:auto">+ Nova solicitação</button><a id="enc-zap" class="botao-zap oculto" target="_blank" rel="noopener">💬 Falar com a TAAI no WhatsApp</a></div>
     <div class="resumo" id="enc-resumo"></div>
     <div class="lista" id="enc-lista"></div>
     <div id="enc-conf" class="oculto"></div>
+    <div id="enc-wa" class="oculto"></div>
     <div class="aviso" id="a-enc"></div>
   </section>
 
@@ -117,9 +125,14 @@
       categorias = cats; souEquipe = souConfig || resp.length > 0;
       $("enc-fcat").innerHTML = `<option value="">Todos os tipos</option>` + categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join("");
       $("enc-abas").innerHTML = `<button data-a="minhas">Minhas solicitações</button>` +
-        (souEquipe ? `<button data-a="fila">Para atender</button>` : "") + (souConfig ? `<button data-a="conf">Tipos e equipes</button>` : "");
+        (souEquipe ? `<button data-a="fila">Para atender</button>` : "") + (souConfig ? `<button data-a="conf">Tipos e equipes</button><button data-a="wa">WhatsApp (TAAI)</button>` : "");
       $("enc-abas").querySelectorAll("button").forEach(b => b.addEventListener("click", () => trocar(b.dataset.a)));
       if (aba !== "minhas" && !souEquipe) aba = "minhas";
+      api("/rest/v1/rpc/wa_publico", { method: "POST", body: "{}" }).then(w => {
+        const n = String(w?.numero || "").replace(/\D/g, "");
+        $("enc-zap").classList.toggle("oculto", !n);
+        if (n) $("enc-zap").href = `https://wa.me/${n}?text=${encodeURIComponent("Oi, TAAI!")}`;
+      }).catch(() => {});
       await trocar(aba);
     } catch (e) { if (e.message !== "sessao") aviso("a-enc", traduzErro(e)); }
   }
@@ -127,10 +140,12 @@
     aba = a;
     $("enc-abas").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.a === a));
     $("enc-conf").classList.toggle("oculto", a !== "conf");
-    ["enc-lista", "enc-resumo"].forEach(id => $(id).classList.toggle("oculto", a === "conf"));
+    $("enc-wa").classList.toggle("oculto", a !== "wa");
+    ["enc-lista", "enc-resumo"].forEach(id => $(id).classList.toggle("oculto", a === "conf" || a === "wa"));
     $("enc-filtros").classList.toggle("oculto", a !== "fila");
     $("enc-btn-nova").classList.toggle("oculto", a !== "minhas");
     if (a === "conf") return desenharConfig();
+    if (a === "wa") return desenharWa();
     $("enc-lista").innerHTML = `<div class="resumo">Carregando…</div>`;
     try {
       if (a === "minhas") minhas = await api(`/rest/v1/enc_lista?select=*&solicitante_id=eq.${eu.id}&order=atualizado_em.desc`);
@@ -275,6 +290,69 @@
   $("ed2-voltar").addEventListener("click", () => abrir());
 
   // ---------- configuração: tipos e equipes
+  // ---------- canal WhatsApp (TAAI)
+  async function desenharWa() {
+    const el = $("enc-wa");
+    el.innerHTML = `<div class="resumo">Carregando…</div>`;
+    let w;
+    try { w = await api("/rest/v1/rpc/wa_painel", { method: "POST", body: "{}" }); }
+    catch (e) { el.innerHTML = `<div class="resumo">${esc(traduzErro(e))}</div>`; return; }
+    const adm = pode("admin");
+    const ok = w.ativo && w.tem_token && w.phone_number_id;
+    const copia = (rot, v) => `<label>${rot}</label><div class="wa-copia"><code>${esc(v || "")}</code><button type="button" class="sec" data-copia="${esc(v || "")}">Copiar</button></div>`;
+    el.innerHTML = `
+      <div class="painel-eq">
+        <h2 style="margin:0">TAAI · assistente do time IA no WhatsApp</h2>
+        <div class="ajuda" style="margin:4px 0 0">Robô que abre e acompanha encaminhamentos pelo WhatsApp, com o mesmo fluxo, prazos e equipes desta tela. O número é virtual, só de mensagens.</div>
+        <div class="wa-est">
+          <div><small>Situação</small><b style="color:${ok ? "#137a3d" : "#b54708"}">${ok ? "Ligado" : w.ativo ? "Incompleto" : "Desligado"}</b></div>
+          <div><small>Pessoas ligadas</small><b>${w.ligados}</b></div>
+          <div><small>Avisos na fila</small><b>${w.pendentes}</b></div>
+          <div><small>Última mensagem recebida</small><b style="font-size:14px">${w.ultima_entrada ? esc(new Date(w.ultima_entrada).toLocaleString("pt-BR")) : "—"}</b></div>
+        </div>
+        ${(w.erros || []).length ? `<div class="ajuda" style="color:#b42318">Últimos erros: ${w.erros.map(x => esc(new Date(x.criado_em).toLocaleString("pt-BR") + " — " + x.resumo)).join("<br>")}</div>` : ""}
+      </div>
+      <div class="painel-eq">
+        <h3 style="margin:0 0 6px">1. Dados para cadastrar na Meta (Webhook)</h3>
+        ${copia("URL de retorno (Callback URL)", w.webhook)}
+        ${copia("Token de verificação (Verify token)", w.verify_token)}
+        <div class="ajuda">No app da Meta, em WhatsApp › Configuração › Webhook, cole os dois valores e assine o campo <b>messages</b>.</div>
+      </div>
+      <form class="painel-eq" id="f-wa">
+        <h3 style="margin:0 0 6px">2. Dados do número (vindos da Meta)</h3>
+        <div class="grade2">
+          <div><label for="wa-pid">Identificação do número (Phone number ID)</label><input id="wa-pid" type="text" value="${esc(w.phone_number_id || "")}" inputmode="numeric" ${adm ? "" : "disabled"}></div>
+          <div><label for="wa-num">Número exibido, com DDI e DDD</label><input id="wa-num" type="text" value="${esc(w.numero || "")}" placeholder="55 71 3333-0000" ${adm ? "" : "disabled"}></div>
+          <div><label for="wa-tok">Token de acesso permanente</label><input id="wa-tok" type="password" autocomplete="off" placeholder="${w.tem_token ? "•••• já cadastrado (preencha só para trocar)" : "cole o token do usuário do sistema"}" ${adm ? "" : "disabled"}></div>
+          <div><label for="wa-seg">Chave secreta do app (App secret)</label><input id="wa-seg" type="password" autocomplete="off" placeholder="${w.tem_segredo ? "•••• já cadastrada (preencha só para trocar)" : "confere que as mensagens vêm da Meta"}" ${adm ? "" : "disabled"}></div>
+          <div><label for="wa-tpl">Modelo de aviso aprovado</label><input id="wa-tpl" type="text" value="${esc(w.template || "sgt_aviso")}" ${adm ? "" : "disabled"}></div>
+          <div><label for="wa-at">Canal</label><select id="wa-at" ${adm ? "" : "disabled"}><option value="nao">Desligado</option><option value="sim"${w.ativo ? " selected" : ""}>Ligado</option></select></div>
+        </div>
+        ${adm ? `<button type="submit" style="width:auto">Salvar</button>` : `<div class="ajuda">Somente o programador ou um ADM altera estes dados.</div>`}
+        <div class="aviso" id="a-wa"></div>
+      </form>
+      <div class="painel-eq">
+        <h3 style="margin:0 0 6px">3. Modelo de aviso (para mensagens depois de 24 h)</h3>
+        <div class="ajuda" style="margin:0">Crie no Gerenciador do WhatsApp um modelo da categoria <b>Utilidade</b>, idioma <b>Português (BR)</b>, nome <code>${esc(w.template || "sgt_aviso")}</code>, com este texto:</div>
+        ${copia("Texto do modelo", "Olá! A TAAI, assistente do time IA, tem uma atualização sobre seus encaminhamentos no SGT: {{1}}. Responda esta mensagem para ver os detalhes e as opções.")}
+        <div class="ajuda">Dentro de 24 h depois da última mensagem da pessoa, a TAAI responde com texto livre e botões; fora disso, usa este modelo.</div>
+      </div>`;
+    el.querySelectorAll("[data-copia]").forEach(b => b.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copia); b.textContent = "Copiado"; setTimeout(() => b.textContent = "Copiar", 1500); } catch { /* sem área de transferência */ }
+    }));
+    const f = $("f-wa");
+    if (adm) f.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const p = { phone_number_id: $("wa-pid").value.replace(/\D/g, ""), numero: $("wa-num").value.replace(/\D/g, ""),
+        token: $("wa-tok").value.trim(), app_secret: $("wa-seg").value.trim(), template: $("wa-tpl").value.trim(), ativo: $("wa-at").value };
+      if (p.ativo === "sim" && (!p.phone_number_id || (!p.token && !w.tem_token))) return aviso("a-wa", "Para ligar, informe a identificação do número e o token.");
+      try {
+        await api("/rest/v1/rpc/wa_configurar", { method: "POST", body: JSON.stringify({ p }) });
+        aviso("a-wa", "Configuração salva.", "ok"); setTimeout(desenharWa, 900);
+      } catch (e) { aviso("a-wa", traduzErro(e)); }
+    });
+  }
+
   async function desenharConfig() {
     $("enc-conf").innerHTML = `<div class="resumo">Carregando…</div>`;
     try {
