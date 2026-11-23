@@ -287,7 +287,7 @@
           <option value="m:banco_talentos">Ferramenta: Banco de Talentos</option><option value="m:encaminhamentos">Ferramenta: Encaminhamentos</option>
           <option value="m:linktree">Ferramenta: Links</option><option value="m:dados_contatos">Ferramenta: Dados e Contatos</option>
           <option value="m:quadro_geral">Ferramenta: Quadro Geral</option><option value="m:painel_vagas">Ferramenta: Painel de Vagas</option>
-          <option value="m:ganews">Ferramenta: GANews (edição)</option><option value="m:orcamento">Ferramenta: Orçamento</option><option value="m:ciclos">Ferramenta: Ciclos (gestão)</option>
+          <option value="m:ganews">Ferramenta: GANews (edição)</option><option value="m:orcamento">Ferramenta: Orçamento</option><option value="m:ciclos">Ferramenta: Ciclos (gestão)</option><option value="m:ciclos_lideranca">Ferramenta: Ciclos (liderança)</option>
         </select>
         <select id="f-situacao">
           <option value="">Todas as situações</option>
@@ -381,7 +381,8 @@
         <label class="check"><input type="checkbox" data-modulo="painel_vagas"><span><b>Painel de Vagas</b><br>consulta vagas abertas e vacância</span></label>
         <label class="check"><input type="checkbox" data-modulo="orcamento"><span><b>Orçamento do Projeto</b><br>consulta o custo de pessoal</span></label>
         <label class="check"><input type="checkbox" data-modulo="ganews"><span><b>GANews (edição)</b><br>publica edições e modera comentários</span></label>
-        <label class="check"><input type="checkbox" data-modulo="ciclos"><span><b>Ciclos de Desenvolvimento (gestão)</b><br>vê e avalia todas as pessoas, painel do ciclo</span></label>
+        <label class="check"><input type="checkbox" data-modulo="ciclos"><span><b>Ciclos de Desenvolvimento (gestão)</b><br>abre ciclos, define carteiras de NTE, vê tudo e exporta</span></label>
+        <label class="check"><input type="checkbox" data-modulo="ciclos_lideranca"><span><b>Ciclos de Desenvolvimento (liderança pedagógica)</b><br>vê as avaliações de todas as coordenações, painel de calibração e condutas de atenção</span></label>
       </div>
       <button type="submit">Salvar alterações</button>
     </form>
@@ -439,7 +440,7 @@ let usuarios = [];        // cache da lista do painel
 let editando = null;
 
 const NOMES_PAPEIS = { superadmin: "Programador(a)", admin: "Administrador(a)", gerencia: "Gerente", rh: "Gestão de Pessoas", lideranca: "Liderança de equipe", colaborador: "Consultor(a)" };
-const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas", ganews: "GANews (edição)", orcamento: "Orçamento", ciclos: "Ciclos (gestão)", relatorios_rpa: "Relatórios RPA" };
+const NOMES_MODULOS = { cat: "CAT", ouvidoria: "Ouvidoria", banco_talentos: "Talentos", encaminhamentos: "Encaminhamentos", linktree: "Links", dados_contatos: "Contatos", quadro_geral: "Quadro Geral", painel_vagas: "Painel de Vagas", ganews: "GANews (edição)", orcamento: "Orçamento", ciclos: "Ciclos (gestão)", relatorios_rpa: "Relatórios RPA", ciclos_lideranca: "Ciclos (liderança)" };
 const NOMES_SIT = { ativo: "Ativo", afastado: "Afastado", ferias: "Férias", desligado: "Desligado" };
 
 // Histórico do navegador: a seta "voltar" do celular/navegador volta para a tela anterior do SGT, em vez de sair
@@ -701,7 +702,7 @@ async function abrirInicio(){
   if (pode("admin","rh") || temModulo("painel_vagas") || temModulo("quadro_geral")) f.push(`<button class="ferr" id="ir-pv"><span class="ico">◷</span><span>Painel de Vagas<small>Vagas abertas e tempo de vacância</small></span></button>`);
   if ((pode("admin","rh") || temModulo("relatorios_rpa")) && window.RelatoriosRPA) f.push(RelatoriosRPA.cartao());
   if (pode("admin","rh") || temModulo("orcamento")) f.push(`<button class="ferr" id="ir-orc"><span class="ico">$</span><span>Orçamento do Projeto<small>Custo de pessoal realizado e projetado</small></span></button>`);
-  f.push(`<button class="ferr" id="ir-cd"><span class="ico">↻</span><span>Ciclos de Desenvolvimento<small>Autoavaliação, feedback e PDI</small></span></button>`);
+  f.push(`<button class="ferr" id="ir-cd"><span class="ico">↻</span><span>Ciclos de Desenvolvimento<small>Avaliação trimestral, devolutiva, PDI e acompanhamento</small></span></button>`);
   f.push(`<button class="ferr" id="ir-car"><span class="ico">☺</span><span>Carômetro<small>Quem faz parte do time hoje</small></span></button>`);
   f.push(`<button class="ferr" id="ir-gan"><span class="ico">✎</span><span>GANews<small>A revista do Projeto GA BA</small></span></button>`);
   if (window.Seguranca) f.push(Seguranca.cartao());
@@ -1042,7 +1043,10 @@ $("importar").addEventListener("click", async () => {
 <script src="carometro.js?v=1"></script>
 <script src="ganews.js?v=1"></script>
 <script src="orcamento.js?v=1"></script>
-<script src="ciclos.js?v=1"></script>
+<script src="ciclo-instrumento.js?v=1"></script>
+<script src="ciclos.js?v=2"></script>
+<script src="ciclos-telas.js?v=1"></script>
+<script src="ciclos-condutas.js?v=1"></script>
 <script src="rpa.js?v=1"></script>
 <script src="seguranca.js?v=3"></script>
 <script src="notificacoes.js?v=1"></script>
