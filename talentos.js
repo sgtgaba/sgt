@@ -29,6 +29,15 @@
     .texto{font-size:14px;line-height:1.55;white-space:pre-wrap;margin:4px 0 0}
     .qlinha{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--borda);border-radius:var(--raio);padding:12px;margin-top:8px;cursor:pointer;font-size:14px;line-height:1.45}
     .qlinha:hover{background:var(--cor-suave)} .qlinha .tags{flex:none}
+    .ev-card-grade{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
+    @media(max-width:760px){.ev-card-grade{grid-template-columns:1fr}}
+    .pv-card{position:relative;overflow:hidden;border:1px solid #efd9e4;border-radius:12px;padding:20px 16px 14px;background:#fff;box-shadow:0 2px 10px rgba(156,11,86,.07);display:flex;flex-direction:column;gap:9px;font-size:13.5px}
+    .pv-card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#e71181 0 34%,#ee7f08 34% 67%,#92c01f 67% 100%)}
+    .pv-card .vinc{align-self:flex-start;font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:999px;color:#fff;background:#c40f6d}
+    .pv-card .vinc.rpa{background:#ee7f08}.pv-card .vinc.est{background:#92c01f}
+    .pv-card b.t{font-size:16px;line-height:1.3}.pv-card .r{color:#6b6470;line-height:1.45}
+    .pv-card .nota{font-size:12px;color:#6b6470;background:#fde8f2;border-radius:8px;padding:6px 9px}
+    .pv-card .cta{font-weight:700;color:#9c0b56}
     .altl{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:center;margin-top:6px} .altl input[type=radio]{accent-color:var(--cor);width:18px;height:18px}
     .prev svg{max-width:100%;height:auto;border:1px solid var(--borda);border-radius:10px;margin-top:8px}
     textarea.cod{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;min-height:90px}
@@ -119,18 +128,33 @@
 
   <section id="v-tal-v" class="oculto">
     <div class="topo"><div><h1 id="ev-tit">Vaga</h1></div>${voltar("v-tal")}</div>
+    <h2>Card da vaga no portal</h2>
+    <p class="ajuda">Estes campos montam o card que o candidato vê. Confira a prévia ao lado.</p>
+    <div class="ev-card-grade">
+      <div>
+        <label for="ev-titulo">Título da vaga</label><input id="ev-titulo" type="text">
+        <label for="ev-tpub">Título no portal (opcional — use quando várias vagas aparecem num único card)</label><input id="ev-tpub" type="text">
+        <div class="grade2">
+          <div><label for="ev-vinc">Vínculo</label><select id="ev-vinc"><option>CLT</option><option>RPA</option><option>Estágio</option><option>PJ</option></select></div>
+          <div><label for="ev-contrato">Detalhe do contrato (opcional)</label><input id="ev-contrato" type="text" placeholder="ex.: 6 meses, renovável"></div>
+          <div><label for="ev-horas">Carga horária (horas semanais)</label><input id="ev-horas" type="number" min="1" max="44"></div>
+          <div><label for="ev-formato">Formato</label><select id="ev-formato"><option value="presencial">Presencial</option><option value="híbrido">Híbrido</option><option value="remoto">Remoto</option></select></div>
+          <div><label for="ev-turno">Turno (opcional)</label><input id="ev-turno" type="text" placeholder="ex.: manhã ou tarde"></div>
+          <div><label for="ev-tlocal">Local de atuação</label><select id="ev-tlocal"><option value="nte">Várias regiões da Bahia (NTE)</option><option value="salvador">Salvador · equipe base</option></select></div>
+          <div><label for="ev-mod">Situação da publicação</label><select id="ev-mod"><option value="reserva">Cadastro reserva (Banco de Talentos)</option><option value="previsto">Início previsto (processo seletivo)</option></select></div>
+          <div id="ev-inicio-box"><label for="ev-inicio">Início previsto (opcional, uso interno)</label><input id="ev-inicio" type="date"></div>
+        </div>
+      </div>
+      <div><div class="ajuda" style="margin:0 0 6px">Prévia do card</div><div id="ev-prev"></div></div>
+    </div>
+    <h2>Uso interno</h2>
     <div class="grade2">
       <div><label for="ev-id">Código</label><input id="ev-id" type="text" placeholder="ex.: art-senior"></div>
-      <div><label for="ev-titulo">Título</label><input id="ev-titulo" type="text"></div>
-      <div><label for="ev-mod">Situação da publicação</label><select id="ev-mod"><option value="reserva">Cadastro reserva</option><option value="previsto">Início previsto</option></select></div>
-      <div id="ev-inicio-box"><label for="ev-inicio">Início previsto (opcional, uso interno)</label><input id="ev-inicio" type="date"></div>
-      <div><label for="ev-contrato">Vínculo / contrato</label><input id="ev-contrato" type="text" placeholder="CLT, RPA, Bolsa estágio…"></div>
-      <div><label for="ev-qtd">Quantidade (uso interno, não aparece no portal)</label><input id="ev-qtd" type="number" min="0"></div>
+      <div><label for="ev-qtd">Quantidade (não aparece no portal)</label><input id="ev-qtd" type="number" min="0"></div>
       <div><label for="ev-nivel">Nível dos testes</label><select id="ev-nivel"><option value="padrao">Padrão</option><option value="estagio">Estágio (mais simples)</option></select></div>
-      <div><label for="ev-jornada">Jornada</label><input id="ev-jornada" type="text"></div>
-      <div><label for="ev-rem">Remuneração (opcional)</label><input id="ev-rem" type="text"></div>
+      <div><label for="ev-rem">Remuneração (não aparece no portal)</label><input id="ev-rem" type="text"></div>
     </div>
-    <label for="ev-local">Local</label><input id="ev-local" type="text">
+    <h2>Descrição completa da vaga</h2>
     <label for="ev-resumo">Resumo</label><textarea id="ev-resumo" rows="2"></textarea>
     <label for="ev-atrib">Atribuições (uma por linha)</label><textarea id="ev-atrib" rows="5"></textarea>
     <label for="ev-pre">Pré-requisitos (um por linha)</label><textarea id="ev-pre" rows="4"></textarea>
@@ -407,18 +431,40 @@
     $("ev-id").value = v ? v.id : ""; $("ev-id").disabled = !!v;
     $("ev-titulo").value = v ? v.titulo : ""; $("ev-qtd").value = v ? v.vagas_abertas : 1; $("ev-nivel").value = v ? v.nivel_teste : "padrao";
     $("ev-mod").value = v && v.modalidade === "previsto" ? "previsto" : "reserva"; $("ev-inicio").value = v && v.inicio_previsto ? v.inicio_previsto : "";
-    $("ev-contrato").value = v ? (v.contrato || "") : "CLT"; $("ev-inicio-box").classList.toggle("oculto", $("ev-mod").value !== "previsto");
-    $("ev-jornada").value = v ? v.jornada : "40 horas semanais, presencial"; $("ev-rem").value = v ? (v.remuneracao || "") : "";
-    $("ev-local").value = v ? v.local : "Município sede de um dos 27 NTE da Bahia"; $("ev-resumo").value = v ? (v.resumo || "") : "";
+    $("ev-inicio-box").classList.toggle("oculto", $("ev-mod").value !== "previsto");
+    $("ev-tpub").value = v ? (v.titulo_publico || "") : "";
+    $("ev-vinc").value = v && v.vinculo ? v.vinculo : (v && /rpa/i.test(v.contrato || "") ? "RPA" : v && v.nivel_teste === "estagio" ? "Estágio" : "CLT");
+    $("ev-contrato").value = v && v.contrato && v.contrato !== v.vinculo && v.contrato !== "CLT" ? v.contrato : "";
+    $("ev-horas").value = v && v.horas_semanais ? v.horas_semanais : 40; $("ev-formato").value = v && v.formato ? v.formato : "presencial";
+    $("ev-turno").value = v ? (v.turno || "") : ""; $("ev-tlocal").value = v && v.tipo_local === "salvador" ? "salvador" : "nte";
+    $("ev-rem").value = v ? (v.remuneracao || "") : ""; $("ev-resumo").value = v ? (v.resumo || "") : "";
     $("ev-atrib").value = v ? v.atribuicoes.join("\n") : ""; $("ev-pre").value = v ? v.prerequisitos.join("\n") : ""; $("ev-des").value = v ? v.desejavel.join("\n") : "";
     const p = v ? v.pesos : {}, r = v ? v.requisitos : {};
     $("ev-pesos").innerHTML = Object.keys(COMP).map(k => `<div><label style="margin:0;font-weight:500">${COMP[k]}</label><select class="ev-peso" data-k="${k}">${[0, 1, 2, 3].map(n => `<option ${(p[k] || 0) == n ? "selected" : ""}>${n}</option>`).join("")}</select></div>`).join("");
     $("ev-r-lic").checked = !!r.licenciatura; $("ev-r-est").checked = !!r.estudante; $("ev-r-mud").checked = !!r.mudanca; $("ev-r-via").checked = !!r.viagens;
     $("ev-r-anos").value = r.anos_educacao_basica ?? ""; $("ev-aberta").checked = v ? v.aberta : true;
-    aviso("a-ev", ""); mostrar("v-tal-v");
+    aviso("a-ev", ""); previaVaga(); mostrar("v-tal-v");
   }
   $("tv-nova").addEventListener("click", () => editarVaga(null));
   $("ev-mod").addEventListener("change", () => $("ev-inicio-box").classList.toggle("oculto", $("ev-mod").value !== "previsto"));
+  function previaVaga() {
+    const vinc = $("ev-vinc").value, h = +$("ev-horas").value, f = $("ev-formato").value, t = $("ev-turno").value.trim(), nte = $("ev-tlocal").value === "nte";
+    const det = $("ev-contrato").value.trim();
+    const grupo = editV && editV.grupo, comum = editV && editV.publico;
+    const titulo = $("ev-tpub").value.trim() || $("ev-titulo").value.trim() || "Título da vaga";
+    const resumo = (comum && comum.resumo) || $("ev-resumo").value.trim();
+    const cls = /rpa/i.test(vinc) ? " rpa" : /est/i.test(vinc) ? " est" : "";
+    $("ev-prev").innerHTML = `<div class="pv-card"><span class="vinc${cls}">${esc(vinc)}</span><b class="t">${esc(titulo)}</b>
+      ${resumo ? `<span class="r">${esc(resumo)}</span>` : ""}
+      <span>💼 Vínculo: <b>${esc(vinc)}</b>${det ? " · " + esc(det) : ""}</span>
+      <span>🕘 ${h ? h + "h semanais" : "—"} · ${esc(f)}${t ? " (" + esc(t) + ")" : ""}</span>
+      <span>📍 ${nte ? "Várias regiões da Bahia (NTE)" : "Salvador · equipe base"}</span>
+      ${nte ? `<span class="nota">Atuação em várias regiões da Bahia: sua disponibilidade por região será consultada durante a inscrição.</span>` : ""}
+      <span class="cta">${$("ev-mod").value === "previsto" ? "Inscreva-se no processo seletivo" : "Inscreva-se no Banco de Talentos"} →</span></div>
+      ${grupo ? `<p class="ajuda" style="margin-top:8px">Esta vaga faz parte do grupo <b>${esc(grupo)}</b>: no portal, as vagas do grupo aparecem num único card${comum ? ", com a descrição comum do grupo" : ""}. Quantidade e senioridade não aparecem para o candidato.</p>` : ""}
+      ${$("ev-aberta").checked ? "" : `<p class="ajuda" style="margin-top:8px">Vaga fechada: o card não aparece no portal.</p>`}`;
+  }
+  ["ev-titulo", "ev-tpub", "ev-vinc", "ev-contrato", "ev-horas", "ev-formato", "ev-turno", "ev-tlocal", "ev-mod", "ev-resumo", "ev-aberta"].forEach(id => { $(id).addEventListener("input", previaVaga); $(id).addEventListener("change", previaVaga); });
   $("ev-salvar").addEventListener("click", async (ev) => {
     const id = $("ev-id").value.trim().toLowerCase();
     if (!/^[a-z0-9-]{2,40}$/.test(id)) return aviso("a-ev", "Código: use letras minúsculas, números e hífen (ex.: art-senior).");
@@ -428,12 +474,15 @@
     const req = {}; if ($("ev-r-lic").checked) req.licenciatura = true; if ($("ev-r-est").checked) req.estudante = true;
     if ($("ev-r-mud").checked) req.mudanca = true; if ($("ev-r-via").checked) req.viagens = true;
     if ($("ev-r-anos").value !== "") req.anos_educacao_basica = +$("ev-r-anos").value;
-    const corpo = { titulo: $("ev-titulo").value.trim(), vagas_abertas: +$("ev-qtd").value || 0, nivel_teste: $("ev-nivel").value, jornada: $("ev-jornada").value.trim(),
-      remuneracao: $("ev-rem").value.trim() || null, local: $("ev-local").value.trim(), resumo: $("ev-resumo").value.trim() || null,
+    const corpo = { titulo: $("ev-titulo").value.trim(), vagas_abertas: +$("ev-qtd").value || 0, nivel_teste: $("ev-nivel").value, jornada: `${+$("ev-horas").value || 40} horas semanais, ${$("ev-formato").value}${$("ev-turno").value.trim() ? " (" + $("ev-turno").value.trim() + ")" : ""}`,
+      horas_semanais: +$("ev-horas").value || null, formato: $("ev-formato").value, turno: $("ev-turno").value.trim() || null,
+      tipo_local: $("ev-tlocal").value, local: $("ev-tlocal").value === "salvador" ? "Salvador" : "Qualquer região da Bahia",
+      titulo_publico: $("ev-tpub").value.trim() || null, vinculo: $("ev-vinc").value,
+      remuneracao: $("ev-rem").value.trim() || null, resumo: $("ev-resumo").value.trim() || null,
       atribuicoes: linhas($("ev-atrib").value), prerequisitos: linhas($("ev-pre").value), desejavel: linhas($("ev-des").value),
       pesos, requisitos: req, aberta: $("ev-aberta").checked,
       modalidade: $("ev-mod").value, inicio_previsto: $("ev-mod").value === "previsto" && $("ev-inicio").value ? $("ev-inicio").value : null,
-      contrato: $("ev-contrato").value.trim() || null };
+      contrato: $("ev-contrato").value.trim() || $("ev-vinc").value };
     ev.target.disabled = true;
     try {
       if (editV) await api(`/rest/v1/tal_vaga?id=eq.${encodeURIComponent(editV.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(corpo) });
