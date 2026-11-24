@@ -122,7 +122,10 @@
     <div class="grade2">
       <div><label for="ev-id">Código</label><input id="ev-id" type="text" placeholder="ex.: art-senior"></div>
       <div><label for="ev-titulo">Título</label><input id="ev-titulo" type="text"></div>
-      <div><label for="ev-qtd">Vagas abertas</label><input id="ev-qtd" type="number" min="0"></div>
+      <div><label for="ev-mod">Situação da publicação</label><select id="ev-mod"><option value="reserva">Cadastro reserva</option><option value="previsto">Início previsto</option></select></div>
+      <div id="ev-inicio-box"><label for="ev-inicio">Início previsto (opcional, uso interno)</label><input id="ev-inicio" type="date"></div>
+      <div><label for="ev-contrato">Vínculo / contrato</label><input id="ev-contrato" type="text" placeholder="CLT, RPA, Bolsa estágio…"></div>
+      <div><label for="ev-qtd">Quantidade (uso interno, não aparece no portal)</label><input id="ev-qtd" type="number" min="0"></div>
       <div><label for="ev-nivel">Nível dos testes</label><select id="ev-nivel"><option value="padrao">Padrão</option><option value="estagio">Estágio (mais simples)</option></select></div>
       <div><label for="ev-jornada">Jornada</label><input id="ev-jornada" type="text"></div>
       <div><label for="ev-rem">Remuneração (opcional)</label><input id="ev-rem" type="text"></div>
@@ -396,13 +399,15 @@
   // ---------- vagas e personas
   function listarVagas() {
     $("tv-lista").innerHTML = vagas.map(v => `<div class="qlinha" data-id="${esc(v.id)}"><div style="flex:1"><b>${esc(v.titulo)}</b><div class="ajuda" style="margin:4px 0 0">${esc(v.resumo || "")}</div></div>
-      <div class="tags"><span class="tag">${v.vagas_abertas} vagas</span><span class="tag">${v.nivel_teste}</span>${v.aberta ? "" : `<span class="tag" style="background:#eee;color:#666">fechada</span>`}</div></div>`).join("");
+      <div class="tags"><span class="tag">${v.modalidade === "previsto" ? "início previsto" : "cadastro reserva"}</span><span class="tag">${v.vagas_abertas} vagas</span><span class="tag">${v.nivel_teste}</span>${v.aberta ? "" : `<span class="tag" style="background:#eee;color:#666">fechada</span>`}</div></div>`).join("");
     $("tv-lista").querySelectorAll(".qlinha").forEach(el => el.addEventListener("click", () => editarVaga(vagas.find(v => v.id === el.dataset.id))));
   }
   function editarVaga(v) {
     editV = v; $("ev-tit").textContent = v ? "Editar vaga" : "Nova vaga";
     $("ev-id").value = v ? v.id : ""; $("ev-id").disabled = !!v;
     $("ev-titulo").value = v ? v.titulo : ""; $("ev-qtd").value = v ? v.vagas_abertas : 1; $("ev-nivel").value = v ? v.nivel_teste : "padrao";
+    $("ev-mod").value = v && v.modalidade === "previsto" ? "previsto" : "reserva"; $("ev-inicio").value = v && v.inicio_previsto ? v.inicio_previsto : "";
+    $("ev-contrato").value = v ? (v.contrato || "") : "CLT"; $("ev-inicio-box").classList.toggle("oculto", $("ev-mod").value !== "previsto");
     $("ev-jornada").value = v ? v.jornada : "40 horas semanais, presencial"; $("ev-rem").value = v ? (v.remuneracao || "") : "";
     $("ev-local").value = v ? v.local : "Município sede de um dos 27 NTE da Bahia"; $("ev-resumo").value = v ? (v.resumo || "") : "";
     $("ev-atrib").value = v ? v.atribuicoes.join("\n") : ""; $("ev-pre").value = v ? v.prerequisitos.join("\n") : ""; $("ev-des").value = v ? v.desejavel.join("\n") : "";
@@ -413,6 +418,7 @@
     aviso("a-ev", ""); mostrar("v-tal-v");
   }
   $("tv-nova").addEventListener("click", () => editarVaga(null));
+  $("ev-mod").addEventListener("change", () => $("ev-inicio-box").classList.toggle("oculto", $("ev-mod").value !== "previsto"));
   $("ev-salvar").addEventListener("click", async (ev) => {
     const id = $("ev-id").value.trim().toLowerCase();
     if (!/^[a-z0-9-]{2,40}$/.test(id)) return aviso("a-ev", "Código: use letras minúsculas, números e hífen (ex.: art-senior).");
@@ -425,7 +431,9 @@
     const corpo = { titulo: $("ev-titulo").value.trim(), vagas_abertas: +$("ev-qtd").value || 0, nivel_teste: $("ev-nivel").value, jornada: $("ev-jornada").value.trim(),
       remuneracao: $("ev-rem").value.trim() || null, local: $("ev-local").value.trim(), resumo: $("ev-resumo").value.trim() || null,
       atribuicoes: linhas($("ev-atrib").value), prerequisitos: linhas($("ev-pre").value), desejavel: linhas($("ev-des").value),
-      pesos, requisitos: req, aberta: $("ev-aberta").checked };
+      pesos, requisitos: req, aberta: $("ev-aberta").checked,
+      modalidade: $("ev-mod").value, inicio_previsto: $("ev-mod").value === "previsto" && $("ev-inicio").value ? $("ev-inicio").value : null,
+      contrato: $("ev-contrato").value.trim() || null };
     ev.target.disabled = true;
     try {
       if (editV) await api(`/rest/v1/tal_vaga?id=eq.${encodeURIComponent(editV.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(corpo) });
