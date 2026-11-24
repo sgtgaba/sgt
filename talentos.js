@@ -31,13 +31,13 @@
     .qlinha:hover{background:var(--cor-suave)} .qlinha .tags{flex:none}
     .ev-card-grade{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
     @media(max-width:760px){.ev-card-grade{grid-template-columns:1fr}}
-    .pv-card{position:relative;overflow:hidden;border:1px solid #efd9e4;border-radius:12px;padding:20px 16px 14px;background:#fff;box-shadow:0 2px 10px rgba(156,11,86,.07);display:flex;flex-direction:column;gap:9px;font-size:13.5px}
-    .pv-card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#e71181 0 34%,#ee7f08 34% 67%,#92c01f 67% 100%)}
-    .pv-card .vinc{align-self:flex-start;font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:999px;color:#fff;background:#c40f6d}
-    .pv-card .vinc.rpa{background:#ee7f08}.pv-card .vinc.est{background:#92c01f}
-    .pv-card b.t{font-size:16px;line-height:1.3}.pv-card .r{color:#6b6470;line-height:1.45}
-    .pv-card .nota{font-size:12px;color:#6b6470;background:#fde8f2;border-radius:8px;padding:6px 9px}
-    .pv-card .cta{font-weight:700;color:#9c0b56}
+    .pv-card{position:relative;overflow:hidden;border-radius:12px;padding:20px 16px 16px;color:#fff;background:linear-gradient(125deg,#9c0b56 0%,#c40f6d 45%,#e71181 100%);box-shadow:0 6px 18px rgba(60,10,40,.18);display:flex;flex-direction:column;gap:9px;font-size:13.5px}
+    .pv-card::before{content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.14)}
+    .pv-card > *{position:relative}
+    .pv-card .vinc{align-self:flex-start;font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:999px;color:#fff;background:rgba(255,255,255,.22)}
+    .pv-card b.t{font-size:16px;line-height:1.3}.pv-card .r{color:rgba(255,255,255,.92);line-height:1.45}
+    .pv-card .nota{font-size:12px;color:#fff;background:rgba(255,255,255,.18);border-radius:8px;padding:6px 9px}
+    .pv-card .cta{align-self:flex-start;font-weight:700;color:#7a0943;background:#fff;padding:7px 13px;border-radius:999px}
     .altl{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:center;margin-top:6px} .altl input[type=radio]{accent-color:var(--cor);width:18px;height:18px}
     .prev svg{max-width:100%;height:auto;border:1px solid var(--borda);border-radius:10px;margin-top:8px}
     textarea.cod{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;min-height:90px}
@@ -140,8 +140,8 @@
           <div><label for="ev-horas">Carga horária (horas semanais)</label><input id="ev-horas" type="number" min="1" max="44"></div>
           <div><label for="ev-formato">Formato</label><select id="ev-formato"><option value="presencial">Presencial</option><option value="híbrido">Híbrido</option><option value="remoto">Remoto</option></select></div>
           <div><label for="ev-turno">Turno (opcional)</label><input id="ev-turno" type="text" placeholder="ex.: manhã ou tarde"></div>
-          <div><label for="ev-tlocal">Local de atuação</label><select id="ev-tlocal"><option value="nte">Várias regiões da Bahia (NTE)</option><option value="salvador">Salvador · equipe base</option></select></div>
-          <div><label for="ev-mod">Situação da publicação</label><select id="ev-mod"><option value="reserva">Cadastro reserva (Banco de Talentos)</option><option value="previsto">Início previsto (processo seletivo)</option></select></div>
+          <div><label for="ev-tlocal">Local de atuação</label><select id="ev-tlocal"><option value="nte">Várias regiões da Bahia</option><option value="salvador">Salvador · equipe base</option></select></div>
+          <div><label for="ev-mod">Situação da publicação</label><select id="ev-mod"><option value="reserva">Cadastro reserva (botão "Inscreva-se no Banco de Talentos")</option><option value="previsto">Início previsto (botão "Inscreva-se")</option></select></div>
           <div id="ev-inicio-box"><label for="ev-inicio">Início previsto (opcional, uso interno)</label><input id="ev-inicio" type="date"></div>
         </div>
       </div>
@@ -458,9 +458,9 @@
       ${resumo ? `<span class="r">${esc(resumo)}</span>` : ""}
       <span>💼 Vínculo: <b>${esc(vinc)}</b>${det ? " · " + esc(det) : ""}</span>
       <span>🕘 ${h ? h + "h semanais" : "—"} · ${esc(f)}${t ? " (" + esc(t) + ")" : ""}</span>
-      <span>📍 ${nte ? "Várias regiões da Bahia (NTE)" : "Salvador · equipe base"}</span>
+      <span>📍 ${nte ? "Várias regiões da Bahia" : "Salvador · equipe base"}</span>
       ${nte ? `<span class="nota">Atuação em várias regiões da Bahia: sua disponibilidade por região será consultada durante a inscrição.</span>` : ""}
-      <span class="cta">${$("ev-mod").value === "previsto" ? "Inscreva-se no processo seletivo" : "Inscreva-se no Banco de Talentos"} →</span></div>
+      <span class="cta">${$("ev-mod").value === "previsto" ? "Inscreva-se" : "Inscreva-se no Banco de Talentos"} →</span></div>
       ${grupo ? `<p class="ajuda" style="margin-top:8px">Esta vaga faz parte do grupo <b>${esc(grupo)}</b>: no portal, as vagas do grupo aparecem num único card${comum ? ", com a descrição comum do grupo" : ""}. Quantidade e senioridade não aparecem para o candidato.</p>` : ""}
       ${$("ev-aberta").checked ? "" : `<p class="ajuda" style="margin-top:8px">Vaga fechada: o card não aparece no portal.</p>`}`;
   }
