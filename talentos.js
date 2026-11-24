@@ -150,7 +150,7 @@
     <h2>Uso interno</h2>
     <div class="grade2">
       <div><label for="ev-id">Código</label><input id="ev-id" type="text" placeholder="ex.: art-senior"></div>
-      <div><label for="ev-qtd">Quantidade (não aparece no portal)</label><input id="ev-qtd" type="number" min="0"></div>
+      <div><label for="ev-qtd">Quantidade de vagas (não aparece no portal; acima de zero, o botão é "Inscreva-se")</label><input id="ev-qtd" type="number" min="0"></div>
       <div><label for="ev-nivel">Nível dos testes</label><select id="ev-nivel"><option value="padrao">Padrão</option><option value="estagio">Estágio (mais simples)</option></select></div>
       <div><label for="ev-rem">Remuneração (não aparece no portal)</label><input id="ev-rem" type="text"></div>
     </div>
@@ -217,7 +217,7 @@
     if (!ranking.length) { $("tal-tabela").innerHTML = `<p class="ajuda" style="margin-top:14px">Nenhuma inscrição por aqui ainda.</p>`; return; }
     $("tal-tabela").innerHTML = `<div style="overflow-x:auto"><table class="tab"><thead><tr><th>#</th><th>Candidato(a)</th><th class="esc">Local</th><th>Teste 1</th><th>Teste 2</th><th>Aderência</th><th class="esc">Melhor outra vaga</th><th class="esc">Etapa</th></tr></thead><tbody>${
       ranking.map((r, i) => { const a = r.aderencia || {}; return `<tr class="cl" data-id="${r.id}">
-        <td>${i + 1}º</td><td><b>${esc(r.nome)}</b>${r.fora_do_tempo ? ` <span class="tag" style="background:var(--erro-fundo);color:var(--erro)">fora do tempo</span>` : ""}${r.status !== "concluida" ? ` <span class="tag">${r.status === "em_andamento" ? "em andamento" : esc(r.status)}</span>` : ""}<div class="ajuda" style="margin:0">${esc(r.email)}</div></td>
+        <td>${i + 1}º</td><td><b>${esc(r.nome)}</b>${r.inscricoes > 1 ? ` <span class="tag" title="Inscrições feitas por esta pessoa, em todas as vagas e rodadas">${r.inscricoes} inscrições</span>` : ""}${r.fora_do_tempo ? ` <span class="tag" style="background:var(--erro-fundo);color:var(--erro)">fora do tempo</span>` : ""}${r.status !== "concluida" ? ` <span class="tag">${r.status === "em_andamento" ? "em andamento" : esc(r.status)}</span>` : ""}<div class="ajuda" style="margin:0">${esc(r.email)}</div></td>
         <td class="esc">${esc([r.municipio, r.uf].filter(Boolean).join("/"))}</td>
         <td>${nota(r.teste_interpretacao, "/10")}</td><td>${nota(r.teste_logica, "/10")}</td>
         <td>${nota(a.aderencia)}${a.requisitos_total ? `<div class="ajuda" style="margin:2px 0 0">req. ${a.requisitos_ok}/${a.requisitos_total}</div>` : ""}</td>
@@ -241,12 +241,12 @@
   });
 
   $("tal-csv").addEventListener("click", () => {
-    const cab = ["Posição", "Nome", "E-mail", "Município", "UF", "Vaga", "Status", "Etapa RH", "Teste 1 (0-10)", "Teste 2 (0-10)", "Fora do tempo", "Aderência", "Desempenho", "Requisitos", "Aceita outras vagas",
+    const cab = ["Posição", "Nome", "E-mail", "Município", "UF", "Vaga", "Status", "Etapa RH", "Teste 1 (0-10)", "Teste 2 (0-10)", "Fora do tempo", "Aderência", "Desempenho", "Requisitos", "Aceita outras vagas", "Inscrições da pessoa",
       ...vagas.map(v => "Aderência · " + v.titulo)];
     const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
     const linhasCsv = ranking.map((r, i) => { const a = r.aderencia || {};
       return [i + 1, r.nome, r.email, r.municipio, r.uf, r.vaga, r.status, ETAPA_RH[r.etapa_rh], r.teste_interpretacao, r.teste_logica, r.fora_do_tempo ? "sim" : "não",
-        a.aderencia, a.desempenho, a.requisitos_total ? `${a.requisitos_ok}/${a.requisitos_total}` : "", r.aceita_outras ? "sim" : "não",
+        a.aderencia, a.desempenho, a.requisitos_total ? `${a.requisitos_ok}/${a.requisitos_total}` : "", r.aceita_outras ? "sim" : "não", r.inscricoes ?? "",
         ...vagas.map(v => v.id === r.vaga_id ? a.aderencia : (r.aderencia_outras || {})[v.id])].map(q).join(";"); });
     const blob = new Blob(["﻿" + [cab.map(q).join(";"), ...linhasCsv].join("\r\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `banco_talentos_${$("tal-vaga").value}.csv`; a.click();
@@ -460,11 +460,11 @@
       <span>🕘 ${h ? h + "h semanais" : "—"} · ${esc(f)}${t ? " (" + esc(t) + ")" : ""}</span>
       <span>📍 ${nte ? "Várias regiões da Bahia" : "Salvador · equipe base"}</span>
       ${nte ? `<span class="nota">Atuação em várias regiões da Bahia: sua disponibilidade por região será consultada durante a inscrição.</span>` : ""}
-      <span class="cta">${$("ev-mod").value === "previsto" ? "Inscreva-se" : "Inscreva-se no Banco de Talentos"} →</span></div>
+      <span class="cta">${$("ev-mod").value === "previsto" || +$("ev-qtd").value > 0 ? "Inscreva-se" : "Inscreva-se no Banco de Talentos"} →</span></div>
       ${grupo ? `<p class="ajuda" style="margin-top:8px">Esta vaga faz parte do grupo <b>${esc(grupo)}</b>: no portal, as vagas do grupo aparecem num único card${comum ? ", com a descrição comum do grupo" : ""}. Quantidade e senioridade não aparecem para o candidato.</p>` : ""}
       ${$("ev-aberta").checked ? "" : `<p class="ajuda" style="margin-top:8px">Vaga fechada: o card não aparece no portal.</p>`}`;
   }
-  ["ev-titulo", "ev-tpub", "ev-vinc", "ev-contrato", "ev-horas", "ev-formato", "ev-turno", "ev-tlocal", "ev-mod", "ev-resumo", "ev-aberta"].forEach(id => { $(id).addEventListener("input", previaVaga); $(id).addEventListener("change", previaVaga); });
+  ["ev-qtd", "ev-titulo", "ev-tpub", "ev-vinc", "ev-contrato", "ev-horas", "ev-formato", "ev-turno", "ev-tlocal", "ev-mod", "ev-resumo", "ev-aberta"].forEach(id => { $(id).addEventListener("input", previaVaga); $(id).addEventListener("change", previaVaga); });
   $("ev-salvar").addEventListener("click", async (ev) => {
     const id = $("ev-id").value.trim().toLowerCase();
     if (!/^[a-z0-9-]{2,40}$/.test(id)) return aviso("a-ev", "Código: use letras minúsculas, números e hífen (ex.: art-senior).");
