@@ -7,7 +7,7 @@
     resultados: "Foco em resultados", escuta: "Escuta e postura democrática", dados: "Análise de dados", tecnologia: "Tecnologia",
     pedagogico: "Visão pedagógica", interpretacao: "Interpretação (teste 1)", logica: "Raciocínio lógico (teste 2)" };
   const ETAPA_RH = { nova: "Nova", em_analise: "Em análise", entrevista: "Entrevista", aprovada: "Aprovada", reprovada: "Não selecionada", banco: "Banco de talentos" };
-  let vagas = [], ranking = [], questoes = [], situacoes = [], cand = null, editQ = null, editS = null, editV = null;
+  let vagas = [], ranking = [], questoes = [], situacoes = [], cand = null, editQ = null, editS = null, editV = null, alterPend = new Set();
 
   document.head.insertAdjacentHTML("beforeend", `<style>
     .abas{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}
@@ -16,7 +16,7 @@
     .tab{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:12px}
     .tab th{text-align:left;font-size:12px;color:var(--texto-2);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--borda);white-space:nowrap}
     .tab td{padding:9px 6px;border-bottom:1px solid #f1eaee;vertical-align:top}
-    .tab tr.cl{cursor:pointer} .tab tr.cl:hover td{background:var(--cor-suave)}
+    .alts tr.pend td{background:#fffaeb} .tab tr.cl{cursor:pointer} .tab tr.cl:hover td{background:var(--cor-suave)}
     .nota{display:inline-block;min-width:42px;text-align:center;font-weight:700;border-radius:999px;padding:2px 8px;font-size:12.5px}
     .n-a{background:var(--ok-fundo);color:var(--ok)} .n-m{background:var(--alerta-fundo);color:var(--alerta)} .n-b{background:var(--erro-fundo);color:var(--erro)}
     .barra{height:8px;background:#f1eaee;border-radius:6px;overflow:hidden;margin-top:4px} .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--magenta),var(--laranja))}
@@ -206,6 +206,7 @@
     try {
       ranking = await api(`/rest/v1/tal_ranking?select=*&vaga_id=eq.${encodeURIComponent(v)}${st ? "&status=eq." + st : ""}`);
       ranking.sort((a, b) => ((b.aderencia || {}).aderencia || 0) - ((a.aderencia || {}).aderencia || 0) || (a.tempo_total || 9e9) - (b.tempo_total || 9e9));
+      try { alterPend = new Set((await api(`/rest/v1/tal_alteracao?select=inscricao_id&visto_em=is.null`)).map(x => x.inscricao_id)); } catch (e) { alterPend = new Set(); }
       desenharRanking();
     } catch (e) { if (e.message !== "sessao") aviso("a-tal", traduzErro(e)); }
   }
@@ -217,7 +218,7 @@
     if (!ranking.length) { $("tal-tabela").innerHTML = `<p class="ajuda" style="margin-top:14px">Nenhuma inscrição por aqui ainda.</p>`; return; }
     $("tal-tabela").innerHTML = `<div style="overflow-x:auto"><table class="tab"><thead><tr><th>#</th><th>Candidato(a)</th><th class="esc">Local</th><th>Teste 1</th><th>Teste 2</th><th>Aderência</th><th class="esc">Melhor outra vaga</th><th class="esc">Etapa</th></tr></thead><tbody>${
       ranking.map((r, i) => { const a = r.aderencia || {}; return `<tr class="cl" data-id="${r.id}">
-        <td>${i + 1}º</td><td><b>${esc(r.nome)}</b>${r.inscricoes > 1 ? ` <span class="tag" title="Inscrições feitas por esta pessoa, em todas as vagas e rodadas">${r.inscricoes} inscrições</span>` : ""}${r.fora_do_tempo ? ` <span class="tag" style="background:var(--erro-fundo);color:var(--erro)">fora do tempo</span>` : ""}${r.status !== "concluida" ? ` <span class="tag">${r.status === "em_andamento" ? "em andamento" : esc(r.status)}</span>` : ""}<div class="ajuda" style="margin:0">${esc(r.email)}</div></td>
+        <td>${i + 1}º</td><td><b>${esc(r.nome)}</b>${r.inscricoes > 1 ? ` <span class="tag" title="Inscrições feitas por esta pessoa, em todas as vagas e rodadas">${r.inscricoes} inscrições</span>` : ""}${r.fora_do_tempo ? ` <span class="tag" style="background:var(--erro-fundo);color:var(--erro)">fora do tempo</span>` : ""}${alterPend.has(r.id) ? ` <span class="tag" style="background:var(--alerta-fundo,#fffaeb);color:var(--alerta,#b54708)" title="O candidato alterou dados depois de enviar a inscrição">dados alterados</span>` : ""}${r.status !== "concluida" ? ` <span class="tag">${r.status === "em_andamento" ? "em andamento" : esc(r.status)}</span>` : ""}<div class="ajuda" style="margin:0">${esc(r.email)}</div></td>
         <td class="esc">${esc([r.municipio, r.uf].filter(Boolean).join("/"))}</td>
         <td>${nota(r.teste_interpretacao, "/10")}</td><td>${nota(r.teste_logica, "/10")}</td>
         <td>${nota(a.aderencia)}${a.requisitos_total ? `<div class="ajuda" style="margin:2px 0 0">req. ${a.requisitos_ok}/${a.requisitos_total}</div>` : ""}</td>
@@ -259,6 +260,7 @@
       const [cr] = await api(`/rest/v1/tal_comport_resp?inscricao_id=eq.${id}&select=pontuacao`);
       const r = ranking.find(x => x.id === id) || (await api(`/rest/v1/tal_ranking?id=eq.${id}&select=*`))[0];
       const [rr] = await api(`/rest/v1/tal_ranking?id=eq.${id}&select=aderencia,aderencia_outras,tempo_total`);
+      let alts = []; try { alts = await api(`/rest/v1/tal_alteracao?inscricao_id=eq.${id}&order=em.desc&select=*`); } catch (e) { alts = []; }
       cand = i; const d = i.dados || {}, a = rr.aderencia || {}, pts = (cr && cr.pontuacao) || {};
       const vaga = vagas.find(v => v.id === i.vaga_id) || {};
       const pesos = vaga.pesos || {};
@@ -268,7 +270,7 @@
       const mud = { reside: "Já reside na sede", sim: "Sim, pode se mudar", nao: "Não" }[d.mudanca] || "—";
       const outras = Object.entries(rr.aderencia_outras || {}).map(([k, n]) => `<div>${esc(titulo(k))}<b>${n ?? "—"}${n != null ? "%" : ""}</b></div>`).join("");
       $("tc-corpo").innerHTML = `<div class="persona">
-        <div class="cab"><div><h2 style="margin:0">${esc(i.nome)}</h2>
+        <div class="cab"><div><h2 style="margin:0">${esc(i.nome)}</h2>${d.nome_social ? `<p class="ajuda" style="margin:2px 0 0">Nome social: <b>${esc(d.nome_social)}</b></p>` : ""}${d.excluido_em ? `<p class="ajuda" style="margin:2px 0 0;color:#b42318"><b>Inscrição excluída a pedido do candidato em ${new Date(d.excluido_em).toLocaleDateString("pt-BR")}</b></p>` : ""}
           <div class="ajuda" style="margin-top:4px">${esc(titulo(i.vaga_id))} · ${esc([d.municipio, d.uf].filter(Boolean).join("/"))} · ${esc(i.email)}${d.telefone ? " · " + esc(d.telefone) : ""}</div>
           <div class="ajuda">Inscrição ${i.status === "concluida" ? "concluída em " + new Date(i.concluida_em).toLocaleString("pt-BR") : "em andamento"}${r && r.fora_do_tempo ? " · <b style='color:var(--erro)'>teste enviado fora do tempo</b>" : ""}</div></div>
           <div style="text-align:right"><div class="ajuda" style="margin:0">Aderência à vaga</div><div class="grande">${a.aderencia ?? "—"}%</div>
@@ -293,11 +295,20 @@
         <h2>Mini currículo</h2><p class="texto">${esc(d.mini_curriculo || "—")}</p>
         <div class="grade2"><div><h2>Pontos fortes</h2><p class="texto">${esc(d.pontos_fortes || "—")}</p></div><div><h2>Pontos a desenvolver</h2><p class="texto">${esc(d.pontos_desenvolver || "—")}</p></div></div>
         ${d.link_curriculo ? `<p class="ajuda">Currículo: <a href="${esc(/^https?:\/\//.test(d.link_curriculo) ? d.link_curriculo : "https://" + d.link_curriculo)}" target="_blank" rel="noopener noreferrer">${esc(d.link_curriculo)}</a></p>` : ""}
+        ${alteracoesHtml(alts)}
         <h2>Declarações</h2>
-        <p class="ajuda">Vínculo com o órgão parceiro: <b>${esc(d.vinculo_orgao || "—")}</b> · Vínculo com a instituição executora: <b>${esc(d.vinculo_executora || "—")}</b> · Parente no projeto: <b>${esc(d.parente_projeto || "—")}</b>${d.acessibilidade ? ` · Acessibilidade: <b>${esc(d.acessibilidade)}</b>` : ""} · Banco de talentos (12 meses): <b>${d.lgpd_banco_talentos ? "autorizou" : "não autorizou"}</b></p>
+        ${vincTexto("Governo do Estado da Bahia", d.vinculo_governo, d.vinculo_orgao)}
+        ${vincTexto("Fundação Getulio Vargas", d.vinculo_fgv, d.vinculo_executora)}
+        <p class="ajuda">Pessoa com deficiência: <b>${d.pcd === "sim" ? "sim" + (d.pcd_qual ? " · " + esc(d.pcd_qual) : "") : d.pcd === "nao" ? "não" : (d.acessibilidade ? "recurso: " + esc(d.acessibilidade) : "—")}</b> · Banco de talentos: <b>${d.lgpd_banco_talentos ? "autorizou" : "não autorizou"}</b></p>
       </div>`;
       $("tc-etapa").value = i.etapa_rh; $("tc-obs").value = i.observacao_rh || ""; aviso("a-tc", "");
       mostrar("v-tal-cand");
+      const bRev = document.getElementById("tc-revisar");
+      if (bRev) bRev.onclick = async () => {
+        try { await api(`/rest/v1/tal_alteracao?inscricao_id=eq.${id}&visto_em=is.null`, { method: "PATCH", body: JSON.stringify({ visto_em: new Date().toISOString(), visto_por: (window.eu && eu.email) || null }) });
+              alterPend.delete(id); bRev.closest(".alts").querySelectorAll(".pend").forEach(x => x.classList.remove("pend")); bRev.remove(); }
+        catch (e) { alert(traduzErro(e)); }
+      };
     } catch (e) { if (e.message !== "sessao") aviso("a-tal", traduzErro(e)); }
   }
   $("tc-imprimir").addEventListener("click", () => window.print());
@@ -496,3 +507,36 @@
 
   window.Talentos = { abrir };
 })();
+
+function vincTexto(inst, v, antigo) {
+  const mes = s => s ? s.split("-").reverse().join("/") : "";
+  if (!v) return `<p class="ajuda">Vínculo com ${inst}: <b>${esc(antigo || "—")}</b></p>`;
+  if (v.possui !== "sim") return `<p class="ajuda">Vínculo com ${inst}: <b>não possui nem possuiu</b></p>`;
+  return `<p class="ajuda">Vínculo com ${inst}: <b>${v.ativo === "sim" ? "ativo" : "encerrado"}</b> · ${esc(mes(v.inicio))}${v.ativo === "sim" ? " até hoje" : " a " + esc(mes(v.fim))} · ${esc(v.tipo || "—")} · ${esc(v.local || "—")} · Função: ${esc(v.funcao || "—")}</p>`;
+}
+
+const ROTULO_CAMPO = { nome: "Nome", nome_social: "Nome social", data_nascimento: "Data de nascimento", whatsapp: "WhatsApp", telefone: "Telefone",
+  telefone_2: "Outro telefone", municipio: "Município", uf: "UF", linkedin: "LinkedIn", pcd: "Pessoa com deficiência", pcd_qual: "Deficiência (qual)",
+  vinculo_governo: "Vínculo com o Governo do Estado da Bahia", vinculo_fgv: "Vínculo com a FGV", lgpd_selecao: "Consentimento LGPD",
+  lgpd_banco_talentos: "Autorização Banco de Talentos", escolaridade: "Escolaridade", curso: "Curso", instituicao: "Instituição",
+  ano_conclusao: "Ano de conclusão", pos_graduacao: "Pós-graduação", licenciatura: "Licenciatura", anos_educacao_basica: "Anos na Educação Básica",
+  experiencias: "Experiências", mini_curriculo: "Mini currículo", pontos_fortes: "Pontos fortes", pontos_desenvolver: "Pontos a desenvolver",
+  link_curriculo: "Link do currículo", matricula_ativa: "Matrícula ativa", semestre: "Semestre", turno: "Turno", mudanca: "Disponibilidade para residir" };
+function valorCampo(v) {
+  if (v == null || v === "") return "—";
+  if (typeof v === "boolean") return v ? "Sim" : "Não";
+  if (Array.isArray(v)) return v.join(" | ");
+  if (typeof v === "object") {
+    if ("possui" in v) return v.possui !== "sim" ? "Não possui" : [v.ativo === "sim" ? "ativo" : "encerrado", v.inicio, v.fim, v.tipo, v.local, v.funcao].filter(Boolean).join(" · ");
+    return JSON.stringify(v);
+  }
+  return String(v);
+}
+function alteracoesHtml(alts) {
+  if (!alts || !alts.length) return "";
+  const pend = alts.filter(a => !a.visto_em).length;
+  return `<div class="alts"><h2>Alterações feitas pelo candidato${pend ? ` <span class="tag" style="background:#fffaeb;color:#b54708">${pend} não revisada${pend > 1 ? "s" : ""}</span>` : ""}</h2>
+    <div style="overflow-x:auto"><table class="tab"><thead><tr><th>Quando</th><th>Campo</th><th>Antes</th><th>Depois</th></tr></thead><tbody>${alts.map(a =>
+      `<tr class="${a.visto_em ? "" : "pend"}"><td style="white-space:nowrap">${new Date(a.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</td><td>${esc(ROTULO_CAMPO[a.campo] || a.campo)}</td><td>${esc(valorCampo(a.antes))}</td><td><b>${esc(valorCampo(a.depois))}</b></td></tr>`).join("")}</tbody></table></div>
+    ${pend ? `<div class="acoes naoimp" style="margin-top:8px"><button class="sec" id="tc-revisar">Marcar alterações como revisadas</button></div>` : ""}</div>`;
+}
